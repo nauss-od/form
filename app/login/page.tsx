@@ -3,16 +3,20 @@ export default function LoginPage() {
     <div className="login-screen">
       <section className="login-visual">
         <div className="pattern-grid" />
+
         <div className="visual-card">
           <img className="visual-brand" src="/images/nauss-logo-full.svg" alt="جامعة نايف" />
+          <div className="visual-kicker">واجهة تشغيل مؤسسية للدورات الخارجية</div>
           <h1 className="visual-title">منصة تأمين المشاركين للدورات الخارجية</h1>
           <p className="visual-text">
-            واجهة مؤسسية أنيقة لإصدار الروابط، جمع بيانات المشاركين، وتجهيز المخرجات الرسمية بطريقة واضحة ومحكمة.
+            بيئة رقمية بهوية جامعة نايف، صُمّمت لتوحيد جمع البيانات، إصدار الروابط، وإدارة المخرجات الرسمية بمظهر رصين
+            وتسلسل بصري واضح.
           </p>
+
           <div className="visual-pills">
-            <div className="visual-pill">رابط مستقل لكل دورة خارجية بدون خلط بين الاستجابات.</div>
-            <div className="visual-pill">تعديل خاص لكل متدرب عبر رابط مستقل بعد أول إرسال.</div>
-            <div className="visual-pill">تجهيز مخرجات Word و EML بصورة مؤسسية جاهزة للإجراء الإداري.</div>
+            <div className="visual-pill">رابط مستقل لكل دورة خارجية مع تنظيم أدق للاستجابات.</div>
+            <div className="visual-pill">تعديل خاص لكل مشارك عبر رابط آمن بعد الإرسال الأول.</div>
+            <div className="visual-pill">مخرجات جاهزة للإجراء الإداري بصياغة مؤسسية واضحة.</div>
           </div>
         </div>
       </section>
@@ -25,19 +29,28 @@ export default function LoginPage() {
 
           <div className="login-heading">
             <h2>تسجيل الدخول</h2>
-            <p>أدخل بيانات حسابك للوصول إلى المنصة</p>
+            <p>أدخل بيانات الحساب للوصول إلى لوحة العمل</p>
           </div>
 
-          <form action="/dashboard">
+          <form className="login-form" action="/dashboard">
             <div className="field">
               <label>البريد الإلكتروني</label>
-              <input defaultValue="Nalshahrani@nauss.edu.sa" type="email" dir="ltr" style={{ textAlign: 'right' }} />
+              <input defaultValue="Nalshahrani@nauss.edu.sa" type="email" dir="ltr" style={{ textAlign: 'left' }} />
             </div>
+
             <div className="field">
               <label>كلمة المرور</label>
               <input defaultValue="Zx.321321" type="password" />
             </div>
-            <button className="primary-btn" type="submit">تسجيل الدخول</button>
+
+            <div className="login-meta-row">
+              <span>الدخول محمي ومخصص للحسابات المخولة</span>
+              <span className="login-meta-badge">NAUSS</span>
+            </div>
+
+            <button className="primary-btn" type="submit">
+              <span>تسجيل الدخول</span>
+            </button>
           </form>
         </div>
       </section>

@@ -15,10 +15,10 @@ type AppShellProps = {
 };
 
 const navItems = [
-  { href: '/dashboard', label: 'لوحة التحكم', icon: '▣' },
-  { href: '/courses', label: 'الدورات', icon: '◫' },
+  { href: '/dashboard', label: 'لوحة التحكم', icon: '⌂' },
+  { href: '/courses', label: 'الدورات', icon: '▤' },
   { href: '/new-course', label: 'إصدار نموذج جديد', icon: '＋' },
-  { href: '/users', label: 'إدارة المستخدمين', icon: '◉', managerOnly: true },
+  { href: '/users', label: 'إدارة المستخدمين', icon: '◎', managerOnly: true },
 ];
 
 export default function AppShell({ title, subtitle, description, role = 'EMPLOYEE', children }: AppShellProps) {
@@ -48,6 +48,8 @@ export default function AppShell({ title, subtitle, description, role = 'EMPLOYE
           </div>
         </div>
 
+        <div className="sidebar-divider" />
+
         <nav className="sidebar-nav">
           {navItems
             .filter((item) => !item.managerOnly || isManager)
@@ -65,7 +67,11 @@ export default function AppShell({ title, subtitle, description, role = 'EMPLOYE
         </nav>
 
         <div className="sidebar-foot">
-          <div className="role-chip">{isManager ? 'مدير' : 'موظف'}</div>
+          <div className="role-card">
+            <small>الوصول الحالي</small>
+            <strong>{isManager ? 'حساب إداري كامل الصلاحية' : 'حساب تشغيلي لتنفيذ الأعمال اليومية'}</strong>
+            <div className="role-chip">{isManager ? 'مدير' : 'موظف'}</div>
+          </div>
         </div>
       </aside>
 
@@ -77,13 +83,15 @@ export default function AppShell({ title, subtitle, description, role = 'EMPLOYE
             <button className="menu-btn" onClick={() => setOpen(true)} aria-label="فتح القائمة">
               ☰
             </button>
-            <div>
+
+            <div className="topbar-stack">
               <h1 className="page-title">{title}</h1>
               {text ? <p className="page-subtitle">{text}</p> : null}
             </div>
           </div>
 
           <div className="topbar-side">
+            <div className="topbar-chip">{isManager ? 'عرض إداري' : 'عرض تشغيلي'}</div>
             <button className="logout-btn" onClick={logout}>
               <span>⎋</span>
               <span>تسجيل الخروج</span>
@@ -91,7 +99,9 @@ export default function AppShell({ title, subtitle, description, role = 'EMPLOYE
           </div>
         </header>
 
-        <main className="page-body">{children}</main>
+        <main className="page-body">
+          <div className="page-stack">{children}</div>
+        </main>
       </div>
     </div>
   );

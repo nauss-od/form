@@ -2,15 +2,18 @@ import AppShell from '@/components/AppShell';
 
 export default function UsersPage() {
   return (
-    <AppShell title="إدارة المستخدمين" subtitle="واجهة أكثر اتزانًا لإدارة الحسابات والصلاحيات." role="MANAGER">
+    <AppShell title="إدارة المستخدمين" subtitle="عرض الحسابات والصلاحيات بحضور بصري أوضح وأكثر اتزانًا." role="MANAGER">
       <section className="section-card">
         <div className="section-head">
           <div>
             <h3>الحسابات</h3>
-            <p>تنسيق واضح للأسماء، الأدوار، والحالة التشغيلية.</p>
+            <p>تنسيق واضح للأسماء، الصلاحيات، والحالة التشغيلية لكل مستخدم.</p>
           </div>
-          <button className="secondary-btn">إضافة مستخدم</button>
+          <div className="section-actions">
+            <button className="secondary-btn">إضافة مستخدم</button>
+          </div>
         </div>
+
         <div className="section-body data-table-wrap">
           <table className="data-table">
             <thead>
@@ -24,18 +27,36 @@ export default function UsersPage() {
             </thead>
             <tbody>
               <tr>
-                <td>مدير النظام</td>
+                <td className="td-title">
+                  <strong>مدير النظام</strong>
+                  <span>صلاحية كاملة لإدارة المنصة</span>
+                </td>
                 <td>Nalshahrani@nauss.edu.sa</td>
                 <td>مدير</td>
-                <td>فعّال</td>
-                <td><button className="ghost-btn">تعديل</button></td>
+                <td>
+                  <span className="status-chip is-done">فعّال</span>
+                </td>
+                <td>
+                  <div className="data-actions">
+                    <button className="ghost-btn">تعديل</button>
+                  </div>
+                </td>
               </tr>
               <tr>
-                <td>موظف تشغيل</td>
+                <td className="td-title">
+                  <strong>موظف تشغيل</strong>
+                  <span>حساب تشغيلي لإصدار النماذج ومتابعتها</span>
+                </td>
                 <td>employee@nauss.edu.sa</td>
                 <td>موظف</td>
-                <td>فعّال</td>
-                <td><button className="ghost-btn">تعديل</button></td>
+                <td>
+                  <span className="status-chip is-open">فعّال</span>
+                </td>
+                <td>
+                  <div className="data-actions">
+                    <button className="ghost-btn">تعديل</button>
+                  </div>
+                </td>
               </tr>
             </tbody>
           </table>
