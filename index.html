@@ -1,74 +1,120 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>منصة نايف — لوحة التحكم (نموذج)</title>
-  <link href="assets/styles.css" rel="stylesheet" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>منصة نايف — تجربة دخول فاخرة</title>
+<link href="assets/styles.css" rel="stylesheet" />
 </head>
 <body>
   <header class="header">
     <div class="brand">
       <img src="assets/nauss-logo.png" alt="جامعة نايف" />
-      <div style="font-weight:700">منصة تشغيل مؤسسية للدورات الخارجية</div>
+      <div style="font-weight:700;color:white">منصة تشغيل مؤسسية للدورات الخارجية</div>
     </div>
-    <nav class="nav">
-      <div style="display:flex;gap:12px;align-items:center">
-        <button style="border-radius:12px;padding:8px 12px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:white">مدير ▾</button>
-        <a href="/login" style="color:white;background:transparent;border-radius:10px;padding:8px">تسجيل خروج</a>
-      </div>
-    </nav>
+    <div class="nav-actions">
+      <button id="roleBtn" class="role-switch" data-role="manager">مدير ▾</button>
+      <button id="logoutBtn" class="logout-btn">تسجيل الخروج</button>
+    </div>
   </header>
 
   <main class="container">
     <section class="hero">
-      <div class="left">
-        <div class="login-card" role="form" aria-label="form-login">
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+      <div class="hero-left">
+        <div class="login-card" role="form" aria-label="login">
+          <div class="login-header">
             <img src="assets/nauss-logo.png" alt="logo" style="height:36px"/>
-            <div style="font-weight:700;font-size:18px">تسجيل الدخول</div>
+            <div class="title">تسجيل الدخول</div>
           </div>
-          <p style="color:var(--muted);margin:6px 0 14px">أدخل بيانات الحساب للوصول إلى لوحة العمل.</p>
-          <div class="form-group">
+          <p class="small">الوصول محمي ومخصص للحسابات المعتمدة</p>
+          <div class="form-row">
             <label>البريد الإلكتروني</label>
-            <input type="text" placeholder="مثال: user@nauss.edu.sa" />
+            <input class="input" type="text" placeholder="user@nauss.edu.sa" />
           </div>
-          <div class="form-group">
+          <div class="form-row">
             <label>كلمة المرور</label>
-            <input type="password" placeholder="********" />
+            <input class="input" type="password" placeholder="••••••••" />
           </div>
-          <div style="display:flex;gap:10px;align-items:center;justify-content:flex-start;margin-top:8px">
-            <button class="login-btn">تسجيل الدخول</button>
+          <div style="display:flex;gap:12px;align-items:center;margin-top:12px">
+            <button class="btn-primary">دخول</button>
+            <a class="small" href="#">نسيت كلمة المرور؟</a>
           </div>
 
-          <div class="stats" style="margin-top:18px">
-            <div class="stat"><div style="font-size:13px;color:var(--muted)">إجمالي الدورات</div><div class="num">--</div></div>
-            <div class="stat"><div style="font-size:13px;color:var(--muted)">الدورات المفتوحة</div><div class="num">--</div></div>
-            <div class="stat"><div style="font-size:13px;color:var(--muted)">المشاركون</div><div class="num">--</div></div>
+          <div class="stats" aria-hidden="true">
+            <div class="stat"><div class="label">إجمالي الدورات</div><div class="value">—</div></div>
+            <div class="stat"><div class="label">الدورات المفتوحة</div><div class="value">—</div></div>
+            <div class="stat"><div class="label">المشاركون</div><div class="value">—</div></div>
           </div>
         </div>
       </div>
 
-      <div class="right">
-        <h1>تجربة دخول هادئة وفاخرة</h1>
-        <p class="lead">تجربة دخول فاخرة، بهوية جامعة نايف، وواجهة مصممة لإدارة البيانات التشغيلية والمخرجات الرسمية بأسلوب رصين وواضح.</p>
-        <div class="hero-card">
-          <div style="font-weight:700">إصدار روابط لكل دورة</div>
-          <p style="margin:6px 0;color:var(--muted)">إصدار روابط مستقلة لكل دورة خارجية دون تداخل في الاستجابات.</p>
+      <div class="hero-right">
+        <h2 class="h1">تجربة دخول هادئة وفاخرة</h2>
+        <p class="lead">واجهة رصينة لإدارة البيانات التشغيلية والمخرجات الرسمية. تصميم واضح، متوازن، وقابل للاستخدام اليومي من قبل فرق التشغيل.</p>
+        <div class="feature-card">
+          <strong>مزايا سريعة</strong>
+          <ul class="small" style="margin:8px 0 0;padding-right:14px;line-height:1.8">
+            <li>إصدار روابط مستقلة لكل دورة خارجية</li>
+            <li>تتبع حالة المشاركين والمرفقات</li>
+            <li>تصدير تقارير تشغيلية جاهزة</li>
+          </ul>
           <a class="cta" href="#">عرض الدورات</a>
         </div>
 
-        <div class="cards" aria-hidden="false">
-          <div class="card"><strong>إدارة الحضور</strong><p style="color:var(--muted);margin-top:10px">متابعة حضور المتدربين وربطها بالنظام.</p></div>
-          <div class="card"><strong>إصدار الشهادات</strong><p style="color:var(--muted);margin-top:10px">تصميم وإصدار شهادات رسمية متوافقة مع الهوية.</p></div>
-          <div class="card"><strong>تقارير تشغيلية</strong><p style="color:var(--muted);margin-top:10px">تصدير تقارير جاهزة للعرض الإداري.</p></div>
+        <div class="cards-grid" role="list">
+          <div class="card"><strong>إدارة الحضور</strong><p class="small">متابعة الحضور وربطه بالمنصة.</p></div>
+          <div class="card"><strong>إصدار الشهادات</strong><p class="small">قوالب رسمية قابلة للطباعة.</p></div>
+          <div class="card"><strong>تقارير ومقاييس</strong><p class="small">لوحة تحكم مبسطة للمتابعة.</p></div>
         </div>
       </div>
     </section>
 
-    <section class="footer">
+    <!-- Dashboard preview -->
+    <section class="dashboard" aria-label="dashboard-preview">
+      <aside class="sidebar" role="navigation">
+        <div style="font-weight:800;font-size:18px">لوحة التحكم</div>
+        <div class="menu">
+          <a class="active" href="#">لوحة التحكم</a>
+          <a href="#">الدورات</a>
+          <a href="#">إصدار نموذج</a>
+          <a href="#">إدارة المستخدمين</a>
+        </div>
+        <div style="margin-top:18px;background:rgba(255,255,255,0.03);padding:12px;border-radius:10px">
+          <div class="small">حالة الوصول الحالية</div>
+          <div style="font-weight:700;margin-top:8px">عرض إداري كامل</div>
+        </div>
+      </aside>
+
+      <div class="main-panel">
+        <div class="cards-grid">
+          <div class="card"><div class="small">إجمالي الدورات</div><div style="font-size:24px;font-weight:800;color:var(--primary);margin-top:6px">12</div></div>
+          <div class="card"><div class="small">الاستجابات المستلمة</div><div style="font-size:24px;font-weight:800;color:var(--primary);margin-top:6px">47</div></div>
+          <div class="card"><div class="small">المشاركون</div><div style="font-size:24px;font-weight:800;color:var(--primary);margin-top:6px">180</div></div>
+        </div>
+
+        <div class="card" style="margin-top:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-weight:800">أحدث الدورات</div>
+            <a class="small" href="#">عرض الكل</a>
+          </div>
+          <table class="table" role="table" aria-label="courses-table" style="margin-top:12px">
+            <thead><tr><th>اسم النشاط</th><th>المقر</th><th>الفترة</th><th>المشاركون</th></tr></thead>
+            <tbody>
+              <tr><td>برنامج الأمن السيبراني</td><td>الدمام</td><td>2026/05/12</td><td>18</td></tr>
+              <tr><td>فن التحقيق الميداني</td><td>جدة</td><td>2026/06/03</td><td>22</td></tr>
+              <tr><td>قيادة العمليات</td><td>الرياض</td><td>2026/07/01</td><td>20</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="footer" style="margin-top:26px;text-align:center;color:var(--muted)">
       حقوق النشر © جامعة نايف العربية للعلوم الأمنية — منصة تشغيل مؤسسية.
     </section>
   </main>
+
+<script src="assets/scripts.js"></script>
 </body>
 </html>

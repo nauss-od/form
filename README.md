@@ -1,32 +1,28 @@
 
-NAUSS Redesign Prototype v2
-===========================
+NAUSS Premium Redesign — Prototype (RTL)
+======================================
 
-Contents
-- index.html            -> RTL landing (prototype)
-- login.html            -> RTL login page (balanced 50/50 layout)
-- assets/styles.css     -> Global styles (uses Cairo font)
-- assets/nauss-logo.png -> University logo or placeholder
+This package contains a premium, production-like front-end prototype for NAUSS:
+- index.html        -> Landing / login split (50/50)
+- login.html        -> Balanced login page
+- dashboard.html    -> Dashboard preview (Sidebar / Cards / Table)
+- assets/styles.css -> Refined CSS (Cairo font)
+- assets/scripts.js -> Small UI interactions (role switch, logout demo)
+- assets/nauss-logo.png -> University logo (or placeholder)
 
-How to use (quick)
-1. Extract the zip into your project's `public/` folder or copy files into your Next.js `public/` and `app/` routes.
-2. For a quick static preview, open `index.html` in a browser.
-3. To integrate into Next.js:
-   - Move `assets/` to `public/assets/`
-   - Convert `index.html` -> `app/page.js` or `pages/index.js` (copy the HTML body into JSX; replace `<link>` with next/head import)
-   - Import the CSS from `public/assets/styles.css` via a global <link> in app/layout.js or in `pages/_app.js`.
+How to preview quickly (static):
+1. Unzip the package.
+2. Open `index.html` in a browser (double-click). Works offline.
+3. For pages preview: open `login.html` and `dashboard.html` similarly.
 
-Recommended Git / Vercel deployment (example)
-```bash
-# place files into your repo, then:
-git add public/assets public/index.html public/login.html
-git commit -m "chore(ui): add NAUSS redesigned landing & login prototype v2"
+Integration notes for Next.js:
+- Copy `assets/` to `public/assets/`.
+- Convert HTML to React/Next files (pages or app routes). Replace `<link>` with head import and move CSS appropriately.
+- All visual assets are static and intentionally separated so you can integrate into your repo easily.
+
+Git commands (use these after replacing files in your repo):
+git add .
+git commit -m "feat(ui): add premium NAUSS RTL redesign prototype"
 git push origin main
 
-# Deploy with Vercel (assumes Vercel CLI configured and project linked)
-vercel --prod
-```
-
-Notes
-- This is a visual/front-end prototype only. No server-side or database logic included.
-- If you want, I can convert the HTML into Next.js pages and produce a single zip with all modified project files ready to replace in your repo.
+If you want: I'll convert these into exact Next.js files and produce a zip that replaces the specific repo paths (pages, components, public/assets). Reply 'convert' and I'll do it now.

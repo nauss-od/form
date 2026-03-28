@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Dashboard — NAUSS Prototype</title><link href="assets/styles.css" rel="stylesheet"/></head>
+<body>
+  <header class="header">
+    <div class="brand"><img src="assets/nauss-logo.png" alt="nauss" /><div style="font-weight:700;color:white">لوحة تحكم — إدارة عمليات التدريب</div></div>
+    <div class="nav-actions"><button id="roleBtn" class="role-switch" data-role="manager">مدير ▾</button><button id="logoutBtn" class="logout-btn">تسجيل الخروج</button></div>
+  </header>
+  <main class="container" style="padding-top:18px">
+    <section class="dashboard">
+      <aside class="sidebar">
+        <div style="font-weight:800;font-size:18px">الملاحة</div>
+        <div class="menu">
+          <a class="active" href="#">لوحة التحكم</a>
+          <a href="#">قوائم الدورات</a>
+          <a href="#">طلبات السلفة</a>
+          <a href="#">المواد والمخزون</a>
+          <a href="#">التقارير</a>
+        </div>
+      </aside>
+      <div class="main-panel">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><h2 style="margin:0;font-size:22px">نظرة سريعة</h2><div class="small">مقتطف تنفيذي لحالة المنصة الحالية</div></div>
+          <div style="display:flex;gap:10px"><button class="btn-primary">إنشاء دورة جديدة</button></div>
+        </div>
+
+        <div class="cards-grid">
+          <div class="card"><div class="small">إجمالي الدورات</div><div style="font-size:22px;font-weight:800;color:var(--primary);margin-top:6px">12</div></div>
+          <div class="card"><div class="small">الدورات النشطة</div><div style="font-size:22px;font-weight:800;color:var(--primary);margin-top:6px">5</div></div>
+          <div class="card"><div class="small">المشاركون</div><div style="font-size:22px;font-weight:800;color:var(--primary);margin-top:6px">180</div></div>
+        </div>
+
+        <div class="card" style="margin-top:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-weight:800">قائمة الدورات (آخر 3)</div>
+            <a class="small" href="#">عرض الكل</a>
+          </div>
+          <table class="table">
+            <thead><tr><th>اسم النشاط</th><th>الموقع</th><th>تاريخ البدء</th><th>المدير</th></tr></thead>
+            <tbody>
+              <tr><td>برنامج القيادة الأمنية</td><td>الرياض</td><td>2026-05-10</td><td>عبدالمحسن</td></tr>
+              <tr><td>التحقيق الجنائي</td><td>جدة</td><td>2026-06-01</td><td>بشائر</td></tr>
+              <tr><td>إدارة الحشود</td><td>الدمام</td><td>2026-07-05</td><td>خازم</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </section>
+  </main>
+<script src="assets/scripts.js"></script>
+</body>
+</html>
