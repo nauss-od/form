@@ -39,7 +39,7 @@ export default function LoginPage() {
         <div className="pattern-grid" />
 
         <div className="visual-card">
-          <img className="visual-brand" src="/images/nauss-logo-full.svg" alt="جامعة نايف" />
+          <img className="visual-brand" src="/images/nauss-logo-gold.png" alt="جامعة نايف" />
           <div className="visual-kicker">منصة تشغيل مؤسسية للدورات الخارجية</div>
           <h1 className="visual-title">منصة تأمين المشاركين للدورات الخارجية</h1>
           <p className="visual-text">
@@ -58,7 +58,7 @@ export default function LoginPage() {
       <section className="login-panel">
         <div className="login-card">
           <div className="login-brand-mini">
-            <img src="/images/nauss-logo-full.svg" alt="جامعة نايف" />
+            <img src="/images/nauss-logo-gold.png" alt="جامعة نايف" />
           </div>
 
           <div className="login-heading">
@@ -69,12 +69,12 @@ export default function LoginPage() {
           <form className="login-form" onSubmit={handleSubmit}>
             <div className="field">
               <label>البريد الإلكتروني</label>
-              <input name="email" defaultValue="Nalshahrani@nauss.edu.sa" type="email" dir="ltr" style={{ textAlign: 'left' }} required />
+              <input name="email" defaultValue="" type="email" dir="ltr" style={{ textAlign: 'left' }} required />
             </div>
 
             <div className="field">
               <label>كلمة المرور</label>
-              <input name="password" defaultValue="Zx.321321" type="password" required />
+              <input name="password" defaultValue="" type="password" required />
             </div>
 
             {error ? <div className="login-error">{error}</div> : null}

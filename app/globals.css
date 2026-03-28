@@ -34,7 +34,7 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100%;
-}
+; font-size:15px; }
 
 html {
   scroll-behavior: smooth;
@@ -80,19 +80,13 @@ button {
 .login-screen {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(420px, 0.8fr);
+  grid-template-columns: 1fr 1fr;
   background:
     radial-gradient(circle at top right, rgba(208, 178, 132, 0.18), transparent 18%),
     linear-gradient(135deg, #033c3b 0%, #015554 42%, #016564 66%, #0c7c79 100%);
 }
 
-.login-visual {
-  position: relative;
-  overflow: hidden;
-  padding: 58px 60px;
-  display: flex;
-  align-items: center;
-}
+.login-visual { padding: 34px; display:flex; align-items:center; justify-content:center; background: linear-gradient(180deg, rgba(1,101,100,0.06), transparent 60%); }
 
 .login-visual::before,
 .login-visual::after,
@@ -136,7 +130,7 @@ button {
   width: min(760px, 100%);
 }
 
-.visual-brand {
+.visual-brand { max-width: 190px;
   width: 250px;
   margin-bottom: 26px;
 }
@@ -158,7 +152,7 @@ button {
 .visual-title {
   margin: 20px 0 0;
   color: #fff;
-  font-size: clamp(2.55rem, 4vw, 4.85rem);
+  font-size: clamp(1.8rem, 3.2vw, 2.6rem);
   line-height: 1.04;
   font-weight: 900;
   letter-spacing: -0.03em;
@@ -217,7 +211,7 @@ button {
   background: linear-gradient(180deg, rgba(248, 251, 251, 0.72), rgba(255, 255, 255, 0.88));
 }
 
-.login-card {
+.login-card { max-width: 520px;
   position: relative;
   z-index: 2;
   width: min(470px, 100%);
@@ -1409,12 +1403,12 @@ select.input:focus {
 }
 
 @media (max-width: 760px) {
-  .login-card {
+  .login-card { max-width: 520px;
     padding: 26px 20px;
     border-radius: 26px;
   }
 
-  .visual-brand {
+  .visual-brand { max-width: 190px;
     width: 220px;
   }
 
@@ -1494,3 +1488,6 @@ select.input:focus {
     padding: 18px;
   }
 }
+
+/* Hide decorative pills for a minimal login */
+.visual-pills { display: none !important; }
