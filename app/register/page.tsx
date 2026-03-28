@@ -25,24 +25,49 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="login-wrap">
-      <section className="login-brand">
-        <div>
-          <h1 style={{ fontSize: 32, marginBottom: 8 }}>منصة تأمين المشاركين للدورات الخارجية</h1>
-          <p style={{ opacity: 0.85 }}>تسجيل ذاتي للموظفين مع اعتماد المدير على إدارة الصلاحيات والتعطيل</p>
-        </div>
-      </section>
-      <section className="login-panel">
-        <form className="login-card" onSubmit={handleSubmit}>
-          <h2 style={{ marginTop: 0 }}>حساب جديد</h2>
-          <div style={{ marginTop: 16 }}><label className="label">الاسم الكامل</label><input className="input" name="name" required /></div>
-          <div style={{ marginTop: 16 }}><label className="label">البريد الإلكتروني</label><input className="input" type="email" name="email" required /></div>
-          <div style={{ marginTop: 16 }}><label className="label">كلمة المرور</label><input className="input" type="password" name="password" required minLength={8} /></div>
-          <div style={{ marginTop: 20, display: 'flex', gap: 12 }}>
-            <button className="btn btn-primary" disabled={loading}>{loading ? 'جاري الإنشاء...' : 'إنشاء الحساب'}</button>
-            <a className="btn btn-outline" href="/login">رجوع</a>
+    <div className="auth-shell">
+      <section className="auth-panel">
+        <form className="auth-card" onSubmit={handleSubmit}>
+          <div className="auth-card-head">
+            <img className="auth-card-mini-logo" src="/images/nauss-official-logo.png" alt="شعار جامعة نايف" />
+            <h1 className="auth-title">تسجيل موظف جديد</h1>
+            <p className="auth-subtitle">إنشاء حساب داخلي للوصول إلى النظام وإصدار روابط النماذج الخارجية.</p>
+          </div>
+          <div className="auth-card-body">
+            <div>
+              <label className="label">الاسم الكامل</label>
+              <input className="input" name="name" placeholder="الاسم الرباعي" required />
+            </div>
+            <div style={{ marginTop: 16 }}>
+              <label className="label">البريد الإلكتروني</label>
+              <input className="input" type="email" name="email" placeholder="example@nauss.edu.sa" required />
+            </div>
+            <div style={{ marginTop: 16 }}>
+              <label className="label">كلمة المرور</label>
+              <input className="input" type="password" name="password" minLength={8} placeholder="8 أحرف على الأقل" required />
+            </div>
+            <div style={{ marginTop: 22, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <button className="btn btn-primary" disabled={loading}>{loading ? 'جاري إنشاء الحساب...' : 'إنشاء الحساب'}</button>
+              <a className="btn btn-outline" href="/login">العودة للدخول</a>
+            </div>
           </div>
         </form>
+      </section>
+
+      <section className="auth-brand">
+        <div className="auth-brand-card">
+          <img className="auth-logo" src="/images/nauss-official-logo.png" alt="شعار جامعة نايف العربية للعلوم الأمنية" />
+          <h1>إدارة دقيقة لرحلة التأمين للمشاركين</h1>
+          <p>
+            يتيح هذا النظام للموظف إصدار نموذج جديد بسرعة، وإرسال رابط خاص للمتدربين، ثم متابعة الردود
+            والمرفقات من شاشة واحدة ضمن بيئة عربية احترافية ومتوافقة مع هوية الجامعة.
+          </p>
+          <div className="auth-features">
+            <div className="auth-feature">إنشاء النماذج الخارجية ببيانات أولية مختصرة فقط.</div>
+            <div className="auth-feature">استقبال مرفقات الجواز والهوية وربطها بكل استجابة.</div>
+            <div className="auth-feature">تحضير مراسلات الموارد البشرية بصيغة عمل جاهزة.</div>
+          </div>
+        </div>
       </section>
     </div>
   );

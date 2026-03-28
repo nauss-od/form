@@ -20,18 +20,27 @@ export default function CourseForm() {
   }
 
   return (
-    <form action={onSubmit} className="card grid" style={{ gap: 16 }}>
+    <form action={onSubmit} className="form-panel">
+      <div className="form-panel-head">
+        <div>
+          <h2>بيانات النشاط</h2>
+          <p>جميع الحقول أدناه اختيارية. يكتفي الموظف بتعبئتها ثم يصدر الرابط المخصص للمتدربين.</p>
+        </div>
+        <span className="badge badge-gold">إصدار رابط مستقل</span>
+      </div>
+
       <div className="grid grid-2">
         <div>
           <label className="label">اسم النشاط</label>
-          <input className="input" name="activityName" />
+          <input className="input" name="activityName" placeholder="مثل: دورة خارجية في رومانيا" />
         </div>
         <div>
           <label className="label">مقر انعقاد النشاط</label>
-          <input className="input" name="venue" />
+          <input className="input" name="venue" placeholder="المدينة أو الجهة المستضيفة" />
         </div>
       </div>
-      <div className="grid grid-2">
+
+      <div className="grid grid-2" style={{ marginTop: 18 }}>
         <div>
           <label className="label">تاريخ البداية</label>
           <input className="input" type="date" name="startDate" />
@@ -41,18 +50,21 @@ export default function CourseForm() {
           <input className="input" type="date" name="endDate" />
         </div>
       </div>
-      <div className="grid grid-2">
+
+      <div className="grid grid-2" style={{ marginTop: 18 }}>
         <div>
           <label className="label">عدد المشاركين</label>
-          <input className="input" type="number" name="participantCount" min="0" />
+          <input className="input" type="number" name="participantCount" min="0" placeholder="العدد المتوقع" />
         </div>
         <div>
           <label className="label">مرفق موافقة المعالي</label>
           <input className="input" type="file" name="approvalFile" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" />
+          <div className="helper">ملف واحد فقط</div>
         </div>
       </div>
-      <div>
-        <button className="btn btn-primary" disabled={submitting}>{submitting ? 'جاري الحفظ...' : 'إصدار النموذج والرابط'}</button>
+
+      <div style={{ marginTop: 22, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        <button className="btn btn-primary" disabled={submitting}>{submitting ? 'جاري إصدار النموذج...' : 'إصدار النموذج والرابط'}</button>
       </div>
     </form>
   );
