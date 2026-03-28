@@ -12,16 +12,22 @@ const links = [
   { href: '/users', label: 'إدارة المستخدمين' },
 ];
 
+type AppShellProps = {
+  title: string;
+  subtitle?: string;
+  description?: string;
+  role?: string;
+  children: ReactNode;
+};
+
 export default function AppShell({
   title,
   subtitle,
+  description,
   children,
-}: {
-  title: string;
-  subtitle?: string;
-  children: ReactNode;
-}) {
+}: AppShellProps) {
   const pathname = usePathname();
+  const headerText = subtitle ?? description;
 
   return (
     <div className="app-shell">
@@ -59,7 +65,7 @@ export default function AppShell({
         <header className="topbar">
           <div>
             <h2>{title}</h2>
-            {subtitle ? <div className="subtitle">{subtitle}</div> : null}
+            {headerText ? <div className="subtitle">{headerText}</div> : null}
           </div>
           <Image src="/images/nauss-logo-gold.png" alt="NAUSS" width={84} height={84} />
         </header>
