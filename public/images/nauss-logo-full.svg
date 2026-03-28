@@ -1,0 +1,13 @@
+<svg width="620" height="170" viewBox="0 0 620 170" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g>
+    <path d="M510 18L542 50L574 18L602 46L570 78L602 110L574 138L542 106L510 138L482 110L514 78L482 46L510 18Z" stroke="#D0B284" stroke-width="6"/>
+    <path d="M522 18L542 38L562 18" stroke="#D0B284" stroke-width="4"/>
+    <path d="M522 138L542 118L562 138" stroke="#D0B284" stroke-width="4"/>
+  </g>
+  <g fill="#D0B284">
+    <text x="0" y="38" font-family="Cairo, sans-serif" font-size="32" font-weight="700">جامعة نايف العربية</text>
+    <text x="0" y="74" font-family="Cairo, sans-serif" font-size="32" font-weight="700">للعلوم الأمنية</text>
+    <text x="0" y="118" font-family="Arial, sans-serif" font-size="30" font-weight="500">NAIF ARAB UNIVERSITY</text>
+    <text x="0" y="152" font-family="Arial, sans-serif" font-size="30" font-weight="500">FOR SECURITY SCIENCES</text>
+  </g>
+</svg>

@@ -1,39 +1,43 @@
-import Image from 'next/image';
-
 export default function LoginPage() {
   return (
-    <div className="login-shell">
+    <div className="login-screen">
       <section className="login-visual">
-        <div className="login-visual-card">
-          <Image src="/images/nauss-logo-gold.png" alt="NAUSS" width={320} height={150} />
-          <h1>منصة تأمين المشاركين للدورات الخارجية</h1>
-          <p>
-            واجهة مؤسسية أنيقة لإدارة النماذج الخارجية، إصدار الروابط، جمع الاستجابات،
-            وتصدير المخرجات الإدارية بشكل احترافي.
+        <div className="pattern-grid" />
+        <div className="visual-card">
+          <img className="visual-brand" src="/images/nauss-logo-full.svg" alt="جامعة نايف" />
+          <h1 className="visual-title">منصة تأمين المشاركين للدورات الخارجية</h1>
+          <p className="visual-text">
+            واجهة مؤسسية أنيقة لإصدار الروابط، جمع بيانات المشاركين، وتجهيز المخرجات الرسمية بطريقة واضحة ومحكمة.
           </p>
+          <div className="visual-pills">
+            <div className="visual-pill">رابط مستقل لكل دورة خارجية بدون خلط بين الاستجابات.</div>
+            <div className="visual-pill">تعديل خاص لكل متدرب عبر رابط مستقل بعد أول إرسال.</div>
+            <div className="visual-pill">تجهيز مخرجات Word و EML بصورة مؤسسية جاهزة للإجراء الإداري.</div>
+          </div>
         </div>
       </section>
 
-      <section className="login-form-side">
+      <section className="login-panel">
         <div className="login-card">
-          <div className="brand">
-            <Image src="/images/nauss-logo-gold.png" alt="NAUSS" width={170} height={80} />
+          <div className="login-brand-mini">
+            <img src="/images/nauss-logo-full.svg" alt="جامعة نايف" />
           </div>
-          <h2>تسجيل الدخول</h2>
-          <p>أدخل بيانات حسابك للوصول إلى النظام</p>
 
-          <form action="/api/auth/login" method="post">
-            <div className="form-group">
+          <div className="login-heading">
+            <h2>تسجيل الدخول</h2>
+            <p>أدخل بيانات حسابك للوصول إلى المنصة</p>
+          </div>
+
+          <form action="/dashboard">
+            <div className="field">
               <label>البريد الإلكتروني</label>
-              <input className="input" name="email" type="email" required dir="ltr" />
+              <input defaultValue="Nalshahrani@nauss.edu.sa" type="email" dir="ltr" style={{ textAlign: 'right' }} />
             </div>
-            <div className="form-group">
+            <div className="field">
               <label>كلمة المرور</label>
-              <input className="input" name="password" type="password" required />
+              <input defaultValue="Zx.321321" type="password" />
             </div>
-            <button className="btn btn-primary" style={{ width: '100%', height: 50 }} type="submit">
-              تسجيل الدخول
-            </button>
+            <button className="primary-btn" type="submit">تسجيل الدخول</button>
           </form>
         </div>
       </section>
