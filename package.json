@@ -1,5 +1,5 @@
 {
-  "name": "nauss-insurance-platform",
+  "name": "nauss-external-courses-platform",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -12,18 +12,21 @@
   "dependencies": {
     "@prisma/client": "5.20.0",
     "bcryptjs": "2.4.3",
-    "jose": "5.9.3",
+    "jsonwebtoken": "9.0.2",
     "next": "14.2.15",
     "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "zod": "3.23.8"
+    "react-dom": "18.3.1"
   },
   "devDependencies": {
-    "@types/bcryptjs": "^2.4.6",
-    "@types/node": "22.7.4",
-    "@types/react": "18.3.3",
-    "@types/react-dom": "18.3.0",
+    "@types/bcryptjs": "2.4.6",
+    "@types/jsonwebtoken": "9.0.6",
+    "@types/node": "22.10.1",
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "autoprefixer": "10.4.20",
+    "postcss": "8.4.49",
     "prisma": "5.20.0",
-    "typescript": "5.6.2"
+    "tailwindcss": "3.4.16",
+    "typescript": "5.6.3"
   }
 }

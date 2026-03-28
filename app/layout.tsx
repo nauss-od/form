@@ -2,8 +2,8 @@ import './globals.css';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'منصة إدارة طلبات التأمين الطبي',
-  description: 'جامعة نايف العربية للعلوم الأمنية',
+  title: 'منصة تأمين المشاركين للدورات الخارجية',
+  description: 'منصة تشغيلية لإدارة روابط تأمين المشاركين للدورات الخارجية'
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

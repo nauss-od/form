@@ -1,47 +1,30 @@
-import Header from '@/components/Header';
-import { requireUser } from '@/lib/auth';
+import AppShell from '@/components/AppShell';
+import { getCurrentSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 
 export default async function DashboardPage() {
-  const user = await requireUser();
-  if (!user) redirect('/login');
+  const session = getCurrentSession();
+  if (!session) redirect('/login');
 
-  const [formsCount, publishedCount, participantsCount, usersCount, latestForms] = await Promise.all([
-    prisma.insuranceForm.count(),
-    prisma.insuranceForm.count({ where: { status: 'PUBLISHED' } }),
-    prisma.participant.count(),
-    prisma.user.count(),
-    prisma.insuranceForm.findMany({ orderBy: { createdAt: 'desc' }, take: 5, include: { createdBy: true } }),
+  const where = session.role === 'MANAGER' ? {} : { createdByUserId: session.userId };
+  const [coursesCount, submissionsCount, usersCount] = await Promise.all([
+    prisma.course.count({ where }),
+    prisma.submission.count({ where: session.role === 'MANAGER' ? {} : { course: { createdByUserId: session.userId } } }),
+    session.role === 'MANAGER' ? prisma.user.count() : Promise.resolve(0)
   ]);
 
   return (
-    <>
-      <Header />
-      <div className="container">
-        <h1 className="page-title">لوحة التحكم</h1>
-        <div className="stats mb-6">
-          <div className="card stat"><h3>إجمالي النماذج</h3><p>{formsCount}</p></div>
-          <div className="card stat"><h3>النماذج المنشورة</h3><p>{publishedCount}</p></div>
-          <div className="card stat"><h3>المشاركون</h3><p>{participantsCount}</p></div>
-          <div className="card stat"><h3>المستخدمون</h3><p>{usersCount}</p></div>
-        </div>
-        <div className="card p-6">
-          <h2 className="section-title">أحدث النماذج</h2>
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>الدورة</th><th>البلد</th><th>الحالة</th><th>المنشئ</th></tr></thead>
-              <tbody>
-                {latestForms.map((form) => (
-                  <tr key={form.id}>
-                    <td>{form.courseName}</td><td>{form.country}</td><td>{form.status}</td><td>{form.createdBy.name}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+    <AppShell title="لوحة التحكم" role={session.role}>
+      <section className="hero">
+        <h2 style={{ marginTop: 0 }}>مرحبًا، {session.name}</h2>
+        <p>هذه النسخة تُثبت المسار الصحيح للنظام: دورة مستقلة، رابط متدرب، تعديل خاص، Word و EML.</p>
+      </section>
+      <div className="stats" style={{ marginTop: 20 }}>
+        <div className="stat"><div className="muted">إجمالي الدورات</div><div style={{ fontSize: 28, fontWeight: 800 }}>{coursesCount}</div></div>
+        <div className="stat"><div className="muted">إجمالي الاستجابات</div><div style={{ fontSize: 28, fontWeight: 800 }}>{submissionsCount}</div></div>
+        {session.role === 'MANAGER' ? <div className="stat"><div className="muted">إجمالي المستخدمين</div><div style={{ fontSize: 28, fontWeight: 800 }}>{usersCount}</div></div> : null}
       </div>
-    </>
+    </AppShell>
   );
 }

@@ -1,43 +1,58 @@
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
-import { SignJWT, jwtVerify } from 'jose';
-import { prisma } from '@/lib/prisma';
+import { UserRole } from '@prisma/client';
 
-const COOKIE_NAME = 'nauss_session';
-const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'dev-secret-change-me');
+const COOKIE_NAME = 'nauss_external_courses_session';
 
-export async function createSession(userId: string, email: string, role: string) {
-  const token = await new SignJWT({ userId, email, role })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime('7d')
-    .sign(secret);
+export type SessionPayload = {
+  userId: string;
+  name: string;
+  email: string;
+  role: UserRole;
+};
 
-  cookies().set(COOKIE_NAME, token, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-    maxAge: 60 * 60 * 24 * 7,
-  });
+function getSecret(): string {
+  return process.env.JWT_SECRET || 'change-me';
 }
 
-export function clearSession() {
-  cookies().set(COOKIE_NAME, '', { path: '/', maxAge: 0 });
+export async function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, 10);
 }
 
-export async function getSession() {
-  const token = cookies().get(COOKIE_NAME)?.value;
-  if (!token) return null;
+export async function comparePassword(password: string, hash: string): Promise<boolean> {
+  return bcrypt.compare(password, hash);
+}
+
+export function signSession(payload: SessionPayload): string {
+  return jwt.sign(payload, getSecret(), { expiresIn: '7d' });
+}
+
+export function verifySession(token: string): SessionPayload | null {
   try {
-    const verified = await jwtVerify(token, secret);
-    return verified.payload as { userId: string; email: string; role: string };
+    return jwt.verify(token, getSecret()) as SessionPayload;
   } catch {
     return null;
   }
 }
 
-export async function requireUser() {
-  const session = await getSession();
-  if (!session?.userId) return null;
-  return prisma.user.findUnique({ where: { id: session.userId } });
+export function setSessionCookie(payload: SessionPayload): void {
+  const token = signSession(payload);
+  cookies().set(COOKIE_NAME, token, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    maxAge: 60 * 60 * 24 * 7
+  });
+}
+
+export function clearSessionCookie(): void {
+  cookies().delete(COOKIE_NAME);
+}
+
+export function getCurrentSession(): SessionPayload | null {
+  const token = cookies().get(COOKIE_NAME)?.value;
+  if (!token) return null;
+  return verifySession(token);
 }
