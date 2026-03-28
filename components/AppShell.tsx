@@ -1,85 +1,71 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { ReactNode } from 'react';
 
 const links = [
   { href: '/dashboard', label: 'لوحة التحكم' },
-  { href: '/courses', label: 'الدورات' },
+  { href: '/courses', label: 'الدورات الخارجية' },
   { href: '/new-course', label: 'إصدار نموذج جديد' },
-  { href: '/users', label: 'إدارة المستخدمين', managerOnly: true }
+  { href: '/users', label: 'إدارة المستخدمين' },
 ];
 
 export default function AppShell({
   title,
-  description,
+  subtitle,
   children,
-  role = 'EMPLOYEE'
 }: {
   title: string;
-  description?: string;
-  children: React.ReactNode;
-  role?: 'MANAGER' | 'EMPLOYEE';
+  subtitle?: string;
+  children: ReactNode;
 }) {
   const pathname = usePathname();
 
-  async function logout() {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    window.location.href = '/login';
-  }
-
   return (
-    <div className="sidebar-layout">
+    <div className="app-shell">
       <aside className="sidebar">
-        <div className="sidebar-brand">
-          <img src="/images/nauss-official-logo.png" alt="شعار جامعة نايف العربية للعلوم الأمنية" />
+        <div className="sidebar-logo">
+          <Image src="/images/nauss-logo-gold.png" alt="NAUSS" width={56} height={56} />
           <div>
-            <div className="sidebar-brand-title">منصة تأمين المشاركين</div>
-            <div className="sidebar-brand-subtitle">للدورات الخارجية</div>
+            <h1>منصة تأمين المشاركين</h1>
+            <p>للدورات الخارجية</p>
           </div>
         </div>
 
-        <div className="sidebar-section">
-          <div className="sidebar-label">القائمة الرئيسية</div>
-          <nav>
-            {links
-              .filter((item) => !item.managerOnly || role === 'MANAGER')
-              .map((item) => {
-                const active = pathname === item.href || (item.href !== '/dashboard' && pathname?.startsWith(item.href));
-                return (
-                  <Link key={item.href} href={item.href} className={`sidebar-link ${active ? 'active' : ''}`}>
-                    <span>{item.label}</span>
-                    <span>‹</span>
-                  </Link>
-                );
-              })}
-          </nav>
-        </div>
+        <nav className="sidebar-nav">
+          {links.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`sidebar-link ${pathname === link.href ? 'active' : ''}`}
+            >
+              <span>{link.label}</span>
+            </Link>
+          ))}
+        </nav>
 
         <div className="sidebar-footer">
-          <div className="sidebar-user">
-            <span className="badge user-pill">{role === 'MANAGER' ? 'مدير' : 'موظف'}</span>
-            <button type="button" className="btn btn-ghost" onClick={logout}>تسجيل الخروج</button>
-          </div>
-          <div style={{ fontSize: 12, opacity: .78 }}>
-            جامعة نايف العربية للعلوم الأمنية<br />
-            واجهة تشغيلية مخصصة للدورات الخارجية
-          </div>
+          <form action="/api/auth/logout" method="post">
+            <button className="logout-btn" type="submit">
+              تسجيل الخروج
+            </button>
+          </form>
         </div>
       </aside>
 
-      <main className="content">
-        <div className="topbar">
-          <div className="topbar-title">
-            <h1>{title}</h1>
-            <p>{description || 'نظام مؤسسي لتجهيز روابط المتدربين، جمع الاستجابات، والتصدير بصيغ العمل الرسمية.'}</p>
+      <div className="main-area">
+        <header className="topbar">
+          <div>
+            <h2>{title}</h2>
+            {subtitle ? <div className="subtitle">{subtitle}</div> : null}
           </div>
-          <div className="topbar-actions">
-            <span className="badge topbar-badge">{role === 'MANAGER' ? 'مدير النظام' : 'موظف التشغيل'}</span>
-          </div>
-        </div>
-        {children}
-      </main>
+          <Image src="/images/nauss-logo-gold.png" alt="NAUSS" width={84} height={84} />
+        </header>
+
+        <main className="page-wrap">{children}</main>
+      </div>
     </div>
   );
 }
