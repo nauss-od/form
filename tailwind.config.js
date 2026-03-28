@@ -21,9 +21,6 @@ export default {
       fontFamily: {
         cairo: ['Cairo', 'sans-serif'],
       },
-      backgroundImage: {
-        'geometric-pattern': "url('/images/geometric-pattern.svg')",
-      },
     },
   },
   plugins: [],

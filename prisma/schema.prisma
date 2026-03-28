@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  MANAGER
+  EMPLOYEE
+}
+
+enum FormStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  PUBLISHED
+  COMPLETED
+  ARCHIVED
+}
+
+enum ParticipantStatus {
+  PENDING
+  COMPLETE
+  INCOMPLETE
+  DUPLICATE
+}
+
+model User {
+  id             String            @id @default(cuid())
+  name           String
+  email          String            @unique
+  passwordHash   String
+  role           UserRole          @default(EMPLOYEE)
+  isActive       Boolean           @default(true)
+  lastLoginAt    DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  forms          InsuranceForm[]   @relation("FormCreator")
+}
+
+model InsuranceForm {
+  id                      String         @id @default(cuid())
+  courseName              String
+  courseCode              String?
+  startDate               DateTime
+  endDate                 DateTime
+  country                 String
+  city                    String?
+  venue                   String?
+  organizingEntity        String
+  contactPerson           String?
+  contactEmail            String?
+  contactPhone            String?
+  submissionDeadline      DateTime?
+  status                  FormStatus     @default(DRAFT)
+  publicLinkToken         String?        @unique
+  expectedParticipants    Int            @default(0)
+  actualParticipants      Int            @default(0)
+  completedRegistrations  Int            @default(0)
+  incompleteRegistrations Int            @default(0)
+  duplicateRegistrations  Int            @default(0)
+  emlFilesGenerated       Int            @default(0)
+  notes                   String?
+  createdAt               DateTime       @default(now())
+  updatedAt               DateTime       @updatedAt
+  createdById             String
+  createdBy               User           @relation("FormCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  participants            Participant[]
+}
+
+model Participant {
+  id               String            @id @default(cuid())
+  formId           String
+  form             InsuranceForm     @relation(fields: [formId], references: [id], onDelete: Cascade)
+  fullNameAr       String
+  fullNameEn       String?
+  nationalId       String?
+  passportNumber   String
+  nationality      String
+  dateOfBirth      DateTime
+  gender           String
+  email            String?
+  phone            String?
+  mobile           String
+  jobTitle         String?
+  department       String?
+  organization     String?
+  travelDate       DateTime?
+  returnDate       DateTime?
+  passportExpiry   String?
+  status           ParticipantStatus @default(PENDING)
+  isDuplicate      Boolean           @default(false)
+  duplicateOfId    String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([formId])
+  @@index([passportNumber])
+  @@index([nationalId])
+}
