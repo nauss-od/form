@@ -2,12 +2,12 @@ import AppShell from '@/components/AppShell';
 
 export default function CoursesPage() {
   return (
-    <AppShell title="الدورات الخارجية" subtitle="عرض النماذج المنشأة ومتابعة عدد الاستجابات لكل دورة." role="MANAGER">
+    <AppShell title="الدورات الخارجية" subtitle="قائمة أوضح بصريًا لمتابعة الأنشطة الخارجية وروابطها وحالة استجاباتها." role="MANAGER">
       <section className="section-card">
         <div className="section-head">
           <div>
             <h3>قائمة الدورات</h3>
-            <p>واجهة أكثر تنظيمًا لعرض الأنشطة الخارجية وروابطها التشغيلية.</p>
+            <p>تنظيم بصري أكثر احترافية لعرض الأنشطة الخارجية مع وضوح أعلى للحالة والإجراء.</p>
           </div>
           <div className="section-actions">
             <a className="secondary-btn" href="/new-course">
@@ -17,7 +17,7 @@ export default function CoursesPage() {
         </div>
 
         <div className="section-body">
-          <div className="inline-toolbar">
+          <div className="inline-toolbar" style={{ marginBottom: 18 }}>
             <div className="field" style={{ margin: 0, width: '100%', maxWidth: 420 }}>
               <input placeholder="ابحث باسم النشاط أو المقر" />
             </div>
@@ -41,7 +41,7 @@ export default function CoursesPage() {
                 <tr>
                   <td className="td-title">
                     <strong>برنامج الأمن السيبراني المتقدم</strong>
-                    <span>نشاط خارجي بمتابعة حالية</span>
+                    <span>نشاط خارجي جارٍ متابعته حاليًا</span>
                   </td>
                   <td>فيينا</td>
                   <td>12 / 05 / 2026</td>
@@ -61,7 +61,7 @@ export default function CoursesPage() {
                 <tr>
                   <td className="td-title">
                     <strong>دورة القيادة الأمنية</strong>
-                    <span>تم اكتمال جميع المشاركات</span>
+                    <span>تم اكتمال البيانات المطلوبة للدورة</span>
                   </td>
                   <td>الرباط</td>
                   <td>18 / 05 / 2026</td>
@@ -81,7 +81,7 @@ export default function CoursesPage() {
                 <tr>
                   <td className="td-title">
                     <strong>برنامج الجرائم المالية</strong>
-                    <span>نموذج ما زال يستقبل البيانات</span>
+                    <span>رابط نشط وعدد الاستجابات في تصاعد</span>
                   </td>
                   <td>باريس</td>
                   <td>22 / 05 / 2026</td>

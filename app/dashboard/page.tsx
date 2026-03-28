@@ -2,14 +2,14 @@ import AppShell from '@/components/AppShell';
 
 export default function DashboardPage() {
   return (
-    <AppShell title="لوحة التحكم" subtitle="نظرة تنفيذية واضحة على حالة المنصة والدورات الجارية." role="MANAGER">
+    <AppShell title="لوحة التحكم" subtitle="قراءة تنفيذية مركزة لحالة المنصة، الدورات، وسير العمل الحالي." role="MANAGER">
       <section className="hero">
         <div className="hero-content">
           <div className="hero-copy">
-            <h2>واجهة تشغيل بهوية هادئة ومظهر مؤسسي رفيع</h2>
+            <h2>واجهة مؤسسية أكثر نضجًا واتزانًا</h2>
             <p>
-              تركز هذه اللوحة على إبراز أهم المؤشرات، تسهيل الوصول إلى النماذج، وإظهار الحالة التشغيلية للدورات الخارجية
-              بأسلوب بصري منظم وواضح.
+              إعادة ضبط بصرية أشمل للمنصة، مع هرمية أوضح للمحتوى، حضور أقوى للهوية، وعناصر تحكم أنظف تسهّل
+              الوصول إلى الإجراءات الأساسية دون تشويش بصري.
             </p>
             <div className="hero-actions">
               <a className="secondary-btn" href="/new-course">
@@ -23,12 +23,12 @@ export default function DashboardPage() {
 
           <div className="hero-side">
             <div className="hero-mini-card">
-              <small>الحالة العامة</small>
-              <strong>تشغيل مستقر ومنظم</strong>
+              <small>الحالة التشغيلية</small>
+              <strong>مستقرة ومهيأة للعمل</strong>
             </div>
             <div className="hero-mini-card">
-              <small>آخر تحديث</small>
-              <strong>اليوم</strong>
+              <small>آخر مزامنة</small>
+              <strong>اليوم — 10:30 صباحًا</strong>
             </div>
           </div>
         </div>
@@ -38,22 +38,22 @@ export default function DashboardPage() {
         <div className="kpi-card">
           <span>إجمالي الدورات</span>
           <strong>12</strong>
-          <em>متابعة شاملة للأنشطة</em>
+          <em>مشمولة بالمتابعة</em>
         </div>
         <div className="kpi-card">
           <span>الاستجابات المستلمة</span>
           <strong>47</strong>
-          <em>تدفق مستقر للبيانات</em>
+          <em>قيد المعالجة والتنظيم</em>
         </div>
         <div className="kpi-card">
           <span>الدورات المفتوحة</span>
           <strong>5</strong>
-          <em>نماذج قيد الاستكمال</em>
+          <em>نماذج نشطة حاليًا</em>
         </div>
         <div className="kpi-card">
           <span>المستخدمون الفعّالون</span>
           <strong>8</strong>
-          <em>حسابات تعمل حاليًا</em>
+          <em>حسابات تشغيلية معتمدة</em>
         </div>
       </section>
 
@@ -62,7 +62,7 @@ export default function DashboardPage() {
           <div className="section-head">
             <div>
               <h3>أحدث الدورات</h3>
-              <p>استعراض سريع لأحدث النماذج المنشأة وحالة التفاعل معها.</p>
+              <p>عرض أكثر ترتيبًا لأهم الأنشطة الأخيرة وحالة الاستجابة لكل منها.</p>
             </div>
             <div className="section-actions">
               <a className="secondary-btn" href="/courses">
@@ -87,7 +87,7 @@ export default function DashboardPage() {
                 <tr>
                   <td className="td-title">
                     <strong>برنامج الأمن السيبراني المتقدم</strong>
-                    <span>رابط فعال وجاهز للاستقبال</span>
+                    <span>رابط مفعل واستجابات قيد التحديث</span>
                   </td>
                   <td>فيينا</td>
                   <td>12 / 05 / 2026</td>
@@ -100,7 +100,7 @@ export default function DashboardPage() {
                 <tr>
                   <td className="td-title">
                     <strong>دورة القيادة الأمنية</strong>
-                    <span>اكتملت جميع الاستجابات المطلوبة</span>
+                    <span>اكتملت الاستجابات المطلوبة بالكامل</span>
                   </td>
                   <td>الرباط</td>
                   <td>18 / 05 / 2026</td>
@@ -113,7 +113,7 @@ export default function DashboardPage() {
                 <tr>
                   <td className="td-title">
                     <strong>برنامج الجرائم المالية</strong>
-                    <span>نموذج نشط بمتابعة حالية</span>
+                    <span>حالة تشغيلية نشطة ومستمرة</span>
                   </td>
                   <td>باريس</td>
                   <td>22 / 05 / 2026</td>
@@ -132,7 +132,7 @@ export default function DashboardPage() {
           <div className="section-head">
             <div>
               <h3>مؤشرات مختصرة</h3>
-              <p>ملخص سريع للحالة التشغيلية الحالية.</p>
+              <p>ملخص سريع للحالة اليومية داخل المنصة.</p>
             </div>
           </div>
 
@@ -140,22 +140,24 @@ export default function DashboardPage() {
             <div className="stats-list">
               <div className="stat-row">
                 <div>
-                  <strong>الدورات الجاهزة للإرسال</strong>
-                  <span>نماذج مكتملة الإعداد</span>
+                  <strong>نماذج جاهزة للإرسال</strong>
+                  <span>تم إعدادها ويمكن مشاركتها مباشرة</span>
                 </div>
                 <b>04</b>
               </div>
+
               <div className="stat-row">
                 <div>
-                  <strong>استجابات تنتظر الاستكمال</strong>
-                  <span>مشاركون لم يكملوا البيانات</span>
+                  <strong>استجابات ناقصة</strong>
+                  <span>تحتاج إلى متابعة أو استكمال بيانات</span>
                 </div>
                 <b>09</b>
               </div>
+
               <div className="stat-row">
                 <div>
                   <strong>مخرجات جاهزة للإجراء</strong>
-                  <span>ملفات يمكن اعتمادها مباشرة</span>
+                  <span>ملفات قابلة للاستخدام الإداري مباشرة</span>
                 </div>
                 <b>11</b>
               </div>

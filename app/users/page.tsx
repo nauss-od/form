@@ -2,16 +2,14 @@ import AppShell from '@/components/AppShell';
 
 export default function UsersPage() {
   return (
-    <AppShell title="إدارة المستخدمين" subtitle="عرض الحسابات والصلاحيات بحضور بصري أوضح وأكثر اتزانًا." role="MANAGER">
+    <AppShell title="إدارة المستخدمين" subtitle="تنسيق بصري أنضج لإظهار الحسابات، الصلاحيات، والحالة التشغيلية بوضوح." role="MANAGER">
       <section className="section-card">
         <div className="section-head">
           <div>
             <h3>الحسابات</h3>
-            <p>تنسيق واضح للأسماء، الصلاحيات، والحالة التشغيلية لكل مستخدم.</p>
+            <p>واجهة مرتبة لإدارة المستخدمين دون ازدحام بصري أو ضعف في الهرمية.</p>
           </div>
-          <div className="section-actions">
-            <button className="secondary-btn">إضافة مستخدم</button>
-          </div>
+          <button className="secondary-btn">إضافة مستخدم</button>
         </div>
 
         <div className="section-body data-table-wrap">
@@ -29,7 +27,7 @@ export default function UsersPage() {
               <tr>
                 <td className="td-title">
                   <strong>مدير النظام</strong>
-                  <span>صلاحية كاملة لإدارة المنصة</span>
+                  <span>صلاحية كاملة لإدارة المنصة والاطلاع التنفيذي</span>
                 </td>
                 <td>Nalshahrani@nauss.edu.sa</td>
                 <td>مدير</td>
@@ -45,7 +43,7 @@ export default function UsersPage() {
               <tr>
                 <td className="td-title">
                   <strong>موظف تشغيل</strong>
-                  <span>حساب تشغيلي لإصدار النماذج ومتابعتها</span>
+                  <span>حساب مخصص لإنشاء النماذج ومتابعة الاستجابات</span>
                 </td>
                 <td>employee@nauss.edu.sa</td>
                 <td>موظف</td>
