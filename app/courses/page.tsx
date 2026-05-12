@@ -1,106 +1,95 @@
 import AppShell from '@/components/AppShell';
 
-export default function CoursesPage() {
+export default function CourseDetailsPage() {
   return (
-    <AppShell title="الدورات الخارجية" subtitle="قائمة أوضح بصريًا لمتابعة الأنشطة الخارجية وروابطها وحالة استجاباتها." role="MANAGER">
+    <AppShell title="تفاصيل الدورة" subtitle="مراجعة البيانات، الروابط، والاستجابات، ضمن واجهة أكثر ترتيبًا ودقة." role="MANAGER">
       <section className="section-card">
         <div className="section-head">
           <div>
-            <h3>قائمة الدورات</h3>
-            <p>تنظيم بصري أكثر احترافية لعرض الأنشطة الخارجية مع وضوح أعلى للحالة والإجراء.</p>
+            <h3>بيانات النشاط</h3>
+            <p>عرض متوازن للبيانات الأساسية مع حضور أوضح للرابط والمخرجات.</p>
           </div>
-          <div className="section-actions">
-            <a className="secondary-btn" href="/new-course">
-              إصدار نموذج جديد
-            </a>
-          </div>
+          <span className="status-chip is-open">نشط</span>
         </div>
 
         <div className="section-body">
-          <div className="inline-toolbar" style={{ marginBottom: 18 }}>
-            <div className="field" style={{ margin: 0, width: '100%', maxWidth: 420 }}>
-              <input placeholder="ابحث باسم النشاط أو المقر" />
+          <div className="form-grid">
+            <div className="field">
+              <label>اسم النشاط</label>
+              <input value="برنامج الأمن السيبراني المتقدم" readOnly />
             </div>
-            <div className="topbar-chip">إجمالي الدورات: 12</div>
+            <div className="field">
+              <label>مقر انعقاد النشاط</label>
+              <input value="فيينا" readOnly />
+            </div>
+            <div className="field">
+              <label>تاريخ البداية</label>
+              <input value="2026-05-12" readOnly />
+            </div>
+            <div className="field">
+              <label>تاريخ النهاية</label>
+              <input value="2026-05-18" readOnly />
+            </div>
+            <div className="field">
+              <label>عدد المشاركين</label>
+              <input value="18" readOnly />
+            </div>
+            <div className="field">
+              <label>موافقة المعالي</label>
+              <input value="attached-approval.pdf" readOnly />
+            </div>
           </div>
 
-          <div className="data-table-wrap">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>اسم النشاط</th>
-                  <th>المقر</th>
-                  <th>التاريخ</th>
-                  <th>عدد المشاركين</th>
-                  <th>الاستجابات</th>
-                  <th>الرابط</th>
-                  <th>الإجراء</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="td-title">
-                    <strong>برنامج الأمن السيبراني المتقدم</strong>
-                    <span>نشاط خارجي جارٍ متابعته حاليًا</span>
-                  </td>
-                  <td>فيينا</td>
-                  <td>12 / 05 / 2026</td>
-                  <td>18</td>
-                  <td>10</td>
-                  <td>
-                    <span className="status-chip is-open">جاهز</span>
-                  </td>
-                  <td>
-                    <div className="data-actions">
-                      <a className="ghost-btn" href="/courses/1">
-                        عرض
-                      </a>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td className="td-title">
-                    <strong>دورة القيادة الأمنية</strong>
-                    <span>تم اكتمال البيانات المطلوبة للدورة</span>
-                  </td>
-                  <td>الرباط</td>
-                  <td>18 / 05 / 2026</td>
-                  <td>12</td>
-                  <td>12</td>
-                  <td>
-                    <span className="status-chip is-done">جاهز</span>
-                  </td>
-                  <td>
-                    <div className="data-actions">
-                      <a className="ghost-btn" href="/courses/2">
-                        عرض
-                      </a>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td className="td-title">
-                    <strong>برنامج الجرائم المالية</strong>
-                    <span>رابط نشط وعدد الاستجابات في تصاعد</span>
-                  </td>
-                  <td>باريس</td>
-                  <td>22 / 05 / 2026</td>
-                  <td>15</td>
-                  <td>8</td>
-                  <td>
-                    <span className="status-chip is-open">جاهز</span>
-                  </td>
-                  <td>
-                    <div className="data-actions">
-                      <a className="ghost-btn" href="/courses/3">
-                        عرض
-                      </a>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div style={{ marginTop: 18 }}>
+            <label style={{ display: 'block', marginBottom: 8, fontWeight: 800 }}>رابط النموذج</label>
+            <div className="link-preview">https://forms.example.com/public/form/secure-token-12345</div>
           </div>
+
+          <div className="hero-actions" style={{ marginTop: 18 }}>
+            <button className="secondary-btn">نسخ الرابط</button>
+            <button className="secondary-btn">تصدير Word</button>
+            <button className="secondary-btn">تصدير EML</button>
+          </div>
+        </div>
+      </section>
+
+      <section className="section-card">
+        <div className="section-head">
+          <div>
+            <h3>الاستجابات</h3>
+            <p>مظهر أكثر نظافة لترتيب بيانات المشاركين ومراجعتها.</p>
+          </div>
+        </div>
+
+        <div className="section-body list-card">
+          <article className="record-card">
+            <div className="record-grid">
+              <div className="record-field">
+                <small>الاسم الكامل</small>
+                <strong>أحمد محمد علي</strong>
+              </div>
+              <div className="record-field">
+                <small>رقم الجواز</small>
+                <strong>P1234567</strong>
+              </div>
+              <div className="record-field">
+                <small>رقم الهوية</small>
+                <strong>1029384756</strong>
+              </div>
+              <div className="record-field">
+                <small>رقم الجوال</small>
+                <strong>0500000000</strong>
+              </div>
+              <div className="record-field">
+                <small>IBAN</small>
+                <strong>SA0380000000608010167519</strong>
+              </div>
+              <div className="record-field">
+                <small>المرفقات</small>
+                <strong>جواز + هوية</strong>
+              </div>
+            </div>
+          </article>
         </div>
       </section>
     </AppShell>
