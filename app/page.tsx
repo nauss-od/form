@@ -21,10 +21,12 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetch('/api/courses?stats=true')
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error(); return r.json(); })
       .then(d => setData(d))
+      .catch(() => { window.location.href = '/login'; })
       .finally(() => setLoading(false));
   }, []);
+  if (!data && !loading) return null;
 
   return (
     <AppShell title="لوحة المستخدم">
@@ -40,7 +42,7 @@ export default function DashboardPage() {
           <table className="data-table">
             <thead><tr><th>النشاط</th><th>المكان</th><th>التاريخ</th><th>المسجلون</th><th>الحالة</th><th></th></tr></thead>
             <tbody>
-              {data?.recentCourses.map(c => (
+              {data?.recentCourses?.map(c => (
                 <tr key={c.id}>
                   <td>{c.activityName || '—'}</td>
                   <td>{c.venue || '—'}</td>

@@ -15,7 +15,7 @@ export default function CoursesPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/courses').then(r => r.json()).then(d => { setCourses(d.courses || []); }).finally(() => setLoading(false));
+    fetch('/api/courses').then(r => { if (!r.ok) throw new Error(); return r.json(); }).then(d => { setCourses(d.courses || []); }).catch(() => { window.location.href = '/login'; }).finally(() => setLoading(false));
   }, []);
 
   return (

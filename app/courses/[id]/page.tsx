@@ -22,7 +22,7 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/courses/${params.id}`).then(r => r.json()).then(d => setCourse(d)).finally(() => setLoading(false));
+    fetch(`/api/courses/${params.id}`).then(r => { if (!r.ok) throw new Error(); return r.json(); }).then(d => setCourse(d)).catch(() => { window.location.href = '/login'; }).finally(() => setLoading(false));
   }, [params.id]);
 
   if (loading) return <AppShell title="تفاصيل الدورة"><p>جاري التحميل...</p></AppShell>;
