@@ -21,63 +21,61 @@ type DashboardData = {
   }>;
 };
 
-function MiniBar({ pct }: { pct: number }) {
-  return (
-    <div className="mini-bar-wrap">
-      <div className="mini-bar" style={{ width: `${Math.min(pct, 100)}%` }} />
-      <span>{pct}%</span>
-    </div>
-  );
-}
-
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [displayRole, setDisplayRole] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/courses?stats=true')
       .then(r => { if (!r.ok) throw new Error(); return r.json(); })
-      .then(d => setData(d))
+      .then(d => {
+        setData(d);
+        const saved = localStorage.getItem('nauss-active-role');
+        if (d.userRole === 'MANAGER') {
+          setDisplayRole(saved === 'EMPLOYEE' ? 'EMPLOYEE' : 'MANAGER');
+        } else {
+          setDisplayRole('EMPLOYEE');
+        }
+      })
       .catch(() => { window.location.href = '/login'; })
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    const handler = () => {
+      const saved = localStorage.getItem('nauss-active-role');
+      if (data?.userRole === 'MANAGER') {
+        setDisplayRole(saved === 'EMPLOYEE' ? 'EMPLOYEE' : 'MANAGER');
+      }
+    };
+    window.addEventListener('storage', handler);
+    return () => window.removeEventListener('storage', handler);
+  }, [data]);
+
   if (loading) return <AppShell title="لوحة المستخدم"><p>جاري التحميل...</p></AppShell>;
   if (!data) return null;
 
-  const isManager = data?.userRole === 'MANAGER';
+  const isManagerView = data.userRole === 'MANAGER' && displayRole === 'MANAGER';
+  const appRole = data.userRole === 'MANAGER' ? 'MANAGER' : 'EMPLOYEE';
 
-  if (isManager) {
+  if (isManagerView) {
     const emp = data.employees || [];
     const activeEmps = emp.filter(e => e._count.courses > 0);
     return (
-      <AppShell title="لوحة المدير" role="MANAGER">
-        {/* KPI Cards */}
+      <AppShell title="لوحة المدير" role={appRole}>
         <div className="dashboard-grid">
-          <div className="stat-card">
-            <span className="stat-value">{data.totalCourses}</span>
-            <span className="stat-label">إجمالي الدورات</span>
-          </div>
-          <div className="stat-card">
-            <span className="stat-value">{data.totalSubmissions}</span>
-            <span className="stat-label">إجمالي المسجلين</span>
-          </div>
-          <div className="stat-card">
-            <span className="stat-value">{emp.length}</span>
-            <span className="stat-label">عدد الموظفين</span>
-          </div>
-          <div className="stat-card accent">
-            <span className="stat-value">{activeEmps.length}</span>
-            <span className="stat-label">موظفون نشطون</span>
-          </div>
+          <div className="stat-card"><span className="stat-value">{data.totalCourses}</span><span className="stat-label">إجمالي الدورات</span></div>
+          <div className="stat-card"><span className="stat-value">{data.totalSubmissions}</span><span className="stat-label">إجمالي المسجلين</span></div>
+          <div className="stat-card"><span className="stat-value">{emp.length}</span><span className="stat-label">عدد الموظفين</span></div>
+          <div className="stat-card accent"><span className="stat-value">{activeEmps.length}</span><span className="stat-label">موظفون نشطون</span></div>
         </div>
 
-        {/* Employees Section */}
         <div className="section-card">
           <div className="section-head"><h3>الموظفون ونشاطهم</h3></div>
           {emp.length === 0 ? <p className="p-muted">لا يوجد موظفون بعد</p> : (
             <table className="data-table">
-              <thead><tr><th>الموظف</th><th>البريد</th><th>رقم الجوال</th><th>الدورات</th><th>المسجلون</th><th>آخر نشاط</th></tr></thead>
+              <thead><tr><th>الموظف</th><th>البريد</th><th>الجوال</th><th>الدورات</th><th>المسجلون</th><th>آخر نشاط</th></tr></thead>
               <tbody>
                 {emp.map(e => (
                   <tr key={e.id}>
@@ -94,10 +92,9 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* All Courses */}
         <div className="section-card">
           <div className="section-head"><h3>جميع الدورات</h3></div>
-          {data.recentCourses?.length === 0 ? <p className="p-muted">لا توجد دورات</p> : (
+          {!data.recentCourses?.length ? <p className="p-muted">لا توجد دورات</p> : (
             <table className="data-table">
               <thead><tr><th>النشاط</th><th>المشرف</th><th>المسجلون</th><th>التاريخ</th><th>الحالة</th><th></th></tr></thead>
               <tbody>
@@ -125,28 +122,18 @@ export default function DashboardPage() {
     );
   }
 
-  /* ========== EMPLOYEE VIEW ========== */
   const avgPerCourse = data.totalCourses > 0 ? Math.round(data.totalSubmissions / data.totalCourses) : 0;
   return (
-    <AppShell title="لوحة المستخدم" role="EMPLOYEE">
+    <AppShell title={data.userRole === 'MANAGER' ? 'لوحة الموظف' : 'لوحة المستخدم'} role={appRole}>
       <div className="dashboard-grid">
-        <div className="stat-card">
-          <span className="stat-value">{data.totalCourses}</span>
-          <span className="stat-label">دوراتي</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-value">{data.totalSubmissions}</span>
-          <span className="stat-label">إجمالي المسجلين</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-value">{avgPerCourse}</span>
-          <span className="stat-label">متوسط لكل دورة</span>
-        </div>
+        <div className="stat-card"><span className="stat-value">{data.totalCourses}</span><span className="stat-label">دوراتي</span></div>
+        <div className="stat-card"><span className="stat-value">{data.totalSubmissions}</span><span className="stat-label">إجمالي المسجلين</span></div>
+        <div className="stat-card"><span className="stat-value">{avgPerCourse}</span><span className="stat-label">متوسط لكل دورة</span></div>
       </div>
 
       <div className="section-card">
         <div className="section-head"><h3>دوراتي</h3></div>
-        {!data.recentCourses?.length ? <p className="p-muted">لا توجد دورات بعد. ابدأ بإنشاء دورة جديدة.</p> : (
+        {!data.recentCourses?.length ? <p className="p-muted">لا توجد دورات بعد</p> : (
           <table className="data-table">
             <thead><tr><th>النشاط</th><th>المكان</th><th>التاريخ</th><th>المسجلون</th><th>الحالة</th><th></th></tr></thead>
             <tbody>
