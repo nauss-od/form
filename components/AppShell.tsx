@@ -12,11 +12,27 @@ type AppShellProps = {
   role?: Role;
 };
 
-const navItems = [
-  { href: '/', label: 'لوحة المستخدم', icon: '📊', managerOnly: false },
-  { href: '/new-course', label: 'إنشاء دورة جديدة', icon: '➕', managerOnly: false },
-  { href: '/courses', label: 'متابعة دورة حالية', icon: '📋', managerOnly: false },
-  { href: '/account', label: 'إدارة الحساب', icon: '👤', managerOnly: false },
+interface NavItem {
+  href: string;
+  label: string;
+  icon: string;
+}
+
+const managerNav: NavItem[] = [
+  { href: '/', label: 'لوحة المعلومات', icon: '📊' },
+  { href: '/employees', label: 'الموظفين', icon: '👥' },
+  { href: '/courses', label: 'الدورات النشطة', icon: '📋' },
+  { href: '/admin/users', label: 'إدارة المستخدمين', icon: '⚙️' },
+  { href: '/admin/audit', label: 'سجل التدقيق', icon: '📝' },
+  { href: '/admin/analysis', label: 'تحليل الأداء', icon: '📈' },
+  { href: '/account', label: 'الحساب', icon: '👤' },
+];
+
+const employeeNav: NavItem[] = [
+  { href: '/', label: 'لوحة المستخدم', icon: '📊' },
+  { href: '/new-course', label: 'إنشاء دورة جديدة', icon: '➕' },
+  { href: '/courses', label: 'الدورات', icon: '📋' },
+  { href: '/account', label: 'الحساب', icon: '👤' },
 ];
 
 export default function AppShell({ title, role = 'EMPLOYEE', children }: AppShellProps) {
@@ -37,13 +53,20 @@ export default function AppShell({ title, role = 'EMPLOYEE', children }: AppShel
   function handleRoleSwitch(nextRole: 'MANAGER' | 'EMPLOYEE') {
     setActiveRole(nextRole);
     if (typeof window !== 'undefined') window.localStorage.setItem('nauss-active-role', nextRole);
+    window.dispatchEvent(new Event('storage'));
   }
 
   async function logout() {
     try { await fetch('/api/auth/logout', { method: 'POST' }); } finally { window.location.href = '/login'; }
   }
 
-  const canSeeManagerLinks = isManagerAccount && activeRole === 'MANAGER';
+  const isManagerView = isManagerAccount && activeRole === 'MANAGER';
+  const navItems = isManagerView ? managerNav : employeeNav;
+
+  function isActive(href: string): boolean {
+    if (href === '/') return pathname === '/';
+    return pathname.startsWith(href);
+  }
 
   return (
     <div className="shell-root">
@@ -61,11 +84,11 @@ export default function AppShell({ title, role = 'EMPLOYEE', children }: AppShel
         <div className="sidebar-divider" />
 
         <nav className="sidebar-nav">
-          {navItems.filter((item) => !item.managerOnly || canSeeManagerLinks).map((item) => (
+          {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className={`sidebar-link ${pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href)) ? 'active' : ''}`}
+              className={`sidebar-link ${isActive(item.href) ? 'active' : ''}`}
               onClick={() => setOpen(false)}
             >
               <span className="sidebar-icon">{item.icon}</span>

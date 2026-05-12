@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { comparePassword, setSessionCookie } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { logAudit } from '@/lib/audit';
 
 export async function POST(request: NextRequest) {
   const { email, password } = await request.json();
@@ -20,6 +21,8 @@ export async function POST(request: NextRequest) {
 
   await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
   setSessionCookie({ userId: user.id, name: user.name, email: user.email, role: user.role });
+
+  await logAudit({ userId: user.id, action: 'LOGIN', entityType: 'User', entityId: user.id });
 
   return NextResponse.json({ success: true });
 }

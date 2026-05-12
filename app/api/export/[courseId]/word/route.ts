@@ -1,12 +1,17 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { formatDate } from '@/lib/utils';
+import { getCurrentSession } from '@/lib/auth';
+import { logAudit } from '@/lib/audit';
 
 function esc(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 export async function GET(_request: Request, { params }: { params: { courseId: string } }) {
+  const session = getCurrentSession();
+  if (!session) return NextResponse.json({ message: 'غير مصرح' }, { status: 401 });
+
   const course = await prisma.course.findUnique({
     where: { id: params.courseId },
     include: {
@@ -15,6 +20,12 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
     },
   });
   if (!course) return NextResponse.json({ message: 'الدورة غير موجودة' }, { status: 404 });
+
+  if (session.role !== 'MANAGER' && course.createdByUserId !== session.userId) {
+    return NextResponse.json({ message: 'غير مصرح' }, { status: 401 });
+  }
+
+  await logAudit({ userId: session.userId, action: 'EXPORT_WORD', entityType: 'Course', entityId: params.courseId });
 
   const base = process.env.APP_URL || 'https://forms-od.vercel.app';
   const logoUrl = `${base}/images/nauss-logo-gold.png`;
@@ -135,7 +146,7 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
   return new NextResponse(html, {
     headers: {
       'Content-Type': 'application/msword',
-      'Content-Disposition': `attachment; filename="${course.activityName || 'course'}-participants.doc`
+      'Content-Disposition': `attachment; filename="${(course.activityName || 'course').replace(/[^a-zA-Z0-9\-_ ]/g, '')}-participants.doc"`
     }
   });
 }

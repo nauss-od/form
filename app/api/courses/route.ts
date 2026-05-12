@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { generatePublicToken } from '@/lib/utils';
+import { logAudit } from '@/lib/audit';
 
 export async function GET(request: NextRequest) {
   const session = getCurrentSession();
@@ -78,6 +79,8 @@ export async function POST(request: NextRequest) {
       status: 'PUBLISHED'
     }
   });
+
+  await logAudit({ userId: session.userId, action: 'CREATE_COURSE', entityType: 'Course', entityId: course.id, meta: { activityName } });
 
   return NextResponse.json({ success: true, course });
 }
