@@ -28,8 +28,8 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
   if (loading) return <AppShell title="تفاصيل الدورة"><p>جاري التحميل...</p></AppShell>;
   if (!course) return <AppShell title="خطأ"><p>الدورة غير موجودة</p></AppShell>;
 
-  const base = typeof window !== 'undefined' ? window.location.origin : '';
-  const publicUrl = `${base}/public/form/${course.publicToken}`;
+  const [publicUrl, setPublicUrl] = useState('');
+  useEffect(() => { setPublicUrl(`${window.location.origin}/public/form/${course.publicToken}`); }, [course.publicToken]);
   const completed = course.submissions.length;
   const total = course.participantCount || completed;
   const pct = total > 0 ? Math.round((completed / total) * 100) : 0;

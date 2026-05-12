@@ -69,6 +69,9 @@ export default function LoginPage() {
             <button className="primary-btn" type="submit" disabled={loading}>
               {loading ? 'جاري التحقق...' : 'تسجيل الدخول'}
             </button>
+            <p style={{ marginTop: 16, textAlign: 'center', fontSize: '0.85rem' }}>
+              ليس لديك حساب؟ <a href="/register" style={{ color: '#014f4d', fontWeight: 600 }}>إنشاء حساب جديد</a>
+            </p>
           </form>
         </div>
       </section>
