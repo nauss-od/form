@@ -19,11 +19,28 @@ export async function GET(request: NextRequest) {
     });
     const recentCourses = await prisma.course.findMany({
       where,
-      include: { _count: { select: { submissions: true } } },
+      include: { _count: { select: { submissions: true } }, createdBy: { select: { name: true } } },
       orderBy: { createdAt: 'desc' },
       take: 10
     });
-    return NextResponse.json({ totalCourses, totalSubmissions, completedSubmissions: totalSubmissions, recentCourses, userRole: session.role });
+
+    let employees = null;
+    if (session.role === 'MANAGER') {
+      const users = await prisma.user.findMany({
+        where: { role: 'EMPLOYEE', isActive: true },
+        select: {
+          id: true, name: true, email: true, mobile: true, createdAt: true, lastLoginAt: true,
+          _count: { select: { courses: true } }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+      employees = await Promise.all(users.map(async (u) => {
+        const subCount = await prisma.submission.count({ where: { course: { createdByUserId: u.id } } });
+        return { ...u, submissionCount: subCount };
+      }));
+    }
+
+    return NextResponse.json({ totalCourses, totalSubmissions, completedSubmissions: totalSubmissions, recentCourses, userRole: session.role, employees });
   }
 
   const courses = await prisma.course.findMany({

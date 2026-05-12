@@ -4,29 +4,29 @@ import { useEffect, useState } from 'react';
 import AppShell from '@/components/AppShell';
 import { formatDate } from '@/lib/utils';
 
+type EmployeeStat = {
+  id: string; name: string; email: string; mobile: string | null;
+  createdAt: string; lastLoginAt: string | null;
+  _count: { courses: number }; submissionCount: number;
+};
+
 type DashboardData = {
-  totalCourses: number;
-  totalSubmissions: number;
-  completedSubmissions: number;
-  userRole: string;
+  totalCourses: number; totalSubmissions: number; completedSubmissions: number;
+  userRole: string; employees: EmployeeStat[] | null;
   recentCourses: Array<{
     id: string; activityName: string | null; venue: string | null;
     startDate: string | null; endDate: string | null;
     _count: { submissions: number }; status: string;
+    createdBy: { name: string };
   }>;
 };
 
-function DonutChart({ pct, size = 100 }: { pct: number; size?: number }) {
-  const r = 38;
-  const circ = 2 * Math.PI * r;
-  const offset = circ - (pct / 100) * circ;
+function MiniBar({ pct }: { pct: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100">
-      <circle cx="50" cy="50" r={r} fill="none" stroke="#e2e8f0" strokeWidth="8" />
-      <circle cx="50" cy="50" r={r} fill="none" stroke="#014f4d" strokeWidth="8" strokeDasharray={circ} strokeDashoffset={offset} transform="rotate(-90 50 50)" strokeLinecap="round" />
-      <text x="50" y="48" textAnchor="middle" fontSize="18" fontWeight="700" fill="#014f4d">{pct}%</text>
-      <text x="50" y="64" textAnchor="middle" fontSize="9" fill="#64748b">مكتمل</text>
-    </svg>
+    <div className="mini-bar-wrap">
+      <div className="mini-bar" style={{ width: `${Math.min(pct, 100)}%` }} />
+      <span>{pct}%</span>
+    </div>
   );
 }
 
@@ -41,51 +41,131 @@ export default function DashboardPage() {
       .catch(() => { window.location.href = '/login'; })
       .finally(() => setLoading(false));
   }, []);
-  if (!data && !loading) return null;
 
-  const avgPerCourse = data && data.totalCourses > 0 ? Math.round(data.totalSubmissions / data.totalCourses) : 0;
+  if (loading) return <AppShell title="لوحة المستخدم"><p>جاري التحميل...</p></AppShell>;
+  if (!data) return null;
 
+  const isManager = data?.userRole === 'MANAGER';
+
+  if (isManager) {
+    const emp = data.employees || [];
+    const activeEmps = emp.filter(e => e._count.courses > 0);
+    return (
+      <AppShell title="لوحة المدير" role="MANAGER">
+        {/* KPI Cards */}
+        <div className="dashboard-grid">
+          <div className="stat-card">
+            <span className="stat-value">{data.totalCourses}</span>
+            <span className="stat-label">إجمالي الدورات</span>
+          </div>
+          <div className="stat-card">
+            <span className="stat-value">{data.totalSubmissions}</span>
+            <span className="stat-label">إجمالي المسجلين</span>
+          </div>
+          <div className="stat-card">
+            <span className="stat-value">{emp.length}</span>
+            <span className="stat-label">عدد الموظفين</span>
+          </div>
+          <div className="stat-card accent">
+            <span className="stat-value">{activeEmps.length}</span>
+            <span className="stat-label">موظفون نشطون</span>
+          </div>
+        </div>
+
+        {/* Employees Section */}
+        <div className="section-card">
+          <div className="section-head"><h3>الموظفون ونشاطهم</h3></div>
+          {emp.length === 0 ? <p className="p-muted">لا يوجد موظفون بعد</p> : (
+            <table className="data-table">
+              <thead><tr><th>الموظف</th><th>البريد</th><th>رقم الجوال</th><th>الدورات</th><th>المسجلون</th><th>آخر نشاط</th></tr></thead>
+              <tbody>
+                {emp.map(e => (
+                  <tr key={e.id}>
+                    <td><strong>{e.name}</strong></td>
+                    <td style={{ direction: 'ltr', textAlign: 'right' }}>{e.email}</td>
+                    <td dir="ltr">{e.mobile || '—'}</td>
+                    <td>{e._count.courses}</td>
+                    <td>{e.submissionCount}</td>
+                    <td>{e.lastLoginAt ? formatDate(e.lastLoginAt) : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* All Courses */}
+        <div className="section-card">
+          <div className="section-head"><h3>جميع الدورات</h3></div>
+          {data.recentCourses?.length === 0 ? <p className="p-muted">لا توجد دورات</p> : (
+            <table className="data-table">
+              <thead><tr><th>النشاط</th><th>المشرف</th><th>المسجلون</th><th>التاريخ</th><th>الحالة</th><th></th></tr></thead>
+              <tbody>
+                {data.recentCourses?.map(c => (
+                  <tr key={c.id}>
+                    <td>{c.activityName || '—'}</td>
+                    <td>{c.createdBy?.name || '—'}</td>
+                    <td>{c._count.submissions}</td>
+                    <td>{formatDate(c.startDate)}</td>
+                    <td><span className={`status-chip ${c.status === 'PUBLISHED' ? 'is-open' : ''}`}>{c.status === 'PUBLISHED' ? 'نشط' : 'مغلق'}</span></td>
+                    <td>
+                      <a href={`/courses/${c.id}`} className="link-btn">تفاصيل</a>
+                      <span style={{ margin: '0 4px' }}>|</span>
+                      <a href={`/api/export/${c.id}/word`} className="link-btn">Word</a>
+                      <span style={{ margin: '0 4px' }}>|</span>
+                      <a href={`/api/export/${c.id}/eml`} className="link-btn">EML</a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </AppShell>
+    );
+  }
+
+  /* ========== EMPLOYEE VIEW ========== */
+  const avgPerCourse = data.totalCourses > 0 ? Math.round(data.totalSubmissions / data.totalCourses) : 0;
   return (
-    <AppShell title="لوحة المستخدم" role={data?.userRole}>
+    <AppShell title="لوحة المستخدم" role="EMPLOYEE">
       <div className="dashboard-grid">
         <div className="stat-card">
-          <span className="stat-value">{loading ? '—' : data?.totalCourses || 0}</span>
-          <span className="stat-label">الدورات المنشأة</span>
+          <span className="stat-value">{data.totalCourses}</span>
+          <span className="stat-label">دوراتي</span>
         </div>
         <div className="stat-card">
-          <span className="stat-value">{loading ? '—' : data?.totalSubmissions || 0}</span>
+          <span className="stat-value">{data.totalSubmissions}</span>
           <span className="stat-label">إجمالي المسجلين</span>
         </div>
         <div className="stat-card">
-          <span className="stat-value">{loading ? '—' : avgPerCourse}</span>
+          <span className="stat-value">{avgPerCourse}</span>
           <span className="stat-label">متوسط لكل دورة</span>
         </div>
       </div>
 
       <div className="section-card">
-        <div className="section-head"><h3>آخر الدورات</h3></div>
-        {loading ? <p className="p-muted">جاري التحميل...</p> : !data?.recentCourses?.length ? <p className="p-muted">لا توجد دورات بعد. ابدأ بإنشاء دورة جديدة.</p> : (
+        <div className="section-head"><h3>دوراتي</h3></div>
+        {!data.recentCourses?.length ? <p className="p-muted">لا توجد دورات بعد. ابدأ بإنشاء دورة جديدة.</p> : (
           <table className="data-table">
             <thead><tr><th>النشاط</th><th>المكان</th><th>التاريخ</th><th>المسجلون</th><th>الحالة</th><th></th></tr></thead>
             <tbody>
-              {data.recentCourses.map(c => {
-                const pct = c._count.submissions > 0 && data.totalCourses > 0 ? Math.round((c._count.submissions / data.totalSubmissions) * 100) : 0;
-                return (
-                  <tr key={c.id}>
-                    <td>{c.activityName || '—'}</td>
-                    <td>{c.venue || '—'}</td>
-                    <td>{formatDate(c.startDate)}</td>
-                    <td>
-                      <div className="mini-bar-wrap">
-                        <div className="mini-bar" style={{ width: `${Math.min(pct, 100)}%` }} />
-                        <span>{c._count.submissions}</span>
-                      </div>
-                    </td>
-                    <td><span className={`status-chip ${c.status === 'PUBLISHED' ? 'is-open' : ''}`}>{c.status === 'PUBLISHED' ? 'نشط' : 'مغلق'}</span></td>
-                    <td><a href={`/courses/${c.id}`} className="link-btn">عرض</a></td>
-                  </tr>
-                );
-              })}
+              {data.recentCourses.map(c => (
+                <tr key={c.id}>
+                  <td>{c.activityName || '—'}</td>
+                  <td>{c.venue || '—'}</td>
+                  <td>{formatDate(c.startDate)}</td>
+                  <td>{c._count.submissions}</td>
+                  <td><span className={`status-chip ${c.status === 'PUBLISHED' ? 'is-open' : ''}`}>{c.status === 'PUBLISHED' ? 'نشط' : 'مغلق'}</span></td>
+                  <td>
+                    <a href={`/courses/${c.id}`} className="link-btn">عرض</a>
+                    <span style={{ margin: '0 4px' }}>|</span>
+                    <a href={`/api/export/${c.id}/word`} className="link-btn">Word</a>
+                    <span style={{ margin: '0 4px' }}>|</span>
+                    <a href={`/api/export/${c.id}/eml`} className="link-btn">EML</a>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         )}
