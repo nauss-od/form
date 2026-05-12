@@ -4,50 +4,93 @@ import { FormEvent, useState } from 'react';
 
 export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
+    setError('');
+
     const formData = new FormData(event.currentTarget);
-    const response = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: formData.get('name'), email: formData.get('email'), password: formData.get('password') }),
-    });
-    const data = await response.json();
-    setLoading(false);
-    if (!response.ok) return alert(data.message || 'تعذر إنشاء الحساب');
-    window.location.href = '/';
+
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.get('name'),
+          email: formData.get('email'),
+          password: formData.get('password'),
+          mobile: formData.get('mobile'),
+          extension: formData.get('extension'),
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'تعذر إنشاء الحساب');
+      window.location.href = '/';
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'حدث خطأ');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <div className="auth-shell">
-      <section className="auth-panel">
-        <form className="auth-card" onSubmit={handleSubmit}>
-          <div className="auth-card-head">
-            <img className="auth-card-mini-logo" src="/images/nauss-official-logo.png" alt="جامعة نايف" />
-            <h1 className="auth-title">تسجيل موظف جديد</h1>
-            <p className="auth-subtitle">إنشاء حساب للوصول إلى المنصة وإصدار روابط النماذج</p>
+    <div className="login-screen">
+      <section className="login-visual">
+        <div className="pattern-grid" />
+        <div className="visual-card">
+          <img className="visual-brand" src="/images/nauss-logo-gold.png" alt="جامعة نايف" />
+          <h1 className="visual-title">إنشاء حساب جديد</h1>
+          <p className="visual-text">جامعة نايف العربية للعلوم الأمنية — وكالة التدريب</p>
+          <div className="visual-pills">
+            <div className="visual-pill">إصدار روابط نماذج لكل دورة خارجية</div>
+            <div className="visual-pill">متابعة تعبئة المشاركين للبيانات والمرفقات</div>
+            <div className="visual-pill">تصدير ملف منظم لإدارة السفر لإصدار التأمين</div>
           </div>
-          <div className="auth-card-body">
-            <div>
-              <label className="label">الاسم الكامل</label>
-              <input className="input" name="name" required />
-            </div>
-            <div style={{ marginTop: 16 }}>
-              <label className="label">البريد الإلكتروني</label>
-              <input className="input" type="email" name="email" required />
-            </div>
-            <div style={{ marginTop: 16 }}>
-              <label className="label">كلمة المرور</label>
-              <input className="input" type="password" name="password" minLength={8} required />
-            </div>
-            <div style={{ marginTop: 22, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <button className="btn btn-primary" disabled={loading}>{loading ? 'جاري إنشاء الحساب...' : 'إنشاء الحساب'}</button>
-              <a className="btn btn-outline" href="/login">العودة للدخول</a>
-            </div>
+        </div>
+      </section>
+
+      <section className="login-panel">
+        <div className="login-card">
+          <div className="login-brand-mini">
+            <img src="/images/nauss-logo-gold.png" alt="جامعة نايف" />
           </div>
-        </form>
+          <div className="login-heading">
+            <h2>بيانات الموظف</h2>
+            <p>إنشاء حساب للوصول إلى المنصة وإصدار روابط النماذج</p>
+          </div>
+
+          <form className="login-form" onSubmit={handleSubmit}>
+            <div className="field">
+              <label>الاسم الكامل *</label>
+              <input name="name" required placeholder="الاسم الرباعي" />
+            </div>
+            <div className="field">
+              <label>البريد الإلكتروني (اسم المستخدم) *</label>
+              <input name="email" type="email" dir="ltr" required placeholder="example@nauss.edu.sa" />
+            </div>
+            <div className="field">
+              <label>كلمة المرور *</label>
+              <input name="password" type="password" required minLength={6} placeholder="6 أحرف على الأقل" />
+            </div>
+            <div className="field">
+              <label>رقم الجوال</label>
+              <input name="mobile" dir="ltr" placeholder="+966501234567" />
+            </div>
+            <div className="field">
+              <label>رقم التحويلة</label>
+              <input name="extension" dir="ltr" placeholder="مثال: 1234" />
+            </div>
+            {error ? <div className="login-error">{error}</div> : null}
+            <button className="primary-btn" type="submit" disabled={loading}>
+              {loading ? 'جاري إنشاء الحساب...' : 'إنشاء الحساب'}
+            </button>
+            <p style={{ marginTop: 16, textAlign: 'center', fontSize: '0.85rem' }}>
+              لديك حساب بالفعل؟ <a href="/login" style={{ color: '#014f4d', fontWeight: 600 }}>تسجيل الدخول</a>
+            </p>
+          </form>
+        </div>
       </section>
     </div>
   );

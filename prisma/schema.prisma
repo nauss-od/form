@@ -27,6 +27,8 @@ model User {
   name         String
   email        String   @unique
   passwordHash String
+  mobile       String?
+  extension    String?
   role         UserRole @default(EMPLOYEE)
   isActive     Boolean  @default(true)
   lastLoginAt  DateTime?

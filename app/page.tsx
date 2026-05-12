@@ -8,6 +8,7 @@ type DashboardData = {
   totalCourses: number;
   totalSubmissions: number;
   completedSubmissions: number;
+  userRole: string;
   recentCourses: Array<{
     id: string; activityName: string | null; venue: string | null;
     startDate: string | null; endDate: string | null;
@@ -29,7 +30,7 @@ export default function DashboardPage() {
   if (!data && !loading) return null;
 
   return (
-    <AppShell title="لوحة المستخدم">
+    <AppShell title="لوحة المستخدم" role={data?.userRole}>
       <div className="dashboard-grid">
         <div className="stat-card"><span className="stat-value">{loading ? '—' : data?.totalCourses || 0}</span><span className="stat-label">إجمالي الدورات</span></div>
         <div className="stat-card"><span className="stat-value">{loading ? '—' : data?.totalSubmissions || 0}</span><span className="stat-label">إجمالي المسجلين</span></div>

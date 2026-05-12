@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
       take: 10
     });
-    return NextResponse.json({ totalCourses, totalSubmissions, completedSubmissions: totalSubmissions, recentCourses });
+    return NextResponse.json({ totalCourses, totalSubmissions, completedSubmissions: totalSubmissions, recentCourses, userRole: session.role });
   }
 
   const courses = await prisma.course.findMany({
