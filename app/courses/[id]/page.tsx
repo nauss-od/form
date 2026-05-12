@@ -20,16 +20,19 @@ type CourseDetail = {
 export default function CourseDetailsPage({ params }: { params: { id: string } }) {
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [publicUrl, setPublicUrl] = useState('');
 
   useEffect(() => {
     fetch(`/api/courses/${params.id}`).then(r => { if (!r.ok) throw new Error(); return r.json(); }).then(d => setCourse(d)).catch(() => { window.location.href = '/login'; }).finally(() => setLoading(false));
   }, [params.id]);
 
-  if (loading) return <AppShell title="تفاصيل الدورة"><p>جاري التحميل...</p></AppShell>;
-  if (!course) return <AppShell title="خطأ"><p>الدورة غير موجودة</p></AppShell>;
+  useEffect(() => {
+    if (course) setPublicUrl(`${window.location.origin}/public/form/${course.publicToken}`);
+  }, [course]);
 
-  const [publicUrl, setPublicUrl] = useState('');
-  useEffect(() => { setPublicUrl(`${window.location.origin}/public/form/${course.publicToken}`); }, [course.publicToken]);
+  if (loading) return <AppShell title="تفاصيل الدورة"><p>جاري التحميل...</p></AppShell>;
+  if (!course || !course.submissions) return <AppShell title="خطأ"><p>الدورة غير موجودة</p></AppShell>;
+
   const completed = course.submissions.length;
   const total = course.participantCount || completed;
   const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
@@ -46,7 +49,7 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
           <div className="field"><label>مقر الانعقاد</label><span>{course.venue || '—'}</span></div>
           <div className="field"><label>تاريخ البداية</label><span>{formatDate(course.startDate)}</span></div>
           <div className="field"><label>تاريخ النهاية</label><span>{formatDate(course.endDate)}</span></div>
-          <div className="field"><label>إعداد</label><span>{course.createdBy.name}</span></div>
+          <div className="field"><label>إعداد</label><span>{course.createdBy?.name || '—'}</span></div>
         </div>
 
         <div className="progress-section">
@@ -55,19 +58,19 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
         </div>
 
         <div style={{ marginTop: 18 }}>
-          <label className="label">رابط النموذج العام</label>
+          <label className="label">رابط النموذج</label>
           <div className="link-preview" dir="ltr">{publicUrl}</div>
-          <div className="hero-actions" style={{ marginTop: 8 }}>
-            <button className="secondary-btn" onClick={() => { navigator.clipboard.writeText(publicUrl); alert('تم نسخ الرابط'); }}>نسخ الرابط</button>
-            <a href={`/api/export/${course.id}/word`} className="secondary-btn">تصدير Word</a>
-            <a href={`/api/export/${course.id}/eml`} className="secondary-btn">تصدير EML</a>
-          </div>
+        </div>
+        <div className="hero-actions" style={{ marginTop: 12 }}>
+          <button className="secondary-btn" onClick={() => { navigator.clipboard.writeText(publicUrl); alert('تم نسخ الرابط'); }}>نسخ الرابط</button>
+          <a href={`/api/export/${course.id}/word`} className="secondary-btn">تصدير Word</a>
+          <a href={`/api/export/${course.id}/eml`} className="secondary-btn">تصدير EML</a>
         </div>
       </div>
 
       <div className="section-card">
-        <div className="section-head"><h3>الاستجابات ({course.submissions.length})</h3></div>
-        {course.submissions.length === 0 ? <p className="p-muted">لا توجد استجابات بعد. أرسل الرابط للمشاركين.</p> : (
+        <div className="section-head"><h3>الاستجابات ({completed})</h3></div>
+        {completed === 0 ? <p className="p-muted">لا توجد استجابات بعد. أرسل الرابط للمشاركين.</p> : (
           <table className="data-table">
             <thead><tr>
               <th>م</th><th>الاسم</th><th>رقم الجواز</th><th>انتهاء الجواز</th><th>الهوية</th><th>الجوال</th><th>تاريخ الميلاد</th><th>IBAN</th><th>المرفقات</th>
@@ -83,7 +86,7 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
                   <td>{s.mobile}</td>
                   <td>{formatDate(s.birthDate)}</td>
                   <td style={{ fontSize: 12 }}>{s.iban}</td>
-                  <td>{s.files.filter(f => f.fileType === 'PASSPORT').length > 0 ? '📷 جواز' : ''} {s.files.filter(f => f.fileType === 'NATIONAL_ID').length > 0 ? '🆔 هوية' : ''}</td>
+                  <td>{s.files?.filter(f => f.fileType === 'PASSPORT').length > 0 ? '📷' : ''} {s.files?.filter(f => f.fileType === 'NATIONAL_ID').length > 0 ? '🆔' : ''}</td>
                 </tr>
               ))}
             </tbody>

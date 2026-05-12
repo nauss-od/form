@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { randomUUID } from 'crypto';
+import { generatePublicToken } from '@/lib/utils';
 
 export async function GET(request: NextRequest) {
   const session = getCurrentSession();
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
       startDate: startDate ? new Date(startDate) : null,
       endDate: endDate ? new Date(endDate) : null,
       participantCount,
-      publicToken: randomUUID(),
+      publicToken: generatePublicToken(),
       status: 'PUBLISHED'
     }
   });

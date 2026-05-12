@@ -1531,3 +1531,11 @@ select.input:focus {
 .role-toggle { display: flex; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
 .role-toggle-btn { padding: 6px 14px; font-size: 0.8rem; border: none; background: white; cursor: pointer; color: #64748b; }
 .role-toggle-btn.active { background: #014f4d; color: white; }
+
+/* Mini progress bar for table */
+.mini-bar-wrap { display: flex; align-items: center; gap: 8px; }
+.mini-bar { height: 6px; background: #014f4d; border-radius: 3px; min-width: 4px; max-width: 60px; }
+.mini-bar-wrap span { font-size: 0.8rem; color: #475569; min-width: 20px; }
+
+/* Add link-preview styling for course details */
+.link-preview { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; font-size: 0.85rem; direction: ltr; text-align: left; color: #014f4d; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

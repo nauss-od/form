@@ -9,4 +9,13 @@ export function coursePublicUrl(token: string): string {
   return `${base}/public/form/${token}`;
 }
 
+export function generatePublicToken(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  let result = 'nauss-od-';
+  for (let i = 0; i < 8; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
 
