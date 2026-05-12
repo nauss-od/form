@@ -1,65 +1,59 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import AppShell from '@/components/AppShell';
+import { formatDate } from '@/lib/utils';
 
-export default function UsersPage() {
+type DashboardData = {
+  totalCourses: number;
+  totalSubmissions: number;
+  completedSubmissions: number;
+  recentCourses: Array<{
+    id: string; activityName: string | null; venue: string | null;
+    startDate: string | null; endDate: string | null;
+    _count: { submissions: number }; status: string;
+  }>;
+};
+
+export default function DashboardPage() {
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/courses?stats=true')
+      .then(r => r.json())
+      .then(d => setData(d))
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
-    <AppShell title="إدارة المستخدمين" subtitle="تنسيق بصري أنضج لإظهار الحسابات، الصلاحيات، والحالة التشغيلية بوضوح." role="MANAGER">
-      <section className="section-card">
-        <div className="section-head">
-          <div>
-            <h3>الحسابات</h3>
-            <p>واجهة مرتبة لإدارة المستخدمين دون ازدحام بصري أو ضعف في الهرمية.</p>
-          </div>
-          <button className="secondary-btn">إضافة مستخدم</button>
-        </div>
+    <AppShell title="لوحة المستخدم">
+      <div className="dashboard-grid">
+        <div className="stat-card"><span className="stat-value">{loading ? '—' : data?.totalCourses || 0}</span><span className="stat-label">إجمالي الدورات</span></div>
+        <div className="stat-card"><span className="stat-value">{loading ? '—' : data?.totalSubmissions || 0}</span><span className="stat-label">إجمالي المسجلين</span></div>
+        <div className="stat-card accent"><span className="stat-value">{loading ? '—' : data?.completedSubmissions || 0}</span><span className="stat-label">نماذج مكتملة</span></div>
+      </div>
 
-        <div className="section-body data-table-wrap">
+      <div className="section-card">
+        <div className="section-head"><h3>آخر الدورات</h3></div>
+        {loading ? <p className="p-muted">جاري التحميل...</p> : (
           <table className="data-table">
-            <thead>
-              <tr>
-                <th>الاسم</th>
-                <th>البريد</th>
-                <th>الدور</th>
-                <th>الحالة</th>
-                <th>الإجراء</th>
-              </tr>
-            </thead>
+            <thead><tr><th>النشاط</th><th>المكان</th><th>التاريخ</th><th>المسجلون</th><th>الحالة</th><th></th></tr></thead>
             <tbody>
-              <tr>
-                <td className="td-title">
-                  <strong>مدير النظام</strong>
-                  <span>صلاحية كاملة لإدارة المنصة والاطلاع التنفيذي</span>
-                </td>
-                <td>Nalshahrani@nauss.edu.sa</td>
-                <td>مدير</td>
-                <td>
-                  <span className="status-chip is-done">فعّال</span>
-                </td>
-                <td>
-                  <div className="data-actions">
-                    <button className="ghost-btn">تعديل</button>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td className="td-title">
-                  <strong>موظف تشغيل</strong>
-                  <span>حساب مخصص لإنشاء النماذج ومتابعة الاستجابات</span>
-                </td>
-                <td>employee@nauss.edu.sa</td>
-                <td>موظف</td>
-                <td>
-                  <span className="status-chip is-open">فعّال</span>
-                </td>
-                <td>
-                  <div className="data-actions">
-                    <button className="ghost-btn">تعديل</button>
-                  </div>
-                </td>
-              </tr>
+              {data?.recentCourses.map(c => (
+                <tr key={c.id}>
+                  <td>{c.activityName || '—'}</td>
+                  <td>{c.venue || '—'}</td>
+                  <td>{formatDate(c.startDate)}</td>
+                  <td>{c._count.submissions}</td>
+                  <td><span className={`status-chip ${c.status === 'PUBLISHED' ? 'is-open' : ''}`}>{c.status === 'PUBLISHED' ? 'نشط' : 'مغلق'}</span></td>
+                  <td><a href={`/courses/${c.id}`} className="link-btn">عرض</a></td>
+                </tr>
+              ))}
             </tbody>
           </table>
-        </div>
-      </section>
+        )}
+      </div>
     </AppShell>
   );
 }

@@ -1,97 +1,95 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import AppShell from '@/components/AppShell';
+import { formatDate } from '@/lib/utils';
 
-export default function CourseDetailsPage() {
+type SubmissionFile = { id: string; fileType: string; fileUrl: string; fileName: string };
+type Submission = {
+  id: string; fullNamePassport: string; passportNumber: string;
+  passportExpiry: string; nationalId: string; mobile: string;
+  birthDate: string; iban: string; createdAt: string; files: SubmissionFile[];
+};
+type CourseDetail = {
+  id: string; activityName: string | null; venue: string | null;
+  startDate: string | null; endDate: string | null; participantCount: number | null;
+  publicToken: string; status: string; createdBy: { name: string };
+  submissions: Submission[];
+};
+
+export default function CourseDetailsPage({ params }: { params: { id: string } }) {
+  const [course, setCourse] = useState<CourseDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/courses/${params.id}`).then(r => r.json()).then(d => setCourse(d)).finally(() => setLoading(false));
+  }, [params.id]);
+
+  if (loading) return <AppShell title="تفاصيل الدورة"><p>جاري التحميل...</p></AppShell>;
+  if (!course) return <AppShell title="خطأ"><p>الدورة غير موجودة</p></AppShell>;
+
+  const base = typeof window !== 'undefined' ? window.location.origin : '';
+  const publicUrl = `${base}/public/form/${course.publicToken}`;
+  const completed = course.submissions.length;
+  const total = course.participantCount || completed;
+  const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+
   return (
-    <AppShell title="تفاصيل الدورة" subtitle="مراجعة البيانات، الروابط، والاستجابات، ضمن واجهة أكثر ترتيبًا ودقة." role="MANAGER">
-      <section className="section-card">
+    <AppShell title={course.activityName || 'تفاصيل الدورة'}>
+      <div className="section-card">
         <div className="section-head">
-          <div>
-            <h3>بيانات النشاط</h3>
-            <p>عرض متوازن للبيانات الأساسية مع حضور أوضح للرابط والمخرجات.</p>
-          </div>
-          <span className="status-chip is-open">نشط</span>
+          <div><h3>بيانات الدورة</h3></div>
+          <span className={`status-chip ${course.status === 'PUBLISHED' ? 'is-open' : ''}`}>{course.status === 'PUBLISHED' ? 'نشط' : 'مغلق'}</span>
+        </div>
+        <div className="form-grid">
+          <div className="field"><label>اسم النشاط</label><span>{course.activityName || '—'}</span></div>
+          <div className="field"><label>مقر الانعقاد</label><span>{course.venue || '—'}</span></div>
+          <div className="field"><label>تاريخ البداية</label><span>{formatDate(course.startDate)}</span></div>
+          <div className="field"><label>تاريخ النهاية</label><span>{formatDate(course.endDate)}</span></div>
+          <div className="field"><label>إعداد</label><span>{course.createdBy.name}</span></div>
         </div>
 
-        <div className="section-body">
-          <div className="form-grid">
-            <div className="field">
-              <label>اسم النشاط</label>
-              <input value="برنامج الأمن السيبراني المتقدم" readOnly />
-            </div>
-            <div className="field">
-              <label>مقر انعقاد النشاط</label>
-              <input value="فيينا" readOnly />
-            </div>
-            <div className="field">
-              <label>تاريخ البداية</label>
-              <input value="2026-05-12" readOnly />
-            </div>
-            <div className="field">
-              <label>تاريخ النهاية</label>
-              <input value="2026-05-18" readOnly />
-            </div>
-            <div className="field">
-              <label>عدد المشاركين</label>
-              <input value="18" readOnly />
-            </div>
-            <div className="field">
-              <label>موافقة المعالي</label>
-              <input value="attached-approval.pdf" readOnly />
-            </div>
-          </div>
-
-          <div style={{ marginTop: 18 }}>
-            <label style={{ display: 'block', marginBottom: 8, fontWeight: 800 }}>رابط النموذج</label>
-            <div className="link-preview">https://forms.example.com/public/form/secure-token-12345</div>
-          </div>
-
-          <div className="hero-actions" style={{ marginTop: 18 }}>
-            <button className="secondary-btn">نسخ الرابط</button>
-            <button className="secondary-btn">تصدير Word</button>
-            <button className="secondary-btn">تصدير EML</button>
-          </div>
-        </div>
-      </section>
-
-      <section className="section-card">
-        <div className="section-head">
-          <div>
-            <h3>الاستجابات</h3>
-            <p>مظهر أكثر نظافة لترتيب بيانات المشاركين ومراجعتها.</p>
-          </div>
+        <div className="progress-section">
+          <div className="progress-info"><span>نسبة اكتمال التعبئة</span><strong>{completed} / {total} ({pct}%)</strong></div>
+          <div className="progress-bar"><div className="progress-fill" style={{ width: `${pct}%` }} /></div>
         </div>
 
-        <div className="section-body list-card">
-          <article className="record-card">
-            <div className="record-grid">
-              <div className="record-field">
-                <small>الاسم الكامل</small>
-                <strong>أحمد محمد علي</strong>
-              </div>
-              <div className="record-field">
-                <small>رقم الجواز</small>
-                <strong>P1234567</strong>
-              </div>
-              <div className="record-field">
-                <small>رقم الهوية</small>
-                <strong>1029384756</strong>
-              </div>
-              <div className="record-field">
-                <small>رقم الجوال</small>
-                <strong>0500000000</strong>
-              </div>
-              <div className="record-field">
-                <small>IBAN</small>
-                <strong>SA0380000000608010167519</strong>
-              </div>
-              <div className="record-field">
-                <small>المرفقات</small>
-                <strong>جواز + هوية</strong>
-              </div>
-            </div>
-          </article>
+        <div style={{ marginTop: 18 }}>
+          <label className="label">رابط النموذج العام</label>
+          <div className="link-preview" dir="ltr">{publicUrl}</div>
+          <div className="hero-actions" style={{ marginTop: 8 }}>
+            <button className="secondary-btn" onClick={() => { navigator.clipboard.writeText(publicUrl); alert('تم نسخ الرابط'); }}>نسخ الرابط</button>
+            <a href={`/api/export/${course.id}/word`} className="secondary-btn">تصدير Word</a>
+            <a href={`/api/export/${course.id}/eml`} className="secondary-btn">تصدير EML</a>
+          </div>
         </div>
-      </section>
+      </div>
+
+      <div className="section-card">
+        <div className="section-head"><h3>الاستجابات ({course.submissions.length})</h3></div>
+        {course.submissions.length === 0 ? <p className="p-muted">لا توجد استجابات بعد. أرسل الرابط للمشاركين.</p> : (
+          <table className="data-table">
+            <thead><tr>
+              <th>م</th><th>الاسم</th><th>رقم الجواز</th><th>انتهاء الجواز</th><th>الهوية</th><th>الجوال</th><th>تاريخ الميلاد</th><th>IBAN</th><th>المرفقات</th>
+            </tr></thead>
+            <tbody>
+              {course.submissions.map((s, i) => (
+                <tr key={s.id}>
+                  <td>{i + 1}</td>
+                  <td>{s.fullNamePassport}</td>
+                  <td>{s.passportNumber}</td>
+                  <td>{formatDate(s.passportExpiry)}</td>
+                  <td>{s.nationalId}</td>
+                  <td>{s.mobile}</td>
+                  <td>{formatDate(s.birthDate)}</td>
+                  <td style={{ fontSize: 12 }}>{s.iban}</td>
+                  <td>{s.files.filter(f => f.fileType === 'PASSPORT').length > 0 ? '📷 جواز' : ''} {s.files.filter(f => f.fileType === 'NATIONAL_ID').length > 0 ? '🆔 هوية' : ''}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </AppShell>
   );
 }

@@ -1489,5 +1489,45 @@ select.input:focus {
   }
 }
 
-/* Hide decorative pills for a minimal login */
-.visual-pills { display: none !important; }
+/* Dashboard stats grid */
+.dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.stat-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; text-align: center; }
+.stat-card.accent { border-color: #d0b284; background: #fdf8f0; }
+.stat-value { display: block; font-size: 2rem; font-weight: 700; color: #014f4d; margin-bottom: 4px; }
+.stat-label { font-size: 0.85rem; color: #64748b; }
+
+/* Progress bar */
+.progress-section { margin-top: 20px; }
+.progress-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.progress-bar { height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, #014f4d, #d0b284); border-radius: 4px; transition: width 0.3s; }
+
+/* Form feedback */
+.form-error { color: #dc2626; font-size: 0.875rem; margin-top: 8px; padding: 8px 12px; background: #fef2f2; border-radius: 6px; }
+.success-msg { color: #014f4d; font-size: 0.875rem; margin-top: 8px; padding: 8px 12px; background: #f0fdf4; border-radius: 6px; }
+
+/* Link button */
+.link-btn { color: #014f4d; font-weight: 600; font-size: 0.875rem; text-decoration: underline; }
+
+/* Success card */
+.success-card { text-align: center; padding: 40px 24px; }
+.success-card h3 { font-size: 1.5rem; margin-bottom: 12px; }
+.success-card p { color: #64748b; margin-bottom: 20px; }
+
+/* Public form page */
+.public-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #f8fafc; padding: 20px; }
+.public-card { background: white; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); padding: 32px; max-width: 720px; width: 100%; }
+.public-header { text-align: center; margin-bottom: 28px; }
+.public-header img { height: 48px; margin-bottom: 12px; }
+.public-header h2 { font-size: 1.3rem; color: #014f4d; margin-bottom: 4px; }
+.public-header p { color: #64748b; font-size: 0.9rem; }
+
+/* Grid utility */
+.grid { display: grid; gap: 16px; }
+.grid-2 { grid-template-columns: 1fr 1fr; }
+@media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
+/* Role toggle */
+.role-toggle { display: flex; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
+.role-toggle-btn { padding: 6px 14px; font-size: 0.8rem; border: none; background: white; cursor: pointer; color: #64748b; }
+.role-toggle-btn.active { background: #014f4d; color: white; }

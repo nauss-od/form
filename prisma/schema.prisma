@@ -13,10 +13,8 @@ enum UserRole {
 }
 
 enum CourseStatus {
-  DRAFT
   PUBLISHED
   CLOSED
-  ARCHIVED
 }
 
 enum SubmissionFileType {
@@ -50,7 +48,7 @@ model Course {
   approvalFileUrl  String?
   approvalFileName String?
   publicToken      String       @unique
-  status           CourseStatus @default(DRAFT)
+  status           CourseStatus @default(PUBLISHED)
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
 
@@ -68,7 +66,6 @@ model Submission {
   mobile            String
   birthDate         DateTime
   iban              String
-  editToken         String   @unique
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 

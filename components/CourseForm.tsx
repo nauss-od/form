@@ -4,42 +4,56 @@ import { useState } from 'react';
 
 export default function CourseForm() {
   const [submitting, setSubmitting] = useState(false);
+  const [result, setResult] = useState<{ publicUrl: string; courseId: string } | null>(null);
+  const [error, setError] = useState('');
 
-  async function onSubmit(formData: FormData) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
     setSubmitting(true);
+    setError('');
+    setResult(null);
+
     try {
+      const formData = new FormData(e.currentTarget);
       const response = await fetch('/api/courses', { method: 'POST', body: formData });
-      if (!response.ok) throw new Error('فشل حفظ الدورة');
       const data = await response.json();
-      window.location.href = `/courses/${data.course.id}`;
-    } catch (error) {
-      alert(error instanceof Error ? error.message : 'حدث خطأ غير متوقع');
+      if (!response.ok) throw new Error(data.message || 'فشل الحفظ');
+      const base = window.location.origin;
+      setResult({ publicUrl: `${base}/public/form/${data.course.publicToken}`, courseId: data.course.id });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'حدث خطأ');
     } finally {
       setSubmitting(false);
     }
   }
 
-  return (
-    <form action={onSubmit} className="form-panel">
-      <div className="form-panel-head">
-        <div>
-          <h2>بيانات النشاط</h2>
-          <p>جميع الحقول أدناه اختيارية. يكتفي الموظف بتعبئتها ثم يصدر الرابط المخصص للمتدربين.</p>
+  if (result) {
+    return (
+      <div className="section-card success-card">
+        <h3>تم إنشاء الدورة ✅</h3>
+        <p>انسخ الرابط أدناه وأرسله للمشاركين:</p>
+        <div className="link-preview" dir="ltr">{result.publicUrl}</div>
+        <div className="hero-actions">
+          <button className="secondary-btn" onClick={() => { navigator.clipboard.writeText(result.publicUrl); alert('تم النسخ'); }}>نسخ الرابط</button>
+          <a href={`/courses/${result.courseId}`} className="btn btn-primary">متابعة الدورة</a>
         </div>
-        <span className="badge badge-gold">إصدار رابط مستقل</span>
       </div>
+    );
+  }
 
+  return (
+    <form className="form-panel" onSubmit={onSubmit}>
+      <h2>بيانات الدورة</h2>
       <div className="grid grid-2">
         <div>
-          <label className="label">اسم النشاط</label>
-          <input className="input" name="activityName" placeholder="مثل: دورة خارجية في رومانيا" />
+          <label className="label">اسم النشاط *</label>
+          <input className="input" name="activityName" required placeholder="مثال: دورة الأمن السيبراني" />
         </div>
         <div>
-          <label className="label">مقر انعقاد النشاط</label>
-          <input className="input" name="venue" placeholder="المدينة أو الجهة المستضيفة" />
+          <label className="label">مقر الانعقاد</label>
+          <input className="input" name="venue" placeholder="المدينة أو الدولة" />
         </div>
       </div>
-
       <div className="grid grid-2" style={{ marginTop: 18 }}>
         <div>
           <label className="label">تاريخ البداية</label>
@@ -50,21 +64,17 @@ export default function CourseForm() {
           <input className="input" type="date" name="endDate" />
         </div>
       </div>
-
       <div className="grid grid-2" style={{ marginTop: 18 }}>
         <div>
           <label className="label">عدد المشاركين</label>
-          <input className="input" type="number" name="participantCount" min="0" placeholder="العدد المتوقع" />
-        </div>
-        <div>
-          <label className="label">مرفق موافقة المعالي</label>
-          <input className="input" type="file" name="approvalFile" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" />
-          <div className="helper">ملف واحد فقط</div>
+          <input className="input" type="number" name="participantCount" min="0" />
         </div>
       </div>
-
-      <div style={{ marginTop: 22, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-        <button className="btn btn-primary" disabled={submitting}>{submitting ? 'جاري إصدار النموذج...' : 'إصدار النموذج والرابط'}</button>
+      {error ? <p className="form-error">{error}</p> : null}
+      <div style={{ marginTop: 22 }}>
+        <button className="btn btn-primary" disabled={submitting}>
+          {submitting ? 'جاري الإنشاء...' : 'إنشاء الدورة والحصول على الرابط'}
+        </button>
       </div>
     </form>
   );

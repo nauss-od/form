@@ -9,7 +9,4 @@ export function coursePublicUrl(token: string): string {
   return `${base}/public/form/${token}`;
 }
 
-export function courseEditUrl(token: string): string {
-  const base = process.env.APP_URL || 'http://localhost:3000';
-  return `${base}/public/edit/${token}`;
-}
+
