@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       where,
       include: { _count: { select: { submissions: true } }, createdBy: { select: { name: true } } },
       orderBy: { createdAt: 'desc' },
-      take: 10
+      take: 50
     });
 
     let employees = null;
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
 
   const courses = await prisma.course.findMany({
     where,
-    include: { _count: { select: { submissions: true } } },
+    include: { _count: { select: { submissions: true } }, createdBy: { select: { name: true } } },
     orderBy: { createdAt: 'desc' }
   });
   return NextResponse.json({ courses });
