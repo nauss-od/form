@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-function validateField(field: string, value: string, pattern: RegExp, message: string): string | null {
-  if (!pattern.test(value)) return message;
-  return null;
-}
-
 export async function POST(request: NextRequest, { params }: { params: { token: string } }) {
   const course = await prisma.course.findUnique({ where: { publicToken: params.token } });
   if (!course) return NextResponse.json({ message: 'الرابط غير صالح أو منتهي' }, { status: 404 });
@@ -22,20 +17,43 @@ export async function POST(request: NextRequest, { params }: { params: { token: 
 
   const errors: string[] = [];
 
+  // Name: English only
   if (!/^[A-Za-z\s.\-']+$/.test(fullNamePassport))
     errors.push('الاسم يجب أن يكون باللغة الإنجليزية فقط');
-  if (passportNumber.length < 4 || passportNumber.length > 30)
-    errors.push('رقم الجواز غير صحيح');
+
+  // Passport: 1-3 letters followed by digits, max 7
+  if (!/^[A-Za-z]{1,3}\d{1,6}$/.test(passportNumber))
+    errors.push('رقم الجواز: حروف إنجليزية ثم أرقام (حد أقصى 7 خانات)');
+  else if (passportNumber.length > 7)
+    errors.push('رقم الجواز لا يتجاوز 7 خانات');
+
+  // National ID: exactly 10 digits
   if (!/^\d{10}$/.test(nationalId))
     errors.push('رقم الهوية يجب أن يكون 10 أرقام');
+
+  // Mobile: +966 + 9 digits
   if (!/^\+966\d{9}$/.test(mobile))
     errors.push('رقم الجوال يجب أن يبدأ بـ +966 متبوعاً بـ 9 أرقام');
+
+  // IBAN: SA + 22 digits
   if (!/^SA\d{22}$/.test(iban))
     errors.push('رقم الآيبان يجب أن يبدأ بـ SA متبوعاً بـ 22 رقماً');
-  if (isNaN(Date.parse(passportExpiry)))
+
+  // Passport expiry: must be valid date, not in past
+  const expiryDate = new Date(passportExpiry);
+  if (isNaN(expiryDate.getTime()))
     errors.push('تاريخ انتهاء الجواز غير صحيح');
-  if (isNaN(Date.parse(birthDate)))
+  else if (expiryDate < new Date(new Date().toDateString()))
+    errors.push('تاريخ انتهاء الجواز لا يمكن أن يكون في الماضي');
+
+  // Birth date: must be valid date, at least 15 years ago
+  const birth = new Date(birthDate);
+  const minBirth = new Date();
+  minBirth.setFullYear(minBirth.getFullYear() - 15);
+  if (isNaN(birth.getTime()))
     errors.push('تاريخ الميلاد غير صحيح');
+  else if (birth > minBirth)
+    errors.push('يجب أن لا يقل العمر عن 15 سنة');
 
   if (errors.length > 0) {
     return NextResponse.json({ message: errors.join(' | ') }, { status: 400 });
@@ -46,10 +64,10 @@ export async function POST(request: NextRequest, { params }: { params: { token: 
       courseId: course.id,
       fullNamePassport,
       passportNumber,
-      passportExpiry: new Date(passportExpiry),
+      passportExpiry: expiryDate,
       nationalId,
       mobile,
-      birthDate: new Date(birthDate),
+      birthDate: birth,
       iban
     }
   });
@@ -58,12 +76,11 @@ export async function POST(request: NextRequest, { params }: { params: { token: 
   const nationalIdFile = formData.get('nationalIdFile') as File | null;
 
   if (passportFile && passportFile.size > 0) {
-    const filename = `${crypto.randomUUID()}-${passportFile.name}`;
     await prisma.submissionFile.create({
       data: {
         submissionId: submission.id,
         fileType: 'PASSPORT',
-        fileUrl: `/uploads/${filename}`,
+        fileUrl: `/uploads/${crypto.randomUUID()}-${passportFile.name}`,
         fileName: passportFile.name,
         fileSize: passportFile.size
       }
@@ -71,12 +88,11 @@ export async function POST(request: NextRequest, { params }: { params: { token: 
   }
 
   if (nationalIdFile && nationalIdFile.size > 0) {
-    const filename = `${crypto.randomUUID()}-${nationalIdFile.name}`;
     await prisma.submissionFile.create({
       data: {
         submissionId: submission.id,
         fileType: 'NATIONAL_ID',
-        fileUrl: `/uploads/${filename}`,
+        fileUrl: `/uploads/${crypto.randomUUID()}-${nationalIdFile.name}`,
         fileName: nationalIdFile.name,
         fileSize: nationalIdFile.size
       }
