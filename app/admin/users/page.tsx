@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import AppShell from '@/components/AppShell';
+import Link from 'next/link';
 
 type AdminUser = {
   id: string; name: string; email: string; mobile: string | null;
@@ -24,9 +25,9 @@ export default function AdminUsersPage() {
     setLoading(true);
     setMsg('');
     fetch('/api/admin/users')
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error('401'); return r.json(); })
       .then(d => { if (d.users) setUsers(d.users); else setError(d.message || 'خطأ'); })
-      .catch(() => setError('تعذر التحميل'))
+      .catch(e => { if (e.message === '401') { window.location.href = '/login'; } else setError('تعذر التحميل'); })
       .finally(() => setLoading(false));
   }
 
@@ -41,18 +42,18 @@ export default function AdminUsersPage() {
     if (!editId) return;
     setMsg('');
     fetch(`/api/admin/users/${editId}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(editForm) })
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error('401'); return r.json(); })
       .then(d => {
         if (d.user) { setMsg('تم التحديث ✓'); setEditId(null); load(); }
         else setMsg(d.message || 'خطأ');
       })
-      .catch(() => setMsg('فشل التحديث'));
+      .catch(e => { if (e.message === '401') window.location.href = '/login'; else setMsg('فشل التحديث'); });
   }
 
   function toggleStatus(u: AdminUser) {
     setMsg('');
     fetch(`/api/admin/users/${u.id}/status`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ isActive: !u.isActive }) })
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error(); return r.json(); })
       .then(d => { if (d.user) load(); else setMsg(d.message || 'خطأ'); })
       .catch(() => setMsg('فشل تغيير الحالة'));
   }
@@ -61,7 +62,7 @@ export default function AdminUsersPage() {
     if (!pwdValue || pwdValue.length < 6) { setMsg('كلمة المرور 6 أحرف على الأقل'); return; }
     setMsg('');
     fetch(`/api/admin/users/${id}/password`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ password: pwdValue }) })
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error(); return r.json(); })
       .then(d => {
         if (d.success) { setMsg('تم تغيير كلمة المرور ✓'); setPwdId(null); setPwdValue(''); }
         else setMsg(d.message || 'خطأ');
@@ -70,22 +71,22 @@ export default function AdminUsersPage() {
   }
 
   function deleteUser(id: string, name: string) {
-    if (!confirm(`هل أنت متأكد من حذف المستخدم "${name}"؟ سيتم حذف جميع بياناته.`)) return;
+    if (!confirm(`حذف "${name}"؟ سيتم حذف جميع بياناته.`)) return;
     setMsg('');
     fetch(`/api/admin/users/${id}`, { method: 'DELETE' })
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error(); return r.json(); })
       .then(d => { if (d.success) { setMsg('تم الحذف ✓'); load(); } else setMsg(d.message || 'خطأ'); })
       .catch(() => setMsg('فشل الحذف'));
   }
 
   return (
-    <AppShell title="إدارة المستخدمين" role="MANAGER">
-      {msg && <div style={{ padding: '12px 16px', borderRadius: 12, background: msg.includes('✓') ? '#f0fdf4' : '#fef2f2', color: msg.includes('✓') ? '#014f4d' : '#dc2626', marginBottom: 12 }}>{msg}</div>}
+    <AppShell title="إدارة المستخدمين" role="MANAGER" forceManager>
+      {msg && <div style={{ padding: '12px 16px', borderRadius: 12, background: msg.includes('✓') ? '#f0fdf4' : '#fef2f2', color: msg.includes('✓') ? '#014f4d' : '#dc2626', marginBottom: 12, fontWeight:700 }}>{msg}</div>}
       {loading ? <p>جاري التحميل...</p> : error ? <p style={{color:'var(--danger)'}}>{error}</p> : (
         <div className="section-card">
           <div className="section-head"><h3>جميع المستخدمين ({users.length})</h3></div>
           <table className="data-table">
-            <thead><tr><th>الاسم</th><th>البريد</th><th>الجوال</th><th>الدور</th><th>الحالة</th><th>الدورات</th><th>المسجلون</th><th>الإجراءات</th></tr></thead>
+            <thead><tr><th>الاسم</th><th>البريد</th><th>الجوال</th><th>الدور</th><th>الحالة</th><th>دورات</th><th>مسجلون</th><th>الإجراءات</th></tr></thead>
             <tbody>
               {users.map(u => (
                 <tr key={u.id}>
@@ -99,7 +100,7 @@ export default function AdminUsersPage() {
                           <option value="EMPLOYEE">موظف</option><option value="MANAGER">مدير</option>
                         </select>
                       </td>
-                      <td><span className={`metric-chip ${u.isActive ? 'badge-primary' : ''}`} style={!u.isActive ? {background:'#f1f5f9',color:'#94a3b8'} : undefined}>{u.isActive ? 'نشط' : 'موقوف'}</span></td>
+                      <td><span className={`metric-chip`} style={{background: u.isActive ? 'rgba(1,101,100,0.1)' : '#f1f5f9', color: u.isActive ? '#016564' : '#94a3b8'}}>{u.isActive ? 'نشط' : 'موقوف'}</span></td>
                       <td>{u._count.courses}</td>
                       <td>{u.submissionCount}</td>
                       <td className="data-actions">
@@ -112,7 +113,7 @@ export default function AdminUsersPage() {
                       <td><strong>{u.name}</strong></td>
                       <td style={{ direction: 'ltr', textAlign: 'right' }}>{u.email}</td>
                       <td dir="ltr">{u.mobile || '—'}</td>
-                      <td><span className="metric-chip" style={{background:'rgba(208,178,132,0.2)',color:'#8a6a39'}}>{u.role === 'MANAGER' ? 'مدير' : 'موظف'}</span></td>
+                      <td><span className="metric-chip" style={{background: u.role === 'MANAGER' ? 'rgba(208,178,132,0.2)' : 'rgba(1,101,100,0.08)', color: u.role === 'MANAGER' ? '#8a6a39' : '#016564'}}>{u.role === 'MANAGER' ? 'مدير' : 'موظف'}</span></td>
                       <td>
                         <button className="secondary-btn" style={{minHeight:34,fontSize:'0.82rem',background: u.isActive ? 'rgba(1,101,100,0.08)' : 'rgba(191,61,48,0.08)', color: u.isActive ? '#016564' : '#bf3d30'}} onClick={() => toggleStatus(u)}>
                           {u.isActive ? 'نشط' : 'موقوف'}
@@ -122,10 +123,8 @@ export default function AdminUsersPage() {
                       <td>{u.submissionCount}</td>
                       <td className="data-actions">
                         <button className="link-btn" onClick={() => startEdit(u)}>تعديل</button>
-                        <button className="link-btn" style={{color:'#016564'}} onClick={() => { setPwdId(u.id); setPwdValue(''); }}>تغيير كلمة المرور</button>
-                        {u.role !== 'MANAGER' && (
-                          <button className="link-btn" style={{color:'#bf3d30'}} onClick={() => deleteUser(u.id, u.name)}>حذف</button>
-                        )}
+                        <button className="link-btn" style={{color:'#016564'}} onClick={() => { setPwdId(u.id); setPwdValue(''); }}>كلمة المرور</button>
+                        <button className="link-btn" style={{color:'#bf3d30'}} onClick={() => deleteUser(u.id, u.name)}>حذف</button>
                       </td>
                     </>
                   )}

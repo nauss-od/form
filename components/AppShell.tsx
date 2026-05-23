@@ -10,6 +10,7 @@ type AppShellProps = {
   title: string;
   children: ReactNode;
   role?: Role;
+  forceManager?: boolean;
 };
 
 interface NavItem {
@@ -35,10 +36,10 @@ const employeeNav: NavItem[] = [
   { href: '/account', label: 'الحساب', icon: '👤' },
 ];
 
-export default function AppShell({ title, role = 'EMPLOYEE', children }: AppShellProps) {
+export default function AppShell({ title, role = 'EMPLOYEE', forceManager = false, children }: AppShellProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const isManagerAccount = useMemo(() => String(role).toUpperCase() === 'MANAGER', [role]);
+  const isManagerAccount = useMemo(() => forceManager || String(role).toUpperCase() === 'MANAGER', [forceManager, role]);
   const [activeRole, setActiveRole] = useState<'MANAGER' | 'EMPLOYEE'>(isManagerAccount ? 'MANAGER' : 'EMPLOYEE');
 
   useEffect(() => {
@@ -46,14 +47,18 @@ export default function AppShell({ title, role = 'EMPLOYEE', children }: AppShel
       setActiveRole('EMPLOYEE');
       return;
     }
+    if (forceManager) {
+      setActiveRole('MANAGER');
+      return;
+    }
     const saved = typeof window !== 'undefined' ? window.localStorage.getItem('nauss-active-role') : null;
     if (saved === 'EMPLOYEE' || saved === 'MANAGER') setActiveRole(saved);
-  }, [isManagerAccount]);
+  }, [isManagerAccount, forceManager]);
 
   function handleRoleSwitch(nextRole: 'MANAGER' | 'EMPLOYEE') {
     setActiveRole(nextRole);
     if (typeof window !== 'undefined') window.localStorage.setItem('nauss-active-role', nextRole);
-    window.dispatchEvent(new Event('storage'));
+    window.dispatchEvent(new Event('nauss-role-change'));
   }
 
   async function logout() {
@@ -110,7 +115,7 @@ export default function AppShell({ title, role = 'EMPLOYEE', children }: AppShel
           </div>
 
           <div className="topbar-side">
-            {isManagerAccount ? (
+            {!forceManager && isManagerAccount ? (
               <div className="role-toggle">
                 <button type="button" className={`role-toggle-btn ${activeRole === 'MANAGER' ? 'active' : ''}`} onClick={() => handleRoleSwitch('MANAGER')}>مدير</button>
                 <button type="button" className={`role-toggle-btn ${activeRole === 'EMPLOYEE' ? 'active' : ''}`} onClick={() => handleRoleSwitch('EMPLOYEE')}>موظف</button>

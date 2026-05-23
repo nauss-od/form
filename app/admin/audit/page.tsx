@@ -29,16 +29,16 @@ export default function AuditPage() {
     const params = new URLSearchParams({ page: String(p), limit: '50' });
     if (actionFilter) params.set('action', actionFilter);
     fetch(`/api/admin/audit?${params}`)
-      .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+      .then(r => { if (!r.ok) throw new Error('401'); return r.json(); })
       .then(d => { setLogs(d.logs); setTotal(d.total); setPage(d.page); setPages(d.pages); })
-      .catch(() => {})
+      .catch(e => { if (e.message === '401') window.location.href = '/login'; })
       .finally(() => setLoading(false));
   }
 
   useEffect(() => { load(1); }, [actionFilter]);
 
   return (
-    <AppShell title="سجل التدقيق" role="MANAGER">
+    <AppShell title="سجل التدقيق" role="MANAGER" forceManager>
       <div className="section-card">
         <div className="section-head">
           <h3>السجل ({total})</h3>
@@ -49,16 +49,15 @@ export default function AuditPage() {
         </div>
         {loading ? <p style={{padding:24}}>جاري التحميل...</p> : logs.length === 0 ? <p style={{padding:24}} className="muted">لا توجد سجلات</p> : (
           <table className="data-table">
-            <thead><tr><th>التاريخ</th><th>المستخدم</th><th>العملية</th><th>الكيان</th><th>معرف الكيان</th><th>تفاصيل</th></tr></thead>
+            <thead><tr><th>التاريخ</th><th>المستخدم</th><th>العملية</th><th>الكيان</th><th>التفاصيل</th></tr></thead>
             <tbody>
               {logs.map(l => (
                 <tr key={l.id}>
                   <td style={{fontSize:'0.82rem',whiteSpace:'nowrap'}}>{new Date(l.createdAt).toLocaleString('ar-SA')}</td>
                   <td>{l.user ? `${l.user.name}` : '—'}</td>
                   <td><span className="metric-chip" style={{fontSize:'0.78rem'}}>{actionLabels[l.action] || l.action}</span></td>
-                  <td style={{fontSize:'0.85rem'}}>{l.entityType}</td>
-                  <td style={{fontSize:'0.78rem',direction:'ltr',maxWidth:120,overflow:'hidden',textOverflow:'ellipsis'}}>{l.entityId}</td>
-                  <td style={{fontSize:'0.82rem',color:'#64748b'}}>{l.metaJson ? JSON.stringify(l.metaJson).slice(0,60) : '—'}</td>
+                  <td style={{fontSize:'0.85rem'}}>{l.entityType} <span style={{fontSize:'0.72rem',color:'#94a3b8',fontFamily:'monospace'}}>{l.entityId.slice(0,12)}</span></td>
+                  <td style={{fontSize:'0.82rem',color:'#64748b',maxWidth:200,overflow:'hidden',textOverflow:'ellipsis'}}>{l.metaJson ? JSON.stringify(l.metaJson) : '—'}</td>
                 </tr>
               ))}
             </tbody>

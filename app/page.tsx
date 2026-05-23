@@ -4,15 +4,14 @@ import { useEffect, useState } from 'react';
 import AppShell from '@/components/AppShell';
 import { formatDate } from '@/lib/utils';
 
-type EmployeeStat = {
-  id: string; name: string; email: string; mobile: string | null;
-  createdAt: string; lastLoginAt: string | null;
-  _count: { courses: number }; submissionCount: number;
-};
-
 type DashboardData = {
-  totalCourses: number; totalSubmissions: number; completedSubmissions: number;
-  userRole: string; employees: EmployeeStat[] | null;
+  totalCourses: number; totalSubmissions: number;
+  userRole: string;
+  employees: Array<{
+    id: string; name: string; email: string; mobile: string | null;
+    createdAt: string; lastLoginAt: string | null;
+    _count: { courses: number }; submissionCount: number;
+  }> | null;
   recentCourses: Array<{
     id: string; activityName: string | null; venue: string | null;
     startDate: string | null; endDate: string | null;
@@ -24,19 +23,23 @@ type DashboardData = {
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [displayRole, setDisplayRole] = useState<string | null>(null);
+  const [managerMode, setManagerMode] = useState<boolean | null>(null);
+
+  function syncRole(apiRole: string) {
+    const saved = localStorage.getItem('nauss-active-role');
+    if (apiRole === 'MANAGER') {
+      setManagerMode(saved !== 'EMPLOYEE');
+    } else {
+      setManagerMode(false);
+    }
+  }
 
   useEffect(() => {
     fetch('/api/courses?stats=true')
       .then(r => { if (!r.ok) throw new Error(); return r.json(); })
       .then(d => {
         setData(d);
-        const saved = localStorage.getItem('nauss-active-role');
-        if (d.userRole === 'MANAGER') {
-          setDisplayRole(saved === 'EMPLOYEE' ? 'EMPLOYEE' : 'MANAGER');
-        } else {
-          setDisplayRole('EMPLOYEE');
-        }
+        syncRole(d.userRole);
       })
       .catch(() => { window.location.href = '/login'; })
       .finally(() => setLoading(false));
@@ -44,24 +47,23 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const handler = () => {
-      const saved = localStorage.getItem('nauss-active-role');
-      if (data?.userRole === 'MANAGER') {
-        setDisplayRole(saved === 'EMPLOYEE' ? 'EMPLOYEE' : 'MANAGER');
-      }
+      if (data) syncRole(data.userRole);
     };
-    window.addEventListener('storage', handler);
-    return () => window.removeEventListener('storage', handler);
+    window.addEventListener('nauss-role-change', handler);
+    return () => window.removeEventListener('nauss-role-change', handler);
   }, [data]);
 
   if (loading) return <AppShell title="لوحة المستخدم"><p>جاري التحميل...</p></AppShell>;
   if (!data) return null;
 
-  const isManagerView = data.userRole === 'MANAGER' && displayRole === 'MANAGER';
-  const appRole = data.userRole === 'MANAGER' ? 'MANAGER' : 'EMPLOYEE';
+  const isManager = data.userRole === 'MANAGER';
+  const showManagerView = isManager && managerMode === true;
+  const appRole = isManager ? 'MANAGER' : 'EMPLOYEE';
+  const emp = data.employees || [];
+  const showRoleToggle = !showManagerView;
 
-  if (isManagerView) {
-    const emp = data.employees || [];
-    const activeEmps = emp.filter(e => e._count.courses > 0);
+  if (showManagerView) {
+    const activeEmps = emp.filter(e => e._count.courses > 0 || e.submissionCount > 0);
     return (
       <AppShell title="لوحة المدير" role={appRole}>
         <div className="dashboard-grid">
@@ -73,7 +75,7 @@ export default function DashboardPage() {
 
         <div className="section-card">
           <div className="section-head"><h3>الموظفون ونشاطهم</h3></div>
-          {emp.length === 0 ? <p className="p-muted">لا يوجد موظفون بعد</p> : (
+          {emp.length === 0 ? <p className="muted" style={{padding:24}}>لا يوجد موظفون بعد</p> : (
             <table className="data-table">
               <thead><tr><th>الموظف</th><th>البريد</th><th>الجوال</th><th>الدورات</th><th>المسجلون</th><th>آخر نشاط</th></tr></thead>
               <tbody>
@@ -94,7 +96,7 @@ export default function DashboardPage() {
 
         <div className="section-card">
           <div className="section-head"><h3>جميع الدورات</h3></div>
-          {!data.recentCourses?.length ? <p className="p-muted">لا توجد دورات</p> : (
+          {!data.recentCourses?.length ? <p className="muted" style={{padding:24}}>لا توجد دورات</p> : (
             <table className="data-table">
               <thead><tr><th>النشاط</th><th>المشرف</th><th>المسجلون</th><th>التاريخ</th><th>الحالة</th><th></th></tr></thead>
               <tbody>
@@ -123,8 +125,9 @@ export default function DashboardPage() {
   }
 
   const avgPerCourse = data.totalCourses > 0 ? Math.round(data.totalSubmissions / data.totalCourses) : 0;
+  const employeeTitle = isManager ? 'لوحة الموظف' : 'لوحة المستخدم';
   return (
-    <AppShell title={data.userRole === 'MANAGER' ? 'لوحة الموظف' : 'لوحة المستخدم'} role={appRole}>
+    <AppShell title={employeeTitle} role={appRole}>
       <div className="dashboard-grid">
         <div className="stat-card"><span className="stat-value">{data.totalCourses}</span><span className="stat-label">دوراتي</span></div>
         <div className="stat-card"><span className="stat-value">{data.totalSubmissions}</span><span className="stat-label">إجمالي المسجلين</span></div>
@@ -133,7 +136,7 @@ export default function DashboardPage() {
 
       <div className="section-card">
         <div className="section-head"><h3>دوراتي</h3></div>
-        {!data.recentCourses?.length ? <p className="p-muted">لا توجد دورات بعد</p> : (
+        {!data.recentCourses?.length ? <p className="muted" style={{padding:24}}>لا توجد دورات بعد</p> : (
           <table className="data-table">
             <thead><tr><th>النشاط</th><th>المكان</th><th>التاريخ</th><th>المسجلون</th><th>الحالة</th><th></th></tr></thead>
             <tbody>

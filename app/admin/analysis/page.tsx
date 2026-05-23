@@ -11,37 +11,44 @@ export default function AnalysisPage() {
   useEffect(() => {
     setLoading(true);
     fetch('/api/admin/analysis')
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error('401'); return r.json(); })
       .then(d => {
         if (d.analysis) setData(d);
-        else setError(d.message || 'خطأ');
+        else setError(d.message || d.error || 'خطأ');
       })
-      .catch(() => setError('تعذر الاتصال'))
+      .catch(e => { if (e.message === '401') window.location.href = '/login'; else setError('تعذر الاتصال'); })
       .finally(() => setLoading(false));
   }, []);
 
   return (
-    <AppShell title="تحليل أداء الموظفين" role="MANAGER">
+    <AppShell title="تحليل أداء الموظفين" role="MANAGER" forceManager>
       {loading ? <p>جاري التحليل...</p> : error ? <p style={{color:'var(--danger)'}}>{error}</p> : data ? (
-        <div className="section-card">
-          <div className="section-head"><h3>تحليل مدعوم بالذكاء الاصطناعي</h3></div>
-          <div className="section-body">
-            <div style={{whiteSpace:'pre-wrap',lineHeight:2,fontSize:'0.95rem',background:'#f8fafc',borderRadius:16,padding:20,border:'1px solid #e2e8f0'}}>
-              {data.analysis}
+        <>
+          <div className="section-card">
+            <div className="section-head"><h3>تحليل مدعوم بالذكاء الاصطناعي</h3></div>
+            <div className="section-body">
+              {data.analysis.startsWith('مفتاح API') ? (
+                <p>تفعيل التحليل: أضف <code style={{background:'#f1f5f9',padding:'2px 8px',borderRadius:6}}>OPENAI_API_KEY</code> إلى إعدادات Vercel Environment Variables.</p>
+              ) : (
+                <div style={{whiteSpace:'pre-wrap',lineHeight:2,fontSize:'0.95rem',background:'#f8fafc',borderRadius:16,padding:20,border:'1px solid #e2e8f0'}}>
+                  {data.analysis}
+                </div>
+              )}
             </div>
           </div>
-        </div>
-      ) : null}
-
-      {data?.rawData && (
-        <div className="section-card" style={{marginTop:16}}>
-          <div className="section-head"><h3>البيانات الأولية</h3></div>
-          <div className="section-body">
-            <pre style={{fontSize:'0.78rem',maxHeight:400,overflow:'auto',background:'#f8fafc',borderRadius:12,padding:16}}>
-              {JSON.stringify(data.rawData, null, 2)}
-            </pre>
-          </div>
-        </div>
+          {data.rawData?.length ? (
+            <div className="section-card" style={{marginTop:16}}>
+              <div className="section-head"><h3>البيانات الأولية</h3></div>
+              <div className="section-body">
+                <pre style={{fontSize:'0.78rem',maxHeight:400,overflow:'auto',background:'#f8fafc',borderRadius:12,padding:16}}>
+                  {JSON.stringify(data.rawData, null, 2)}
+                </pre>
+              </div>
+            </div>
+          ) : null}
+        </>
+      ) : (
+        <p className="muted">لا توجد بيانات</p>
       )}
     </AppShell>
   );
