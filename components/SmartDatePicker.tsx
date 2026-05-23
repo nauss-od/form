@@ -9,21 +9,29 @@ const MONTHS = [
 
 const DAYS = ['ح', 'ن', 'ث', 'ر', 'خ', 'ج', 'س'];
 
+interface QuickBtn {
+  label: string;
+  offsetYears: number;
+  offsetMonths?: number;
+}
+
 interface SmartDatePickerProps {
   value: string;
   onChange: (val: string) => void;
   min?: string;
   max?: string;
   placeholder?: string;
-  quickButtons?: { label: string; offsetYears: number; offsetMonths?: number }[];
+  quickButtons?: QuickBtn[];
+  label?: string;
 }
 
-export default function SmartDatePicker({ value, onChange, min, max, placeholder, quickButtons }: SmartDatePickerProps) {
+export default function SmartDatePicker({ value, onChange, min, max, placeholder, quickButtons, label }: SmartDatePickerProps) {
   const [open, setOpen] = useState(false);
+  const [animIn, setAnimIn] = useState(false);
   const [viewYear, setViewYear] = useState(0);
   const [viewMonth, setViewMonth] = useState(0);
   const panelRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
 
   const today = new Date();
   if (viewYear === 0) {
@@ -33,10 +41,13 @@ export default function SmartDatePicker({ value, onChange, min, max, placeholder
   }
 
   useEffect(() => {
+    if (open) requestAnimationFrame(() => setAnimIn(true));
+    else setAnimIn(false);
+  }, [open]);
+
+  useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node) && inputRef.current && !inputRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
     }
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
@@ -45,12 +56,8 @@ export default function SmartDatePicker({ value, onChange, min, max, placeholder
   function daysInMonth(y: number, m: number) { return new Date(y, m + 1, 0).getDate(); }
   function firstDay(y: number, m: number) { return new Date(y, m, 1).getDay(); }
 
-  function formatDate(d: Date): string {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
-  }
+  function pad(n: number) { return String(n).padStart(2, '0'); }
+  function formatDate(d: Date) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
 
   function displayDate(d: string): string {
     if (!d) return '';
@@ -59,12 +66,23 @@ export default function SmartDatePicker({ value, onChange, min, max, placeholder
     return `${p[2]}/${p[1]}/${p[0]}`;
   }
 
+  function parseDate(s: string): Date | null {
+    const p = s.split('-');
+    if (p.length !== 3) return null;
+    const d = new Date(+p[0], +p[1] - 1, +p[2]);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
   function isDisabled(y: number, m: number, d: number): boolean {
     const date = new Date(y, m, d);
     const ts = date.getTime();
     if (min && ts < new Date(min).getTime()) return true;
     if (max && ts > new Date(max).getTime()) return true;
     return false;
+  }
+
+  function isToday(y: number, m: number, d: number): boolean {
+    return y === today.getFullYear() && m === today.getMonth() && d === today.getDate();
   }
 
   function selectDate(y: number, m: number, d: number) {
@@ -94,6 +112,11 @@ export default function SmartDatePicker({ value, onChange, min, max, placeholder
     setOpen(false);
   }
 
+  function jumpToYear() {
+    const y = prompt('أدخل السنة:', String(viewYear));
+    if (y && /^\d{4}$/.test(y)) setViewYear(+y);
+  }
+
   const dim = daysInMonth(viewYear, viewMonth);
   const start = firstDay(viewYear, viewMonth);
   const days: (number | null)[] = [];
@@ -101,45 +124,65 @@ export default function SmartDatePicker({ value, onChange, min, max, placeholder
   for (let i = 1; i <= dim; i++) days.push(i);
 
   const selectedValue = displayDate(value);
+  const selDate = parseDate(value);
+  const displayLabel = label || '';
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div ref={wrapRef} className="dp-wrap">
       <input
-        ref={inputRef}
-        className="input"
-        style={{ cursor: 'pointer', direction: 'ltr', textAlign: 'center', fontFamily: 'monospace' }}
+        className={`dp-input ${value ? 'dp-input-filled' : ''}`}
         value={selectedValue}
-        placeholder={placeholder || 'YYYY-MM-DD'}
-        onFocus={() => { setOpen(true); }}
+        placeholder={placeholder || 'اختر تاريخ'}
+        onFocus={() => setOpen(true)}
         readOnly
       />
+      <svg className="dp-cal-icon" viewBox="0 0 20 20" fill="none" width="18" height="18">
+        <rect x="2" y="4" width="16" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+        <path d="M2 8h16" stroke="currentColor" strokeWidth="1.5"/>
+        <rect x="6" y="1" width="2" height="4" rx="1" fill="currentColor"/>
+        <rect x="12" y="1" width="2" height="4" rx="1" fill="currentColor"/>
+      </svg>
+
       {open && (
-        <div ref={panelRef} className="datepicker-panel">
-          {/* Header */}
-          <div className="datepicker-header">
-            <div className="datepicker-nav">
-              <button className="datepicker-nav-btn" onClick={prevYear} title="السنة السابقة">«</button>
-              <button className="datepicker-nav-btn" onClick={prevMonth} title="الشهر السابق">‹</button>
+        <div ref={panelRef} className={`dp-panel ${animIn ? 'dp-panel-open' : ''}`}>
+          <div className="dp-header">
+            <div className="dp-nav">
+              <button className="dp-nav-btn" onClick={prevYear} title="السنة السابقة">
+                <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M12 5l-5 5 5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+              <button className="dp-nav-btn" onClick={prevMonth} title="الشهر السابق">
+                <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M12 5l-5 5 5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
             </div>
-            <div className="datepicker-title">{MONTHS[viewMonth]} {viewYear}</div>
-            <div className="datepicker-nav">
-              <button className="datepicker-nav-btn" onClick={nextMonth} title="الشهر التالي">›</button>
-              <button className="datepicker-nav-btn" onClick={nextYear} title="السنة التالية">»</button>
+            <div className="dp-title" onClick={jumpToYear} title="انقر لتغيير السنة">
+              <span className="dp-month-name">{MONTHS[viewMonth]}</span>
+              <span className="dp-year-name">{viewYear}</span>
+            </div>
+            <div className="dp-nav">
+              <button className="dp-nav-btn" onClick={nextMonth} title="الشهر التالي">
+                <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M8 5l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+              <button className="dp-nav-btn" onClick={nextYear} title="السنة التالية">
+                <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M8 5l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
             </div>
           </div>
 
-          {/* Day names */}
-          <div className="datepicker-weekdays">
+          <div className="dp-weekdays">
             {DAYS.map(d => <span key={d}>{d}</span>)}
           </div>
 
-          {/* Calendar grid */}
-          <div className="datepicker-grid">
+          <div className="dp-grid">
             {days.map((d, i) =>
               d === null ? <span key={i} /> : (
                 <button
                   key={i}
-                  className={`datepicker-day ${isDisabled(viewYear, viewMonth, d) ? 'disabled' : ''} ${value === formatDate(new Date(viewYear, viewMonth, d)) ? 'selected' : ''}`}
+                  className={
+                    `dp-day` +
+                    (isDisabled(viewYear, viewMonth, d) ? ' dp-day-disabled' : '') +
+                    (value === formatDate(new Date(viewYear, viewMonth, d)) ? ' dp-day-selected' : '') +
+                    (isToday(viewYear, viewMonth, d) ? ' dp-day-today' : '')
+                  }
                   onClick={() => selectDate(viewYear, viewMonth, d)}
                   disabled={isDisabled(viewYear, viewMonth, d)}
                 >
@@ -149,11 +192,10 @@ export default function SmartDatePicker({ value, onChange, min, max, placeholder
             )}
           </div>
 
-          {/* Quick buttons */}
           {quickButtons && quickButtons.length > 0 && (
-            <div className="datepicker-quick">
+            <div className="dp-quick">
               {quickButtons.map((q, i) => (
-                <button key={i} className="datepicker-quick-btn" onClick={() => applyQuick(q.offsetYears, q.offsetMonths)}>
+                <button key={i} className="dp-quick-btn" onClick={() => applyQuick(q.offsetYears, q.offsetMonths)}>
                   {q.label}
                 </button>
               ))}
