@@ -27,7 +27,7 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
 
   await logAudit({ userId: session.userId, action: 'EXPORT_WORD', entityType: 'Course', entityId: params.courseId });
 
-  const base = process.env.APP_URL || 'https://forms-od.vercel.app';
+  const base = process.env.APP_URL || 'https://forms-tan-xi.vercel.app';
   const logoUrl = `${base}/images/nauss-logo-gold.png`;
 
   const infoRows = [
@@ -66,11 +66,11 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
       <div class="images-row">
         <div class="img-box">
           <div class="img-label">صورة جواز السفر</div>
-          ${passportFile ? `<img src="${esc(passportFile.fileUrl)}" class="part-img" />` : '<div class="no-img">لا توجد صورة</div>'}
+          ${passportFile ? `<img src="${esc(base + passportFile.fileUrl)}" class="part-img" />` : '<div class="no-img">لا توجد صورة</div>'}
         </div>
         <div class="img-box">
           <div class="img-label">صورة الهوية الوطنية</div>
-          ${nationalIdFile ? `<img src="${esc(nationalIdFile.fileUrl)}" class="part-img" />` : '<div class="no-img">لا توجد صورة</div>'}
+          ${nationalIdFile ? `<img src="${esc(base + nationalIdFile.fileUrl)}" class="part-img" />` : '<div class="no-img">لا توجد صورة</div>'}
         </div>
       </div>
     </div>`;

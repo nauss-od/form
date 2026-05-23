@@ -76,26 +76,40 @@ export async function POST(request: NextRequest, { params }: { params: { token: 
   const nationalIdFile = formData.get('nationalIdFile') as File | null;
 
   if (passportFile && passportFile.size > 0) {
-    await prisma.submissionFile.create({
+    const buf = Buffer.from(await passportFile.arrayBuffer());
+    const file = await prisma.submissionFile.create({
       data: {
         submissionId: submission.id,
         fileType: 'PASSPORT',
-        fileUrl: `/uploads/${crypto.randomUUID()}-${passportFile.name}`,
+        fileUrl: '',
         fileName: passportFile.name,
-        fileSize: passportFile.size
+        fileSize: passportFile.size,
+        fileData: buf,
+        mimeType: passportFile.type || 'image/jpeg'
       }
+    });
+    await prisma.submissionFile.update({
+      where: { id: file.id },
+      data: { fileUrl: `/api/files/${file.id}` }
     });
   }
 
   if (nationalIdFile && nationalIdFile.size > 0) {
-    await prisma.submissionFile.create({
+    const buf = Buffer.from(await nationalIdFile.arrayBuffer());
+    const file = await prisma.submissionFile.create({
       data: {
         submissionId: submission.id,
         fileType: 'NATIONAL_ID',
-        fileUrl: `/uploads/${crypto.randomUUID()}-${nationalIdFile.name}`,
+        fileUrl: '',
         fileName: nationalIdFile.name,
-        fileSize: nationalIdFile.size
+        fileSize: nationalIdFile.size,
+        fileData: buf,
+        mimeType: nationalIdFile.type || 'image/jpeg'
       }
+    });
+    await prisma.submissionFile.update({
+      where: { id: file.id },
+      data: { fileUrl: `/api/files/${file.id}` }
     });
   }
 

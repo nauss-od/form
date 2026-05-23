@@ -82,6 +82,8 @@ model SubmissionFile {
   fileUrl      String
   fileName     String
   fileSize     Int?
+  fileData     Bytes?
+  mimeType     String?
   createdAt    DateTime @default(now())
 
   submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
