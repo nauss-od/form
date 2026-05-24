@@ -1800,6 +1800,28 @@ select.input:focus {
 .scanner-close:hover { background: var(--nauss-soft-2); }
 .scanner-body { padding: 20px 24px 24px; overflow-y: auto; }
 
+/* Manual MRZ entry */
+.mrz-manual { margin-bottom: 16px; }
+.mrz-parse-btn {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 10px;
+  border-radius: 14px;
+  border: 0;
+  background: linear-gradient(135deg, #016564, #014948);
+  color: #fff;
+  font-weight: 900;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.scanner-hint-lines p {
+  margin: 14px 0 0;
+  text-align: center;
+  color: #94a5a5;
+  font-size: 0.78rem;
+  line-height: 1.9;
+}
+
 /* Source selection */
 .scanner-options { display: grid; gap: 12px; }
 .scanner-option {

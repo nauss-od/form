@@ -18,16 +18,25 @@ interface PassportScannerProps {
 
 type Step = 'select' | 'process' | 'review';
 
+const FIELD_META: { key: keyof MrzResult; label: string }[] = [
+  { key: 'fullNamePassport', label: 'الاسم الكامل' },
+  { key: 'passportNumber', label: 'رقم جواز السفر' },
+  { key: 'passportExpiry', label: 'تاريخ انتهاء الجواز' },
+  { key: 'birthDate', label: 'تاريخ الميلاد' },
+  { key: 'nationality', label: 'الجنسية' },
+];
+
 export default function PassportScanner({ onResult, onClose }: PassportScannerProps) {
   const [step, setStep] = useState<Step>('select');
   const [processMsg, setProcessMsg] = useState('جارٍ تجهيز الصورة...');
   const [error, setError] = useState('');
   const [preview, setPreview] = useState<string | null>(null);
   const [fields, setFields] = useState<ExtractedField[]>([]);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [rawText, setRawText] = useState('');
+  const [mrzInput, setMrzInput] = useState('');
+  const [showManualMrz, setShowManualMrz] = useState(false);
 
-  // Prevent body scroll when modal is open
+  // Prevent body scroll
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = ''; };
@@ -36,20 +45,18 @@ export default function PassportScanner({ onResult, onClose }: PassportScannerPr
   const processFile = useCallback(async (file: File) => {
     if (!file) return;
 
-    // Show preview
     const reader = new FileReader();
     reader.onload = async (e) => {
       const dataUrl = e.target?.result as string;
       setPreview(dataUrl);
       setStep('process');
       setError('');
+      setShowManualMrz(false);
 
-      // Load image into canvas for OCR
       const img = new Image();
       img.onload = async () => {
-        const canvas = document.createElement('canvas');
-        // Scale down for performance
-        const maxDim = 1600;
+        // Keep original resolution for MRZ readability - only scale if extremely large
+        const maxDim = 2400;
         let w = img.width;
         let h = img.height;
         if (w > maxDim || h > maxDim) {
@@ -57,6 +64,8 @@ export default function PassportScanner({ onResult, onClose }: PassportScannerPr
           w = Math.round(w * ratio);
           h = Math.round(h * ratio);
         }
+
+        const canvas = document.createElement('canvas');
         canvas.width = w;
         canvas.height = h;
         const ctx = canvas.getContext('2d');
@@ -66,24 +75,34 @@ export default function PassportScanner({ onResult, onClose }: PassportScannerPr
         try {
           setProcessMsg('جارٍ التعرف على النصوص...');
 
-          const worker = await createWorker('eng', 1);
+          // Tesseract config optimized for MRZ
+          const worker = await createWorker('eng', 1, {
+            logger: () => {},
+          });
+          await worker.setParameters({
+            tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<',
+          });
+
           setProcessMsg('تحليل بيانات جواز السفر...');
           const { data } = await worker.recognize(canvas);
           await worker.terminate();
 
-          const result = parseMrz(data.text);
-          if (result) {
+          const ocrText = data.text.toUpperCase();
+          setRawText(ocrText);
+
+          const result = parseMrz(ocrText);
+          if (result && result.fullNamePassport) {
             setFields([
               { key: 'fullNamePassport', label: 'الاسم الكامل', value: result.fullNamePassport, checked: true },
               { key: 'passportNumber', label: 'رقم جواز السفر', value: result.passportNumber, checked: true },
               { key: 'passportExpiry', label: 'تاريخ انتهاء الجواز', value: result.passportExpiry, checked: true },
               { key: 'birthDate', label: 'تاريخ الميلاد', value: result.birthDate, checked: true },
-              { key: 'nationality', label: 'الجنسية', value: result.nationality, checked: false },
+              { key: 'nationality', label: 'الجنسية', value: result.nationality || 'SAU', checked: false },
             ]);
             setStep('review');
           } else {
-            setError('لم يتم التعرف على بيانات MRZ. تأكد من تصوير صفحة البيانات بالكامل في الجواز.');
-            setStep('select');
+            setError('لم يتم التعرف على بيانات MRZ. يمكنك إدخال النص المستخرج يدوياً أدناه.');
+            setShowManualMrz(true);
           }
         } catch {
           setError('حدث خطأ في معالجة الصورة');
@@ -95,8 +114,7 @@ export default function PassportScanner({ onResult, onClose }: PassportScannerPr
     reader.readAsDataURL(file);
   }, []);
 
-  function handleCameraCapture() {
-    // Use native camera UI via file input (works on all devices)
+  function openCamera() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
@@ -108,7 +126,7 @@ export default function PassportScanner({ onResult, onClose }: PassportScannerPr
     input.click();
   }
 
-  function handleGalleryUpload() {
+  function openGallery() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
@@ -117,6 +135,24 @@ export default function PassportScanner({ onResult, onClose }: PassportScannerPr
       if (file) processFile(file);
     };
     input.click();
+  }
+
+  function parseManualMrz() {
+    const result = parseMrz(mrzInput);
+    if (result && result.fullNamePassport) {
+      setFields([
+        { key: 'fullNamePassport', label: 'الاسم الكامل', value: result.fullNamePassport, checked: true },
+        { key: 'passportNumber', label: 'رقم جواز السفر', value: result.passportNumber, checked: true },
+        { key: 'passportExpiry', label: 'تاريخ انتهاء الجواز', value: result.passportExpiry, checked: true },
+        { key: 'birthDate', label: 'تاريخ الميلاد', value: result.birthDate, checked: true },
+        { key: 'nationality', label: 'الجنسية', value: result.nationality || 'SAU', checked: false },
+      ]);
+      setError('');
+      setShowManualMrz(false);
+      setStep('review');
+    } else {
+      setError('لم يتم التعرف على النص المدخل. تأكد من إدخال سطري MRZ بشكل صحيح.');
+    }
   }
 
   function toggleField(index: number) {
@@ -131,56 +167,32 @@ export default function PassportScanner({ onResult, onClose }: PassportScannerPr
     const checked = fields.filter(f => f.checked);
     if (checked.length === 0) { setError('اختر حقل واحد على الأقل'); return; }
 
-    // Build result from checked fields
     const result: MrzResult = {
-      fullNamePassport: '',
-      passportNumber: '',
-      passportExpiry: '',
-      birthDate: '',
-      nationality: '',
-      issuingCountry: '',
-      sex: '',
+      fullNamePassport: '', passportNumber: '', passportExpiry: '',
+      birthDate: '', nationality: '', issuingCountry: '', sex: '',
     };
-    for (const f of checked) {
-      (result as any)[f.key] = f.value;
-    }
+    for (const f of checked) (result as any)[f.key] = f.value;
     onResult(result);
   }
 
-  function renderDatePicker(value: string, onChange: (v: string) => void) {
-    // Simple date input for review step
+  function renderFieldInput(key: string, value: string, onChange: (v: string) => void) {
+    if (key === 'passportExpiry' || key === 'birthDate') {
+      return (
+        <input type="date" value={value} onChange={e => onChange(e.target.value)}
+          style={{ width: '100%', minHeight: 40, borderRadius: 12, border: '1px solid var(--nauss-line)', padding: '0 12px', fontFamily: 'inherit', fontSize: '0.88rem', direction: 'ltr' }}
+        />
+      );
+    }
     return (
-      <input
-        type="date"
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        style={{
-          width: '100%', minHeight: 40, borderRadius: 12, border: '1px solid var(--nauss-line)',
-          padding: '0 12px', fontFamily: 'inherit', fontSize: '0.88rem', direction: 'ltr',
-        }}
+      <input type="text" value={value} onChange={e => onChange(e.target.value)}
+        style={{ width: '100%', minHeight: 40, borderRadius: 12, border: '1px solid var(--nauss-line)', padding: '0 12px', fontFamily: 'inherit', fontSize: '0.88rem', direction: 'ltr' }}
       />
     );
   }
-
-  const displayValue = (key: string, value: string, onChange: (v: string) => void) => {
-    if (key === 'passportExpiry' || key === 'birthDate') return renderDatePicker(value, onChange);
-    return (
-      <input
-        type="text"
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        style={{
-          width: '100%', minHeight: 40, borderRadius: 12, border: '1px solid var(--nauss-line)',
-          padding: '0 12px', fontFamily: 'inherit', fontSize: '0.88rem', direction: 'ltr',
-        }}
-      />
-    );
-  };
 
   return (
     <div className="scanner-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="scanner-modal">
-        {/* Header */}
         <div className="scanner-head">
           <h3>مسح جواز السفر</h3>
           <button className="scanner-close" onClick={onClose}>✕</button>
@@ -188,52 +200,74 @@ export default function PassportScanner({ onResult, onClose }: PassportScannerPr
 
         <div className="scanner-body">
 
-          {/* ===== Step: Select source ===== */}
+          {/* Step: Select source */}
           {step === 'select' && (
-            <div className="scanner-select">
+            <div>
               {preview && (
                 <div className="scanner-preview">
-                  <img src={preview} alt="preview" />
+                  <img src={preview} alt="" />
                 </div>
               )}
 
               {error && <div className="scanner-error">{error}</div>}
 
-              <div className="scanner-options">
-                <button className="scanner-option" onClick={handleCameraCapture}>
-                  <svg viewBox="0 0 24 24" fill="none" width="32" height="32">
-                    <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2v11z" stroke="currentColor" strokeWidth="1.8" fill="none"/>
-                    <circle cx="12" cy="13" r="4" stroke="currentColor" strokeWidth="1.8" fill="none"/>
-                  </svg>
-                  <strong>التقاط صورة</strong>
-                  <span>تصوير جواز السفر بالكاميرا</span>
-                </button>
+              {/* Manual MRZ input fallback */}
+              {showManualMrz && (
+                <div className="mrz-manual">
+                  <p style={{ margin: '0 0 10px', fontSize: '0.85rem', fontWeight: 700, color: '#014948' }}>
+                    أدخل نص MRZ يدوياً:
+                  </p>
+                  <textarea
+                    value={mrzInput}
+                    onChange={e => setMrzInput(e.target.value.toUpperCase())}
+                    placeholder="P&lt;SURNAME&lt;&lt;GIVEN&lt;&lt;&lt;&#10;AB123456&lt;SAU...&#10;انسخ النص من أسفل الجواز"
+                    rows={3}
+                    style={{
+                      width: '100%', minHeight: 70, borderRadius: 14, border: '1px solid var(--nauss-line)',
+                      padding: '10px 12px', fontFamily: 'monospace', fontSize: '0.85rem',
+                      direction: 'ltr', resize: 'vertical',
+                    }}
+                  />
+                  <button onClick={parseManualMrz} className="mrz-parse-btn">
+                    تحليل النص
+                  </button>
+                </div>
+              )}
 
-                <button className="scanner-option" onClick={handleGalleryUpload}>
-                  <svg viewBox="0 0 24 24" fill="none" width="32" height="32">
-                    <rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" strokeWidth="1.8" fill="none"/>
-                    <circle cx="8.5" cy="9.5" r="1.5" fill="currentColor"/>
-                    <path d="M2 15l5-5 3 3 3-3 5 5" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" fill="none"/>
-                  </svg>
-                  <strong>رفع صورة</strong>
-                  <span>اختيار صورة من الجهاز</span>
-                </button>
+              {/* Source buttons */}
+              {!showManualMrz && (
+                <div className="scanner-options">
+                  <button className="scanner-option" onClick={openCamera}>
+                    <svg viewBox="0 0 24 24" fill="none" width="32" height="32">
+                      <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2v11z" stroke="currentColor" strokeWidth="1.8" fill="none"/>
+                      <circle cx="12" cy="13" r="4" stroke="currentColor" strokeWidth="1.8" fill="none"/>
+                    </svg>
+                    <div><strong>التقاط صورة</strong><span>تصوير جواز السفر بالكاميرا</span></div>
+                  </button>
+                  <button className="scanner-option" onClick={openGallery}>
+                    <svg viewBox="0 0 24 24" fill="none" width="32" height="32">
+                      <rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" strokeWidth="1.8" fill="none"/>
+                      <circle cx="8.5" cy="9.5" r="1.5" fill="currentColor"/>
+                      <path d="M2 15l5-5 3 3 3-3 5 5" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" fill="none"/>
+                    </svg>
+                    <div><strong>رفع صورة</strong><span>اختيار صورة من الجهاز</span></div>
+                  </button>
+                </div>
+              )}
+
+              <div className="scanner-hint-lines">
+                <p>اختر طريقة الإدخال ← تأكد من ظهور سطري MRZ السفليين بوضوح</p>
+                {showManualMrz && <p>يمكنك نسخ النص من أسفل الجواز (السطرين السفليين) ولصقه أعلاه</p>}
               </div>
-
-              <p className="scanner-hint">
-                1. اختر طريقة إدخال الصورة<br />
-                2. تأكد من ظهور سطري MRZ في الصورة<br />
-                3. راجع البيانات المستخرجة قبل تأكيدها
-              </p>
             </div>
           )}
 
-          {/* ===== Step: Processing ===== */}
+          {/* Step: Processing */}
           {step === 'process' && (
-            <div className="scanner-process">
+            <div>
               {preview && (
                 <div className="scanner-preview">
-                  <img src={preview} alt="captured" />
+                  <img src={preview} alt="" />
                 </div>
               )}
               <div className="scanner-spinner">
@@ -246,9 +280,9 @@ export default function PassportScanner({ onResult, onClose }: PassportScannerPr
             </div>
           )}
 
-          {/* ===== Step: Review ===== */}
+          {/* Step: Review */}
           {step === 'review' && (
-            <div className="scanner-review">
+            <div>
               <div className="scanner-review-head">
                 <svg viewBox="0 0 24 24" fill="none" width="28" height="28" style={{ flexShrink: 0 }}>
                   <circle cx="12" cy="12" r="10" stroke="#016564" strokeWidth="1.8" fill="rgba(1,101,100,0.06)"/>
@@ -256,7 +290,7 @@ export default function PassportScanner({ onResult, onClose }: PassportScannerPr
                 </svg>
                 <div>
                   <strong>تم استخراج البيانات</strong>
-                  <span>يرجى مراجعة البيانات أدناه ثم تأكيد الحقول الصحيحة</span>
+                  <span>يرجى مراجعة البيانات وتعديل ما يلزم قبل التأكيد</span>
                 </div>
               </div>
 
@@ -267,7 +301,7 @@ export default function PassportScanner({ onResult, onClose }: PassportScannerPr
                       <input type="checkbox" checked={f.checked} onChange={() => toggleField(i)} />
                       <span className="scanner-field-label">{f.label}</span>
                     </label>
-                    {displayValue(f.key, f.value, (v) => updateField(i, v))}
+                    {renderFieldInput(f.key, f.value, (v) => updateField(i, v))}
                   </div>
                 ))}
               </div>
@@ -276,9 +310,6 @@ export default function PassportScanner({ onResult, onClose }: PassportScannerPr
 
               <button className="scanner-confirm" onClick={confirmData}>
                 تأكيد وتعبئة النموذج
-                <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
-                  <path d="M4 10h12m0 0l-5-5m5 5l-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
               </button>
             </div>
           )}

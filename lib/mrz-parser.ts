@@ -1,83 +1,99 @@
 export interface MrzResult {
   fullNamePassport: string;
   passportNumber: string;
-  passportExpiry: string; // YYYY-MM-DD
-  birthDate: string;      // YYYY-MM-DD
+  passportExpiry: string;
+  birthDate: string;
   nationality: string;
   issuingCountry: string;
   sex: string;
 }
 
-function checkDigit(data: string): number {
-  const weights = [7, 3, 1];
-  let sum = 0;
-  for (let i = 0; i < data.length; i++) {
-    const ch = data[i];
-    let val: number;
-    if (ch >= '0' && ch <= '9') val = ch.charCodeAt(0) - 48;
-    else if (ch >= 'A' && ch <= 'Z') val = ch.charCodeAt(0) - 55;
-    else if (ch === '<') val = 0;
-    else return -1;
-    sum += val * weights[i % 3];
-  }
-  return sum % 10;
+function clean(s: string): string {
+  return s.replace(/[^A-Z0-9<]/g, '');
 }
 
-function cleanMrzLine(s: string): string {
-  return s.replace(/[^A-Z0-9<]/g, '').toUpperCase();
+function digits(n: number): string {
+  return String(n).padStart(2, '0');
 }
 
 function parseDate(yymmdd: string): string {
-  if (!yymmdd || yymmdd.length !== 6) return '';
+  if (!yymmdd || yymmdd.length < 6) return '';
   const yy = parseInt(yymmdd.substring(0, 2), 10);
   const mm = yymmdd.substring(2, 4);
   const dd = yymmdd.substring(4, 6);
+  if (isNaN(yy)) return '';
   const fullYear = yy >= 40 ? 1900 + yy : 2000 + yy;
   return `${fullYear}-${mm}-${dd}`;
 }
 
-function extractName(line: string): string {
-  // After position 4 (type + issuing country), the rest is name
-  const nameField = line.substring(5).replace(/<+/g, ' ').trim();
-  // Split by double space (which was <<)
-  const parts = nameField.split(/\s{2,}/);
-  // parts[0] = surname, parts[1] = given names
-  const surname = parts[0] || '';
-  const givenNames = parts.length > 1 ? parts.slice(1).join(' ') : '';
-  // Return "GIVEN_NAME SURNAME" or just what we have
-  const full = givenNames ? `${givenNames} ${surname}` : surname;
-  return full.trim().replace(/\s+/g, ' ');
-}
+export function parseMrz(raw: string): MrzResult | null {
+  // Normalize: uppercase, keep < and alphanumeric
+  const text = raw.toUpperCase().replace(/[^A-Z0-9<]/g, '');
 
-export function parseMrz(text: string): MrzResult | null {
-  // Clean input: keep only alphanumeric, <, and newlines
-  const cleaned = text.replace(/[^\w<]/g, '').toUpperCase();
-  
-  // Try to find 2 consecutive lines of 44 chars each
-  const lines = cleaned.split(/\s+/).filter(l => l.length >= 30);
-  
-  let line1 = '';
-  let line2 = '';
-  
-  for (let i = 0; i < lines.length - 1; i++) {
-    const a = cleanMrzLine(lines[i]);
-    const b = cleanMrzLine(lines[i + 1]);
-    if (a.length >= 44 && b.length >= 44) {
-      line1 = a.substring(0, 44);
-      line2 = b.substring(0, 44);
+  // Find all candidate lines (30+ chars, or starting with P)
+  const candidates: string[] = [];
+  let i = 0;
+  while (i < text.length) {
+    // Try to find a line starting with P (passport indicator)
+    const pIdx = text.indexOf('P', i);
+    if (pIdx === -1 || pIdx > i + 5) {
+      // No P found nearby, just take chunks
       break;
+    }
+    // From P, take next 44 chars (or up to 50)
+    const line1 = text.substring(pIdx, Math.min(pIdx + 50, text.length));
+    // Find the second line: after line1, look for a line starting with alphanumeric
+    const rest = text.substring(pIdx + line1.length);
+    const line2Match = rest.match(/^[A-Z0-9<]{30,50}/);
+    if (line2Match) {
+      candidates.push(line1.substring(0, 44));
+      candidates.push(line2Match[0].substring(0, 44));
+      break;
+    }
+    i = pIdx + 1;
+  }
+
+  // Fallback: if no P found, try to find two consecutive long strings
+  if (candidates.length === 0) {
+    const chunks: string[] = [];
+    let cur = '';
+    for (const ch of text) {
+      cur += ch;
+      // If we have a long enough chunk, check if next char ends a "line"
+      if (cur.length >= 30) {
+        chunks.push(cur);
+        cur = '';
+      }
+    }
+    if (cur.length >= 30) chunks.push(cur);
+
+    // Take first two chunks that are 30-50 chars
+    const valid = chunks.filter(c => c.length >= 30 && c.length <= 50);
+    if (valid.length >= 2) {
+      candidates.push(valid[0].substring(0, 44));
+      candidates.push(valid[1].substring(0, 44));
     }
   }
 
-  if (!line1 || !line2) return null;
+  if (candidates.length < 2) return null;
 
-  // Line 1 validation: should start with P
-  if (line1[0] !== 'P') return null;
+  let line1 = clean(candidates[0]).padEnd(44, '<').substring(0, 44);
+  let line2 = clean(candidates[1]).padEnd(44, '<').substring(0, 44);
 
-  // Parse
-  const issuingCountry = line1.substring(2, 5);
-  const fullNamePassport = extractName(line1);
+  // Line 1 must start with P
+  if (line1[0] !== 'P') {
+    // Try prepending P
+    line1 = 'P' + line1.substring(0, 43);
+  }
 
+  // Extract surname from line1 (between pos 5 and <<)
+  const nameField = line1.substring(5);
+  const nameParts = nameField.split(/<+/).filter(Boolean);
+  const surname = nameParts[0] || '';
+  const givenNames = nameParts.slice(1).join(' ');
+  const fullNamePassport = givenNames ? `${givenNames} ${surname}` : surname;
+
+  // Extract from line2
   const passportNumber = line2.substring(0, 10).replace(/</g, '');
   const nationality = line2.substring(11, 14).replace(/</g, '');
   const rawDob = line2.substring(14, 20);
@@ -87,15 +103,15 @@ export function parseMrz(text: string): MrzResult | null {
   const birthDate = parseDate(rawDob);
   const passportExpiry = parseDate(rawExpiry);
 
-  if (!passportNumber || !birthDate || !passportExpiry) return null;
+  if (!passportNumber) return null;
 
   return {
-    fullNamePassport,
+    fullNamePassport: fullNamePassport.trim() || '',
     passportNumber,
     passportExpiry,
     birthDate,
     nationality,
-    issuingCountry,
-    sex,
+    issuingCountry: line1.substring(2, 5).replace(/</g, ''),
+    sex: sex === 'M' || sex === 'F' ? sex : '',
   };
 }
