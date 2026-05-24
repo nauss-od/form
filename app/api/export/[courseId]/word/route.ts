@@ -3,19 +3,75 @@ import { prisma } from '@/lib/prisma';
 import { formatDate } from '@/lib/utils';
 import { getCurrentSession } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
+import {
+  Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
+  ImageRun, PageBreak, AlignmentType, WidthType, BorderStyle,
+} from 'docx';
 
-function esc(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const MUTED = '666666';
+const DARK = '014f4d';
+const LINE = 'aaaaaa';
+
+function cmToEmu(cm: number) { return Math.round(cm * 360000); }
+
+function txt(text: string, opts: { bold?: boolean; size?: number; color?: string; font?: string } = {}): TextRun {
+  return new TextRun({ text, font: opts.font || 'Traditional Arabic', size: opts.size ?? 22, bold: opts.bold, color: opts.color });
 }
 
-function fileToBase64(f: { fileData: unknown; mimeType: string | null }): string | null {
-  if (!f.fileData) return null;
-  try {
-    const buf = f.fileData instanceof Buffer ? f.fileData : Buffer.from(f.fileData as Uint8Array);
-    return `data:${f.mimeType || 'image/jpeg'};base64,${buf.toString('base64')}`;
-  } catch {
-    return null;
-  }
+function para(children: TextRun[], opts: { align?: string; spacing?: number; spaceBefore?: number; spaceAfter?: number } = {}): Paragraph {
+  return new Paragraph({
+    children,
+    alignment: opts.align as any || AlignmentType.RIGHT,
+    spacing: { before: opts.spaceBefore ?? 0, after: opts.spaceAfter ?? 0, line: opts.spacing },
+  });
+}
+
+function cell(children: Paragraph[], opts: { width?: number; span?: number; shade?: string; border?: boolean } = {}): TableCell {
+  return new TableCell({
+    children,
+    width: opts.width ? { size: opts.width, type: WidthType.DXA } : undefined,
+    columnSpan: opts.span,
+    shading: opts.shade ? { fill: opts.shade, type: 'clear' as any } : undefined,
+    borders: opts.border === false ? undefined : {
+      top: { style: BorderStyle.SINGLE, size: 1, color: LINE },
+      bottom: { style: BorderStyle.SINGLE, size: 1, color: LINE },
+      left: { style: BorderStyle.SINGLE, size: 1, color: LINE },
+      right: { style: BorderStyle.SINGLE, size: 1, color: LINE },
+    },
+  });
+}
+
+function row(cells: TableCell[], isHeader = false): TableRow {
+  return new TableRow({ children: cells, tableHeader: isHeader });
+}
+
+function imageParagraph(buffer: Buffer, label: string): Paragraph[] {
+  // Determine image type from magic bytes
+  let type: 'jpg' | 'png' | 'gif' | 'bmp' = 'jpg';
+  if (buffer[0] === 0x89 && buffer[1] === 0x50) type = 'png';
+  else if (buffer[0] === 0xff && buffer[1] === 0xd8) type = 'jpg';
+  else if (buffer[0] === 0x47 && buffer[1] === 0x49) type = 'gif';
+  else if (buffer[0] === 0x42 && buffer[1] === 0x4d) type = 'bmp';
+
+  // Calculate dimensions: max 13cm wide, maintain aspect ratio
+  const maxW = cmToEmu(13);
+  // We don't know real dimensions, so estimate from file size / typical passport scan
+  // Real images: read using sharp or similar — but we approximate by ratio
+  // Assume ~600x400px for most uploaded images, scale to fit maxW
+  const aspect = 1.5; // typical passport image ratio (width/height)
+  const w = maxW;
+  const h = Math.round(w / aspect);
+
+  const img = new ImageRun({
+    type,
+    data: buffer,
+    transformation: { width: w, height: h },
+  });
+
+  return [
+    para([txt(label, { size: 18, bold: true, color: MUTED })], { align: 'center', spaceAfter: 40 }),
+    para([img], { align: 'center', spaceAfter: 80 }),
+  ];
 }
 
 export async function GET(_request: Request, { params }: { params: { courseId: string } }) {
@@ -37,136 +93,122 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
 
   await logAudit({ userId: session.userId, action: 'EXPORT_WORD', entityType: 'Course', entityId: params.courseId });
 
-  const base = process.env.APP_URL || 'https://forms-tan-xi.vercel.app';
+  // ========== Build document sections ==========
+  const children: (Paragraph | Table)[] = [];
 
-  // Compact info: multi‑column table (6 fields → 3 cols × 2 rows)
-  const infoCells = [
-    ['النشاط', esc(course.activityName || '—')],
-    ['المكان', esc(course.venue || '—')],
-    ['من', esc(formatDate(course.startDate))],
-    ['إلى', esc(formatDate(course.endDate))],
+  // --- Title ---
+  children.push(para([txt('بيانات المشاركين في الدورة الخارجية', { size: 32, bold: true, color: DARK })], { align: 'center', spaceAfter: 40 }));
+  children.push(para([txt('جامعة نايف العربية للعلوم الأمنية — وكالة التدريب', { size: 20, color: MUTED })], { align: 'center', spaceAfter: 200 }));
+
+  // --- Course info table (3 cols × 2 rows) ---
+  const infoData = [
+    ['النشاط', course.activityName || '—'],
+    ['المكان', course.venue || '—'],
+    ['من', formatDate(course.startDate)],
+    ['إلى', formatDate(course.endDate)],
     ['المشاركون', String(course.submissions.length)],
-    ['إعداد', esc(course.createdBy?.name || '—')],
+    ['إعداد', course.createdBy?.name || '—'],
   ];
 
-  const infoRows: string[] = [];
+  const infoCells = infoData.map(([l, v]) => [
+    cell([para([txt(l, { bold: true, size: 18 })], { align: 'right' })], { shade: 'f0f4f4', width: 800 }),
+    cell([para([txt(v, { size: 18 })], { align: 'right' })], { width: 2000 }),
+  ]);
+
+  const infoRows: TableRow[] = [];
   for (let r = 0; r < 2; r++) {
-    const cols = [];
+    const cells: TableCell[] = [];
     for (let c = 0; c < 3; c++) {
       const idx = r * 3 + c;
-      if (idx < infoCells.length) {
-        cols.push(`<td class="il">${infoCells[idx][0]}</td><td class="iv">${infoCells[idx][1]}</td>`);
-      }
+      if (idx < infoCells.length) cells.push(...infoCells[idx]);
     }
-    infoRows.push(`<tr>${cols.join('')}</tr>`);
+    infoRows.push(row(cells));
   }
 
-  // Full participant table (compact)
-  const tableRows = course.submissions.map((s, i) => `
-    <tr>
-      <td>${i + 1}</td>
-      <td>${esc(s.fullNamePassport)}</td>
-      <td>${esc(s.passportNumber)}</td>
-      <td>${esc(formatDate(s.passportExpiry))}</td>
-      <td>${esc(s.nationalId)}</td>
-      <td dir="ltr">${esc(s.mobile)}</td>
-      <td>${esc(formatDate(s.birthDate))}</td>
-      <td dir="ltr" style="font-size:6.5pt;">${esc(s.iban)}</td>
-    </tr>
-  `).join('');
+  children.push(new Table({
+    rows: infoRows,
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    visuallyRightToLeft: true,
+  }));
 
-  // Participant pages — images stacked vertically
-  const partPages: string[] = [];
+  children.push(para([], { spaceAfter: 100 }));
 
+  // --- Participant table (compact) ---
+  const headers = ['م', 'الاسم', 'رقم الجواز', 'انتهاء الجواز', 'الهوية', 'الجوال', 'الميلاد', 'IBAN'];
+  const headerRow = row(headers.map(h => cell([para([txt(h, { bold: true, size: 14, color: 'ffffff' })], { align: 'center' })], { shade: DARK, border: false })), true);
+
+  const dataRows = course.submissions.map((s, i) => row([
+    cell([para([txt(String(i + 1), { size: 14 })], { align: 'center' })]),
+    cell([para([txt(s.fullNamePassport, { size: 14 })], { align: 'center' })]),
+    cell([para([txt(s.passportNumber, { size: 14 })], { align: 'center' })]),
+    cell([para([txt(formatDate(s.passportExpiry), { size: 14 })], { align: 'center' })]),
+    cell([para([txt(s.nationalId, { size: 14 })], { align: 'center' })]),
+    cell([para([txt(s.mobile, { size: 14 })], { align: 'center' })]),
+    cell([para([txt(formatDate(s.birthDate), { size: 14 })], { align: 'center' })]),
+    cell([para([txt(s.iban, { size: 11 })], { align: 'center' })]),
+  ]));
+
+  children.push(new Table({
+    rows: [headerRow, ...dataRows],
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    visuallyRightToLeft: true,
+  }));
+
+  children.push(para([txt(`تم التصدير من منصة تأمين المشاركين — ${new Date().toLocaleDateString('ar-SA')}`, { size: 14, color: MUTED })], { align: 'center', spaceBefore: 200 }));
+
+  // --- Participant pages ---
   for (const s of course.submissions) {
+    children.push(new Paragraph({ children: [new PageBreak()] }));
+    children.push(para([txt(s.fullNamePassport, { size: 32, bold: true, color: DARK })], { align: 'center', spaceAfter: 40 }));
+    children.push(para([txt(`رقم الجواز: ${s.passportNumber}`, { size: 20, color: MUTED })], { align: 'center', spaceAfter: 200 }));
+
     const pf = s.files.find(f => f.fileType === 'PASSPORT');
     const nf = s.files.find(f => f.fileType === 'NATIONAL_ID');
 
-    const pSrc = pf ? (fileToBase64(pf) || `${base}${pf.fileUrl}`) : null;
-    const nSrc = nf ? (fileToBase64(nf) || `${base}${nf.fileUrl}`) : null;
+    if (pf?.fileData) {
+      const buf = pf.fileData instanceof Buffer ? pf.fileData : Buffer.from(pf.fileData as Uint8Array);
+      children.push(...imageParagraph(buf, 'صورة جواز السفر'));
+    } else {
+      children.push(para([txt('لا توجد صورة جواز السفر', { size: 18, color: MUTED })], { align: 'center', spaceAfter: 80 }));
+    }
 
-    partPages.push(`
-    <div class="pb"></div>
-    <div class="pp">
-      <div class="pp-name">${esc(s.fullNamePassport)}</div>
-      <div class="pp-num">رقم الجواز: ${esc(s.passportNumber)}</div>
-      ${pSrc ? `<div class="pp-img"><div class="pp-lbl">صورة جواز السفر</div><img src="${esc(pSrc)}" class="pi" /></div>` : ''}
-      ${nSrc ? `<div class="pp-img"><div class="pp-lbl">صورة بطاقة الهوية</div><img src="${esc(nSrc)}" class="pi" /></div>` : ''}
-      ${!pSrc && !nSrc ? '<div class="pp-empty">لا توجد صور مرفقة</div>' : ''}
-    </div>`);
+    if (nf?.fileData) {
+      const buf = nf.fileData instanceof Buffer ? nf.fileData : Buffer.from(nf.fileData as Uint8Array);
+      children.push(...imageParagraph(buf, 'صورة بطاقة الهوية'));
+    } else {
+      children.push(para([txt('لا توجد صورة بطاقة الهوية', { size: 18, color: MUTED })], { align: 'center', spaceAfter: 80 }));
+    }
+
+    children.push(para([txt(`تم التصدير من منصة تأمين المشاركين للدورات الخارجية — ${new Date().toLocaleDateString('ar-SA')}`, { size: 14, color: MUTED })], { align: 'center', spaceBefore: 200 }));
   }
 
-  const html = `<!DOCTYPE html>
-<html dir="rtl">
-<head>
-<meta charset="utf-8" />
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>بيانات المشاركين - ${esc(course.activityName || '')}</title>
-<style>
-  @page { size: A4; margin: 1.5cm 1.5cm; }
-  body { font-family: 'Traditional Arabic', 'Arial', sans-serif; margin: 0; padding: 0; color: #222; font-size: 10pt; line-height: 1.5; }
+  // --- Build document ---
+  const doc = new Document({
+    styles: {
+      default: {
+        document: {
+          run: { font: 'Traditional Arabic', size: 22 },
+          paragraph: { alignment: AlignmentType.RIGHT },
+        },
+      },
+    },
+    sections: [{
+      properties: {
+        page: {
+          margin: { top: cmToEmu(1.5), bottom: cmToEmu(1.5), right: cmToEmu(1.5), left: cmToEmu(1.5) },
+          size: { width: cmToEmu(21), height: cmToEmu(29.7) },
+        },
+      },
+      children,
+    }],
+  });
 
-  /* ===== Cover ===== */
-  .dt { font-size: 15pt; font-weight: bold; color: #014f4d; text-align: center; margin: 0 0 12px; }
-  .sub { font-size: 9pt; color: #666; text-align: center; margin: 0 0 16px; }
+  const buffer = await Packer.toBuffer(doc);
 
-  /* Info table — 3 columns */
-  .it { width: 100%; border-collapse: collapse; margin: 0 0 14px; }
-  .it td { padding: 3px 6px; border: 1px solid #aaa; font-size: 8.5pt; }
-  .il { font-weight: bold; background: #f0f4f4; width: 50px; white-space: nowrap; }
-  .iv { }
-
-  /* Participant table */
-  .dtbl { width: 100%; border-collapse: collapse; margin: 0 0 6px; font-size: 7pt; }
-  .dtbl th { background: #014f4d; color: #fff; padding: 3px 2px; text-align: center; font-weight: bold; font-size: 7pt; }
-  .dtbl td { border: 1px solid #aaa; padding: 1px 3px; text-align: center; }
-  .dtbl tr:nth-child(even) { background: #f8fafa; }
-
-  /* ===== Participant pages ===== */
-  .pb { page-break-after: always; border: none; height: 0; margin: 0; }
-  .pp { padding: 10px 0; text-align: center; }
-  .pp-name { font-size: 14pt; font-weight: bold; color: #014f4d; margin-bottom: 2px; }
-  .pp-num { font-size: 9pt; color: #555; margin-bottom: 14px; }
-  .pp-img { margin: 0 auto 12px; text-align: center; }
-  .pp-lbl { font-size: 9pt; font-weight: bold; color: #333; margin-bottom: 4px; }
-  .pi { max-width: 100%; max-height: 420px; border: 1px solid #bbb; }
-  .pp-empty { padding: 30px; color: #999; font-size: 9pt; border: 1px dashed #bbb; }
-
-  /* Footer */
-  .ft { text-align: center; color: #999; font-size: 6.5pt; margin-top: 12px; padding-top: 4px; border-top: 1px solid #ddd; }
-</style>
-</head>
-<body>
-
-<div class="dt">بيانات المشاركين في الدورة الخارجية</div>
-<div class="sub">جامعة نايف العربية للعلوم الأمنية — وكالة التدريب</div>
-
-<table class="it" cellspacing="0" cellpadding="0">
-  ${infoRows.join('')}
-</table>
-
-<table class="dtbl" cellspacing="0" cellpadding="0">
-  <thead>
-    <tr>
-      <th>م</th><th>الاسم</th><th>رقم الجواز</th><th>انتهاء الجواز</th>
-      <th>الهوية</th><th>الجوال</th><th>الميلاد</th><th>IBAN</th>
-    </tr>
-  </thead>
-  <tbody>${tableRows}</tbody>
-</table>
-
-<div class="ft">تم التصدير من منصة تأمين المشاركين — ${new Date().toLocaleDateString('ar-SA')}</div>
-
-${partPages.join('')}
-
-<div class="ft" style="margin-top:20px;">تم التصدير من منصة تأمين المشاركين للدورات الخارجية — ${new Date().toLocaleDateString('ar-SA')}</div>
-
-</body></html>`;
-
-  return new NextResponse(html, {
+  return new NextResponse(buffer, {
     headers: {
-      'Content-Type': 'application/msword',
-      'Content-Disposition': `attachment; filename="${(course.activityName || 'course').replace(/[^a-zA-Z0-9\-_ ]/g, '')}-participants.doc`
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'Content-Disposition': `attachment; filename="${(course.activityName || 'course').replace(/[^a-zA-Z0-9\-_ ]/g, '')}-participants.docx`
     }
   });
 }
