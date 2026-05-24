@@ -5,7 +5,7 @@ import { getCurrentSession } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
 import {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
-  PageBreak, AlignmentType, WidthType, BorderStyle, ExternalHyperlink,
+  PageBreak, AlignmentType, WidthType, BorderStyle, PageOrientation,
 } from 'docx';
 
 const MUTED = '666666';
@@ -28,11 +28,11 @@ function para(children: any[], opts: { align?: string; spaceBefore?: number; spa
   });
 }
 
-function link(label: string, url: string): ExternalHyperlink {
-  return new ExternalHyperlink({
-    children: [txt(label, { size: 18, color: '0563C1' })],
-    link: url,
-  });
+function linkText(label: string, url: string): TextRun[] {
+  return [
+    txt(label, { size: 18, bold: true, color: '0563C1' }),
+    txt(` (${url})`, { size: 14, color: MUTED }),
+  ];
 }
 
 function cell(children: Paragraph[], opts: { width?: number; shade?: string } = {}): TableCell {
@@ -107,10 +107,10 @@ export async function GET(request: Request, { params }: { params: { courseId: st
     const right = infoItems[i + 1];
     infoRows.push(new TableRow({
       children: [
-        cell([para([txt(left[0], { bold: true, size: 18 })], { align: 'right' })], { shade: 'f0f4f4', width: 1800 }),
-        cell([para([txt(left[1], { size: 18 })], { align: 'right' })], { width: 3200 }),
-        cell([para([txt(right[0], { bold: true, size: 18 })], { align: 'right' })], { shade: 'f0f4f4', width: 1800 }),
-        cell([para([txt(right[1], { size: 18 })], { align: 'right' })], { width: 3200 }),
+        cell([para([txt(left[0], { bold: true, size: 18 })], { align: 'right' })], { shade: 'f0f4f4', width: 2200 }),
+        cell([para([txt(left[1], { size: 18 })], { align: 'right' })], { width: 3800 }),
+        cell([para([txt(right[0], { bold: true, size: 18 })], { align: 'right' })], { shade: 'f0f4f4', width: 2200 }),
+        cell([para([txt(right[1], { size: 18 })], { align: 'right' })], { width: 3800 }),
       ],
     }));
   }
@@ -125,7 +125,7 @@ export async function GET(request: Request, { params }: { params: { courseId: st
 
   // --- Participant table ---
   const hdrs = ['م', 'الاسم', 'رقم الجواز', 'انتهاء الجواز', 'الهوية', 'الجوال', 'الميلاد', 'IBAN'];
-  const colWidths = [600, 2200, 1600, 1400, 1600, 1600, 1400, 2600];
+  const colWidths = [600, 2800, 1800, 1600, 1800, 1800, 1600, 3000];
 
   const partRows: TableRow[] = [
     new TableRow({
@@ -171,8 +171,8 @@ export async function GET(request: Request, { params }: { params: { courseId: st
 
     const fieldRows = fields.map(([label, value]) => new TableRow({
       children: [
-        cell([para([txt(label, { bold: true, size: 18 })], { align: 'right' })], { shade: 'f0f4f4', width: 2000 }),
-        cell([para([txt(value, { size: 18 })], { align: 'right' })], { width: 4000 }),
+        cell([para([txt(label, { bold: true, size: 18 })], { align: 'right' })], { shade: 'f0f4f4', width: 2200 }),
+        cell([para([txt(value, { size: 18 })], { align: 'right' })], { width: 5000 }),
       ],
     }));
 
@@ -181,15 +181,15 @@ export async function GET(request: Request, { params }: { params: { courseId: st
     const nf = s.files.find(f => f.fileType === 'NATIONAL_ID');
 
     if (pf || nf) {
-      const fileLinks: (TextRun | ExternalHyperlink)[] = [];
-      if (pf) fileLinks.push(link('صورة جواز السفر', `${origin}/api/files/${pf.id}`));
-      if (pf && nf) fileLinks.push(txt('  |  ', { size: 18, color: MUTED }));
-      if (nf) fileLinks.push(link('صورة بطاقة الهوية', `${origin}/api/files/${nf.id}`));
+      const fileLinks: (TextRun)[] = [];
+      if (pf) fileLinks.push(...linkText('صورة جواز السفر', `${origin}/api/files/${pf.id}`));
+      if (pf && nf) fileLinks.push(txt('  |  ', { size: 14, color: MUTED }));
+      if (nf) fileLinks.push(...linkText('صورة بطاقة الهوية', `${origin}/api/files/${nf.id}`));
 
       fieldRows.push(new TableRow({
         children: [
-          cell([para([txt('المرفقات', { bold: true, size: 18 })], { align: 'right' })], { shade: 'f0f4f4', width: 2000 }),
-          cell([para(fileLinks, { align: 'right' })], { width: 4000 }),
+          cell([para([txt('المرفقات', { bold: true, size: 18 })], { align: 'right' })], { shade: 'f0f4f4', width: 2200 }),
+          cell([para(fileLinks, { align: 'right' })], { width: 5000 }),
         ],
       }));
     }
@@ -216,7 +216,7 @@ export async function GET(request: Request, { params }: { params: { courseId: st
       properties: {
         page: {
           margin: { top: cmToTwip(1.5), bottom: cmToTwip(1.5), right: cmToTwip(1.5), left: cmToTwip(1.5) },
-          size: { width: cmToEmu(21), height: cmToEmu(29.7) },
+          size: { width: cmToEmu(29.7), height: cmToEmu(21), orientation: PageOrientation.LANDSCAPE },
           pageNumbers: { start: 1 },
         },
       },
