@@ -5,9 +5,11 @@ import { getCurrentSession } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
 import ExcelJS from 'exceljs';
 
-export async function GET(_request: Request, { params }: { params: { courseId: string } }) {
+export async function GET(request: Request, { params }: { params: { courseId: string } }) {
   const session = getCurrentSession();
   if (!session) return NextResponse.json({ message: 'غير مصرح' }, { status: 401 });
+
+  const origin = new URL(request.url).origin;
 
   const course = await prisma.course.findUnique({
     where: { id: params.courseId },
@@ -74,8 +76,8 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
     const nf = s.files.find(f => f.fileType === 'NATIONAL_ID');
 
     const attachments: string[] = [];
-    if (pf) attachments.push(`📷 جواز: /api/files/${pf.id}`);
-    if (nf) attachments.push(`🆔 هوية: /api/files/${nf.id}`);
+    if (pf) attachments.push(`📷 جواز: ${origin}/api/files/${pf.id}`);
+    if (nf) attachments.push(`🆔 هوية: ${origin}/api/files/${nf.id}`);
 
     const row = partSheet.addRow([
       i + 1,
@@ -98,7 +100,7 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
 
     // Hyperlinks in attachments column
     const attachCell = row.getCell(9);
-    if (pf) (attachCell as any).hyperlink = `/api/files/${pf.id}`;
+    if (pf) (attachCell as any).hyperlink = `${origin}/api/files/${pf.id}`;
   });
 
   partSheet.columns = [

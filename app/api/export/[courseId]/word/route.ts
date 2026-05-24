@@ -14,6 +14,7 @@ const LINE = 'cccccc';
 const BORDER = { style: BorderStyle.SINGLE as any, size: 6, color: LINE };
 
 function cmToEmu(cm: number) { return Math.round(cm * 360000); }
+function cmToTwip(cm: number) { return Math.round(cm * 1440 / 2.54); }
 
 function txt(text: string, opts: { bold?: boolean; size?: number; color?: string } = {}): TextRun {
   return new TextRun({ text, font: 'Arial', size: opts.size ?? 22, bold: opts.bold, color: opts.color });
@@ -63,9 +64,11 @@ function dataCell(text: string, width?: number): TableCell {
   });
 }
 
-export async function GET(_request: Request, { params }: { params: { courseId: string } }) {
+export async function GET(request: Request, { params }: { params: { courseId: string } }) {
   const session = getCurrentSession();
   if (!session) return NextResponse.json({ message: 'غير مصرح' }, { status: 401 });
+
+  const origin = new URL(request.url).origin;
 
   const course = await prisma.course.findUnique({
     where: { id: params.courseId },
@@ -177,13 +180,11 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
     const pf = s.files.find(f => f.fileType === 'PASSPORT');
     const nf = s.files.find(f => f.fileType === 'NATIONAL_ID');
 
-    const fileUrl = (f: typeof pf) => f ? `/api/files/${f.id}` : null;
-
     if (pf || nf) {
       const fileLinks: (TextRun | ExternalHyperlink)[] = [];
-      if (pf) fileLinks.push(link('صورة جواز السفر', `/api/files/${pf.id}`));
+      if (pf) fileLinks.push(link('صورة جواز السفر', `${origin}/api/files/${pf.id}`));
       if (pf && nf) fileLinks.push(txt('  |  ', { size: 18, color: MUTED }));
-      if (nf) fileLinks.push(link('صورة بطاقة الهوية', `/api/files/${nf.id}`));
+      if (nf) fileLinks.push(link('صورة بطاقة الهوية', `${origin}/api/files/${nf.id}`));
 
       fieldRows.push(new TableRow({
         children: [
@@ -214,7 +215,7 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
     sections: [{
       properties: {
         page: {
-          margin: { top: cmToEmu(1.5), bottom: cmToEmu(1.5), right: cmToEmu(1.5), left: cmToEmu(1.5) },
+          margin: { top: cmToTwip(1.5), bottom: cmToTwip(1.5), right: cmToTwip(1.5), left: cmToTwip(1.5) },
           size: { width: cmToEmu(21), height: cmToEmu(29.7) },
           pageNumbers: { start: 1 },
         },
