@@ -73,8 +73,9 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
               <div className="link-preview" dir="ltr">{publicUrl}</div>
               <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
                 <button className="secondary-btn" onClick={() => { navigator.clipboard.writeText(publicUrl); alert('تم نسخ الرابط'); }}>نسخ الرابط</button>
-                <a href={`/api/export/${course.id}/word`} className="secondary-btn">📄 تصدير Word</a>
-                <a href={`/api/export/${course.id}/eml`} className="secondary-btn">✉️ تنزيل EML</a>
+                <a href={`/api/export/${course.id}/word`} className="secondary-btn">📄 Word</a>
+                <a href={`/api/export/${course.id}/excel`} className="secondary-btn">📊 Excel</a>
+                <a href={`/api/export/${course.id}/eml`} className="secondary-btn">✉️ EML</a>
               </div>
             </>
           ) : null}

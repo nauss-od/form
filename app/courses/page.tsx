@@ -51,6 +51,7 @@ function CourseCard({ c }: { c: Course }) {
         <Link href={`/courses/${c.id}`} className="secondary-btn" style={{ minHeight: 38, fontSize: '0.82rem' }}>عرض</Link>
         <button className="ghost-btn" style={{ minHeight: 38, fontSize: '0.82rem' }} onClick={() => { navigator.clipboard.writeText(courseUrl(c)); alert('تم نسخ الرابط'); }}>نسخ الرابط</button>
         <a href={`/api/export/${c.id}/word`} className="ghost-btn" style={{ minHeight: 38, fontSize: '0.82rem' }}>Word</a>
+        <a href={`/api/export/${c.id}/excel`} className="ghost-btn" style={{ minHeight: 38, fontSize: '0.82rem' }}>Excel</a>
         <a href={`/api/export/${c.id}/eml`} className="ghost-btn" style={{ minHeight: 38, fontSize: '0.82rem' }}>EML</a>
       </div>
     </div>
