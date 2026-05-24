@@ -5,11 +5,9 @@ import { getCurrentSession } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
 import ExcelJS from 'exceljs';
 
-export async function GET(request: Request, { params }: { params: { courseId: string } }) {
+export async function GET(_request: Request, { params }: { params: { courseId: string } }) {
   const session = getCurrentSession();
   if (!session) return NextResponse.json({ message: 'غير مصرح' }, { status: 401 });
-
-  const origin = new URL(request.url).origin;
 
   const course = await prisma.course.findUnique({
     where: { id: params.courseId },
@@ -37,22 +35,21 @@ export async function GET(request: Request, { params }: { params: { courseId: st
     { header: '', key: 'value', width: 50 },
   ];
 
-  const infoData = [
-    ['النشاط', course.activityName || '—'],
-    ['المكان', course.venue || '—'],
-    ['تاريخ البداية', formatDate(course.startDate)],
-    ['تاريخ النهاية', formatDate(course.endDate)],
-    ['عدد المشاركين', String(course.submissions.length)],
-    ['إعداد', course.createdBy?.name || '—'],
-    ['تاريخ التصدير', new Date().toLocaleDateString('ar-SA')],
+  const infoRows = [
+    { label: 'النشاط', value: course.activityName || '—' },
+    { label: 'المكان', value: course.venue || '—' },
+    { label: 'تاريخ البداية', value: formatDate(course.startDate) },
+    { label: 'تاريخ النهاية', value: formatDate(course.endDate) },
+    { label: 'عدد المشاركين', value: String(course.submissions.length) },
+    { label: 'إعداد', value: course.createdBy?.name || '—' },
+    { label: 'تاريخ التصدير', value: new Date().toLocaleDateString('ar-SA') },
   ];
 
-  infoData.forEach(([label, value]) => {
-    const row = infoSheet.addRow([label, value]);
-    row.getCell(1).font = { bold: true, size: 12 };
-    row.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F4F4' } };
-    row.getCell(1).border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
-    row.getCell(2).border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+  infoRows.forEach(r => infoSheet.addRow(r));
+
+  infoSheet.getColumn('label').eachCell(c => {
+    c.font = { bold: true, size: 12 };
+    c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F4F4' } };
   });
 
   // --- Sheet 2: Participants ---
@@ -60,24 +57,21 @@ export async function GET(request: Request, { params }: { params: { courseId: st
   const headers = ['م', 'الاسم', 'رقم الجواز', 'انتهاء الجواز', 'رقم الهوية', 'الجوال', 'تاريخ الميلاد', 'IBAN', 'المرفقات'];
   const headerRow = partSheet.addRow(headers);
 
-  const GREEN = 'FF016564';
-  const WHITE = 'FFFFFFFF';
-  const ALT_ROW = 'FFF8FBFB';
-
   headerRow.eachCell(c => {
-    c.font = { bold: true, color: { argb: WHITE }, size: 11, name: 'Arial' };
-    c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: GREEN } };
+    c.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+    c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF016564' } };
     c.alignment = { horizontal: 'center', vertical: 'middle' };
-    c.border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+    c.border = {
+      top: { style: 'thin' }, bottom: { style: 'thin' },
+      left: { style: 'thin' }, right: { style: 'thin' },
+    };
   });
 
   course.submissions.forEach((s, i) => {
     const pf = s.files.find(f => f.fileType === 'PASSPORT');
     const nf = s.files.find(f => f.fileType === 'NATIONAL_ID');
 
-    const attachments: string[] = [];
-    if (pf) attachments.push(`📷 جواز: ${origin}/api/files/${pf.id}`);
-    if (nf) attachments.push(`🆔 هوية: ${origin}/api/files/${nf.id}`);
+    const attachText = [pf ? '📷 جواز السفر' : '', nf ? '🆔 بطاقة الهوية' : ''].filter(Boolean).join(' + ');
 
     const row = partSheet.addRow([
       i + 1,
@@ -88,31 +82,22 @@ export async function GET(request: Request, { params }: { params: { courseId: st
       s.mobile,
       formatDate(s.birthDate),
       s.iban,
-      attachments.join('\n'),
+      attachText,
     ]);
 
-    const bgColor = i % 2 === 1 ? ALT_ROW : null;
-    row.eachCell((c, colIdx) => {
-      c.alignment = { horizontal: 'center', vertical: 'middle', wrapText: colIdx === 9 };
-      c.border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
-      if (bgColor) c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } };
+    row.eachCell(c => {
+      c.alignment = { horizontal: 'center', vertical: 'middle' };
+      c.border = {
+        top: { style: 'thin' }, bottom: { style: 'thin' },
+        left: { style: 'thin' }, right: { style: 'thin' },
+      };
     });
-
-    // Hyperlinks in attachments column
-    const attachCell = row.getCell(9);
-    if (pf) (attachCell as any).hyperlink = `${origin}/api/files/${pf.id}`;
   });
 
   partSheet.columns = [
     { width: 5 }, { width: 32 }, { width: 18 }, { width: 16 },
-    { width: 16 }, { width: 18 }, { width: 16 }, { width: 32 }, { width: 40 },
+    { width: 16 }, { width: 18 }, { width: 16 }, { width: 32 }, { width: 30 },
   ];
-
-  // Auto-filter
-  partSheet.autoFilter = {
-    from: { row: 1, column: 1 },
-    to: { row: course.submissions.length + 1, column: 9 },
-  };
 
   const buffer = await wb.xlsx.writeBuffer();
 
