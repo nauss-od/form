@@ -5,7 +5,7 @@ import { getCurrentSession } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
 import {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
-  ImageRun, PageBreak, AlignmentType, WidthType, BorderStyle,
+  PageBreak, AlignmentType, WidthType, BorderStyle,
 } from 'docx';
 
 const MUTED = '666666';
@@ -43,30 +43,6 @@ function cell(children: Paragraph[], opts: { width?: number; span?: number; shad
 
 function row(cells: TableCell[], isHeader = false): TableRow {
   return new TableRow({ children: cells, tableHeader: isHeader });
-}
-
-function imageParagraph(buffer: Buffer | null, label: string): Paragraph[] | null {
-  if (!buffer || buffer.length < 100) return null;
-
-  let type: 'jpg' | 'png' | 'gif' | 'bmp' = 'jpg';
-  if (buffer[0] === 0x89 && buffer[1] === 0x50) type = 'png';
-  else if (buffer[0] === 0xff && buffer[1] === 0xd8) type = 'jpg';
-  else if (buffer[0] === 0x47 && buffer[1] === 0x49) type = 'gif';
-  else if (buffer[0] === 0x42 && buffer[1] === 0x4d) type = 'bmp';
-
-  try {
-    const img = new ImageRun({
-      type,
-      data: buffer,
-      transformation: { width: cmToEmu(13), height: cmToEmu(9) },
-    });
-    return [
-      para([txt(label, { size: 18, bold: true, color: MUTED })], { align: 'center', spaceAfter: 40 }),
-      para([img], { align: 'center', spaceAfter: 80 }),
-    ];
-  } catch {
-    return null;
-  }
 }
 
 export async function GET(_request: Request, { params }: { params: { courseId: string } }) {
@@ -155,22 +131,12 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
   for (const s of course.submissions) {
     children.push(new Paragraph({ children: [new PageBreak()] }));
     children.push(para([txt(s.fullNamePassport, { size: 32, bold: true, color: DARK })], { align: 'center', spaceAfter: 40 }));
-    children.push(para([txt(`رقم الجواز: ${s.passportNumber}`, { size: 20, color: MUTED })], { align: 'center', spaceAfter: 200 }));
-
-    const pf = s.files.find(f => f.fileType === 'PASSPORT');
-    const nf = s.files.find(f => f.fileType === 'NATIONAL_ID');
-
-    const pBuf = pf?.fileData ? (pf.fileData instanceof Buffer ? pf.fileData : Buffer.from(pf.fileData as Uint8Array)) : null;
-    const nBuf = nf?.fileData ? (nf.fileData instanceof Buffer ? nf.fileData : Buffer.from(nf.fileData as Uint8Array)) : null;
-    const pImg = pBuf ? imageParagraph(pBuf, 'صورة جواز السفر') : null;
-    const nImg = nBuf ? imageParagraph(nBuf, 'صورة بطاقة الهوية') : null;
-
-    if (pImg) { children.push(...pImg); }
-    else { children.push(para([txt('لا توجد صورة جواز السفر', { size: 18, color: MUTED })], { align: 'center', spaceAfter: 80 })); }
-
-    if (nImg) { children.push(...nImg); }
-    else { children.push(para([txt('لا توجد صورة بطاقة الهوية', { size: 18, color: MUTED })], { align: 'center', spaceAfter: 80 })); }
-
+    children.push(para([txt(`رقم الجواز: ${s.passportNumber}`, { size: 20, color: MUTED })], { align: 'center', spaceAfter: 80 }));
+    children.push(para([txt(`رقم الهوية: ${s.nationalId}`, { size: 20, color: MUTED })], { align: 'center', spaceAfter: 80 }));
+    children.push(para([txt(`الجوال: ${s.mobile}`, { size: 20, color: MUTED })], { align: 'center', spaceAfter: 80 }));
+    children.push(para([txt(`تاريخ الميلاد: ${formatDate(s.birthDate)}`, { size: 20, color: MUTED })], { align: 'center', spaceAfter: 80 }));
+    children.push(para([txt(`IBAN: ${s.iban}`, { size: 20, color: MUTED })], { align: 'center', spaceAfter: 80 }));
+    children.push(para([txt(`انتهاء الجواز: ${formatDate(s.passportExpiry)}`, { size: 20, color: MUTED })], { align: 'center', spaceAfter: 200 }));
     children.push(para([txt(`تم التصدير من منصة تأمين المشاركين للدورات الخارجية — ${new Date().toLocaleDateString('ar-SA')}`, { size: 14, color: MUTED })], { align: 'center', spaceBefore: 200 }));
   }
 
@@ -195,29 +161,7 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
     }],
   });
 
-  let buffer: Buffer;
-  try {
-    buffer = Buffer.from(await Packer.toBuffer(doc));
-  } catch {
-    // Fallback: return minimal doc with just text
-    const fallbackDoc = new Document({
-      sections: [{
-        properties: {
-          page: {
-            margin: { top: cmToEmu(1.5), bottom: cmToEmu(1.5), right: cmToEmu(1.5), left: cmToEmu(1.5) },
-            size: { width: cmToEmu(21), height: cmToEmu(29.7) },
-          },
-        },
-        children: [
-          para([txt('بيانات المشاركين', { size: 32, bold: true, color: DARK })], { align: 'center', spaceAfter: 200 }),
-          ...course.submissions.map((s) =>
-            para([txt(`${s.fullNamePassport} — ${s.passportNumber}`, { size: 22 })], { align: 'right', spaceAfter: 100 })
-          ),
-        ],
-      }],
-    });
-    buffer = Buffer.from(await Packer.toBuffer(fallbackDoc));
-  }
+  const buffer = Buffer.from(await Packer.toBuffer(doc));
 
   return new NextResponse(buffer, {
     headers: {
