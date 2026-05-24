@@ -1736,6 +1736,25 @@ select.input:focus {
 
 .req { color: #dc2626; }
 
+/* Scan passport button */
+.scan-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 14px;
+  margin-right: auto;
+  border-radius: 999px;
+  border: 1px solid rgba(1, 101, 100, 0.15);
+  background: rgba(1, 101, 100, 0.06);
+  color: var(--nauss-green);
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.scan-btn:hover { background: rgba(1, 101, 100, 0.12); border-color: var(--nauss-green); }
+
 /* Mobile field */
 .mobile-wrap {
   display: flex;

@@ -2,6 +2,8 @@
 
 import { FormEvent, useState } from 'react';
 import SmartDatePicker from '@/components/SmartDatePicker';
+import PassportScanner from '@/components/PassportScanner';
+import { MrzResult } from '@/lib/mrz-parser';
 
 function UploadIcon() {
   return (
@@ -59,6 +61,21 @@ export default function PublicFormPage({ params }: { params: { token: string } }
 
   const [passportFile, setPassportFile] = useState<File | null>(null);
   const [nationalIdFile, setNationalIdFile] = useState<File | null>(null);
+  const [showScanner, setShowScanner] = useState(false);
+
+  function handleScanResult(data: MrzResult) {
+    setName(data.fullNamePassport);
+    if (data.passportNumber) {
+      setPassport(data.passportNumber);
+    }
+    if (data.passportExpiry) {
+      setExpiry(data.passportExpiry);
+    }
+    if (data.birthDate) {
+      setBirthDate(data.birthDate);
+    }
+    setShowScanner(false);
+  }
 
   const today = new Date().toISOString().split('T')[0];
   const maxBirth = new Date();
@@ -178,6 +195,14 @@ export default function PublicFormPage({ params }: { params: { token: string } }
             <div className="section-step">
               <span className="step-num">1</span>
               <h3>البيانات الشخصية</h3>
+              <button type="button" onClick={() => setShowScanner(true)} className="scan-btn">
+                <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+                  <rect x="2" y="2" width="16" height="16" rx="3" stroke="currentColor" strokeWidth="1.5"/>
+                  <circle cx="10" cy="8" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
+                  <path d="M2 14l4-4 3 3 3-3 6 6" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+                </svg>
+                مسح الجواز
+              </button>
             </div>
 
             <div className="field">
@@ -336,6 +361,13 @@ export default function PublicFormPage({ params }: { params: { token: string } }
               </div>
             </div>
           </div>
+
+          {showScanner && (
+            <PassportScanner
+              onResult={handleScanResult}
+              onClose={() => setShowScanner(false)}
+            />
+          )}
 
           {error ? <div className="form-error-bar">{error}</div> : null}
 
