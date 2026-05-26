@@ -6,6 +6,7 @@ import { logAudit } from '@/lib/audit';
 import {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
   PageBreak, AlignmentType, WidthType, BorderStyle, PageOrientation,
+  TableLayoutType,
 } from 'docx';
 
 const MUTED = '666666';
@@ -118,6 +119,8 @@ export async function GET(request: Request, { params }: { params: { courseId: st
   children.push(new Table({
     rows: infoRows,
     width: { size: 100, type: WidthType.PERCENTAGE },
+    columnWidths: [2200, 3800, 2200, 3800],
+    layout: TableLayoutType.FIXED,
     visuallyRightToLeft: true,
   }));
 
@@ -143,12 +146,15 @@ export async function GET(request: Request, { params }: { params: { courseId: st
         dataCell(formatDate(s.birthDate), colWidths[6]),
         dataCell(s.iban, colWidths[7]),
       ],
+      cantSplit: true,
     })),
   ];
 
   children.push(new Table({
     rows: partRows,
     width: { size: 100, type: WidthType.PERCENTAGE },
+    columnWidths: colWidths,
+    layout: TableLayoutType.FIXED,
     visuallyRightToLeft: true,
   }));
 
@@ -174,6 +180,7 @@ export async function GET(request: Request, { params }: { params: { courseId: st
         cell([para([txt(label, { bold: true, size: 18 })], { align: 'right' })], { shade: 'f0f4f4', width: 2200 }),
         cell([para([txt(value, { size: 18 })], { align: 'right' })], { width: 5000 }),
       ],
+      cantSplit: true,
     }));
 
     // Add file attachments row if files exist
@@ -197,6 +204,8 @@ export async function GET(request: Request, { params }: { params: { courseId: st
     children.push(new Table({
       rows: fieldRows,
       width: { size: 80, type: WidthType.PERCENTAGE },
+      columnWidths: [2200, 5000],
+      layout: TableLayoutType.FIXED,
       visuallyRightToLeft: true,
     }));
 
