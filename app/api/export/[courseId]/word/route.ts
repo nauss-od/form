@@ -43,7 +43,7 @@ async function resizeImage(buffer: Buffer, maxWidth: number): Promise<Buffer | n
 }
 
 function imgParagraph(data: Buffer, label: string, width: number, height: number): Paragraph[] {
-  const run = new ImageRun({ type: 'image' as any, data, transformation: { width, height } });
+  const run = new ImageRun({ type: 'jpg', data, transformation: { width, height } });
   return [
     new Paragraph({ children: [run], alignment: AlignmentType.CENTER, spacing: { after: 20 } }),
     new Paragraph({ children: [txt(label, { size: 16, color: MUTED })], alignment: AlignmentType.CENTER, spacing: { after: 60 } }),
@@ -222,7 +222,7 @@ export async function GET(request: Request, { params }: { params: { courseId: st
     const nfBuf = nf?.fileData ? await resizeImage(nf.fileData, IMG_WIDTH) : null;
 
     const spacerCell = new TableCell({
-      children: [new Paragraph({ children: [txt('', { size: 2 })] })],
+      children: [new Paragraph({ children: [], spacing: { before: 0, after: 0 } })],
       width: { size: 5, type: WidthType.PERCENTAGE },
       borders: { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER },
     });
@@ -237,7 +237,6 @@ export async function GET(request: Request, { params }: { params: { courseId: st
         ],
       })],
       width: { size: 100, type: WidthType.PERCENTAGE },
-      layout: TableLayoutType.AUTOFIT,
       visuallyRightToLeft: true,
     }));
 
@@ -270,7 +269,7 @@ export async function GET(request: Request, { params }: { params: { courseId: st
   return new NextResponse(buffer, {
     headers: {
       'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'Content-Disposition': `attachment; filename="${(course.activityName || 'course').replace(/[^a-zA-Z0-9\-_ ]/g, '')}${course.venue ? '-' + course.venue.replace(/[^a-zA-Z0-9\-_ ]/g, '') : ''}-insurance.docx"`,
+      'Content-Disposition': `attachment; filename="${(course.activityName || 'course').replace(/[<>:"/\\|?*]/g, '')}${course.venue ? '-' + course.venue.replace(/[<>:"/\\|?*]/g, '') : ''}-insurance.docx"`,
     },
   });
 }

@@ -68,7 +68,7 @@ ${course.createdBy?.name || 'موظف التدريب'}
 وكالة التدريب
 جامعة نايف العربية للعلوم الأمنية`;
 
-  const safeName = (course.activityName || 'course').replace(/[^a-zA-Z0-9\-_ ]/g, '');
+  const safeName = (course.activityName || 'course').replace(/[<>:"/\\|?*]/g, '');
   const encodedSubject = '=?UTF-8?B?' + Buffer.from(subject).toString('base64') + '?=';
 
   const eml = [
