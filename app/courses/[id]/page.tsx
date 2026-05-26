@@ -17,6 +17,10 @@ type CourseDetail = {
   submissions: Submission[];
 };
 
+function IconLoc() { return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>; }
+function IconCal() { return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>; }
+function IconUser() { return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>; }
+
 export default function CourseDetailsPage({ params }: { params: { id: string } }) {
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,7 +47,6 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
 
   return (
     <AppShell title={course.activityName || 'تفاصيل الدورة'}>
-      {/* Course Info + Progress */}
       <div className="course-hero">
         <div className="course-hero-main">
           <div className="course-hero-info">
@@ -52,9 +55,9 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
             </span>
             <h2>{course.activityName || 'دورة تدريبية'}</h2>
             <div className="course-meta">
-              <span>📍 {course.venue || '—'}</span>
-              <span>📅 {formatDate(course.startDate)} — {formatDate(course.endDate)}</span>
-              <span>👤 {course.createdBy?.name || '—'}</span>
+              <span><IconLoc /> {course.venue || '—'}</span>
+              <span><IconCal /> {formatDate(course.startDate)} — {formatDate(course.endDate)}</span>
+              <span><IconUser /> {course.createdBy?.name || '—'}</span>
             </div>
           </div>
           <div className="course-hero-progress">
@@ -71,52 +74,56 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
           {publicUrl ? (
             <>
               <div className="link-preview" dir="ltr">{publicUrl}</div>
-              <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+              <div className="inline-toolbar" style={{ marginTop: 8 }}>
                 <button className="secondary-btn" onClick={() => { navigator.clipboard.writeText(publicUrl); alert('تم نسخ الرابط'); }}>نسخ الرابط</button>
-                <a href={`/api/export/${course.id}/word`} className="secondary-btn">📄 Word</a>
-                <a href={`/api/export/${course.id}/excel`} className="secondary-btn">📊 Excel</a>
-                <a href={`/api/export/${course.id}/eml`} className="secondary-btn">✉️ EML</a>
+                <a href={`/api/export/${course.id}/word`} className="secondary-btn">Word</a>
+                <a href={`/api/export/${course.id}/excel`} className="secondary-btn">Excel</a>
+                <a href={`/api/export/${course.id}/eml`} className="secondary-btn">EML</a>
               </div>
             </>
           ) : null}
         </div>
       </div>
 
-      {/* Submissions */}
-      <div className="section-card" style={{ marginTop: 20 }}>
-        <div className="section-head">
-          <h3>الاستجابات ({completed})</h3>
-        </div>
-        {completed === 0 ? (
-          <p className="p-muted">لا توجد استجابات بعد. أرسل الرابط للمشاركين.</p>
-        ) : (
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>م</th><th>الاسم</th><th>رقم الجواز</th><th>انتهاء الجواز</th>
-                <th>الهوية</th><th>الجوال</th><th>تاريخ الميلاد</th><th>IBAN</th><th>المرفقات</th>
-              </tr>
-            </thead>
-            <tbody>
-              {course.submissions.map((s, i) => (
-                <tr key={s.id}>
-                  <td>{i + 1}</td>
-                  <td><strong>{s.fullNamePassport}</strong></td>
-                  <td>{s.passportNumber}</td>
-                  <td>{formatDate(s.passportExpiry)}</td>
-                  <td>{s.nationalId}</td>
-                  <td dir="ltr">{s.mobile}</td>
-                  <td>{formatDate(s.birthDate)}</td>
-                  <td style={{ fontSize: 11, direction: 'ltr' }}>{s.iban}</td>
-                  <td>
-                    {s.files?.some(f => f.fileType === 'PASSPORT') ? '📷' : ''}
-                    {s.files?.some(f => f.fileType === 'NATIONAL_ID') ? '🆔' : ''}
-                  </td>
+      <div className="data-table-wrap" style={{ marginTop: 20 }}>
+        <div className="section-card">
+          <div className="section-head">
+            <h3>الاستجابات ({completed})</h3>
+          </div>
+          {completed === 0 ? (
+            <div className="empty-state">
+              <p>لا توجد استجابات بعد. أرسل الرابط للمشاركين.</p>
+            </div>
+          ) : (
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>م</th><th>الاسم</th><th>رقم الجواز</th><th>انتهاء الجواز</th>
+                  <th>الهوية</th><th>الجوال</th><th>تاريخ الميلاد</th><th>IBAN</th><th>المرفقات</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+              </thead>
+              <tbody>
+                {course.submissions.map((s, i) => (
+                  <tr key={s.id}>
+                    <td>{i + 1}</td>
+                    <td className="td-title"><strong>{s.fullNamePassport}</strong></td>
+                    <td>{s.passportNumber}</td>
+                    <td>{formatDate(s.passportExpiry)}</td>
+                    <td>{s.nationalId}</td>
+                    <td dir="ltr">{s.mobile}</td>
+                    <td>{formatDate(s.birthDate)}</td>
+                    <td style={{ fontSize: 11, direction: 'ltr' }}>{s.iban}</td>
+                    <td>
+                      {s.files?.some(f => f.fileType === 'PASSPORT') ? 'جواز' : ''}
+                      {s.files?.some(f => f.fileType === 'NATIONAL_ID') && s.files?.some(f => f.fileType === 'PASSPORT') ? ' + ' : ''}
+                      {s.files?.some(f => f.fileType === 'NATIONAL_ID') ? 'هوية' : ''}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
     </AppShell>
   );
