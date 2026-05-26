@@ -188,35 +188,33 @@ export async function GET(request: Request, { params }: { params: { courseId: st
   // --- Per-participant pages ---
   for (const s of course.submissions) {
     children.push(new Paragraph({ children: [new PageBreak()] }));
-    children.push(para([txt(s.fullNamePassport, { size: 36, bold: true, color: DARK })], { align: 'center', spaceAfter: 120 }));
+    children.push(para([txt(s.fullNamePassport, { size: 36, bold: true, color: DARK })], { align: 'center', spaceAfter: 160 }));
 
-    // Full participant info table (2x6 grid: label, value, label, value)
-    const infoFields = [
-      ['رقم الجواز', s.passportNumber, 'انتهاء الجواز', formatDate(s.passportExpiry)],
-      ['رقم الهوية', s.nationalId, 'الجوال', s.mobile],
-      ['تاريخ الميلاد', formatDate(s.birthDate), 'IBAN', s.iban],
-    ];
-    const infoFieldRows = infoFields.map(([l1, v1, l2, v2]) => new TableRow({
-      children: [
-        cell([para([txt(l1, { bold: true, size: 18 })], { align: 'right' })], { shade: 'f0f4f4', width: 2200 }),
-        cell([para([txt(v1, { size: 18 })], { align: 'right' })], { width: 3400 }),
-        cell([para([txt(l2, { bold: true, size: 18 })], { align: 'right' })], { shade: 'f0f4f4', width: 2200 }),
-        cell([para([txt(v2, { size: 18 })], { align: 'right' })], { width: 3400 }),
-      ],
-      cantSplit: true,
-    }));
+    // 2-row info table: headers + values, fills page for centering
+    const infoHeaders = ['رقم الجواز', 'انتهاء الجواز', 'رقم الهوية', 'الجوال', 'تاريخ الميلاد', 'IBAN'];
+    const infoValues = [s.passportNumber, formatDate(s.passportExpiry), s.nationalId, s.mobile, formatDate(s.birthDate), s.iban];
+    const infoColWidths = [1800, 1400, 1800, 1400, 1400, 1800];
 
     children.push(new Table({
-      rows: infoFieldRows,
-      width: { size: 80, type: WidthType.PERCENTAGE },
-      columnWidths: [2200, 3400, 2200, 3400],
+      rows: [
+        new TableRow({
+          children: infoHeaders.map((h, i) => headerCell(h, infoColWidths[i])),
+          cantSplit: true,
+        }),
+        new TableRow({
+          children: infoValues.map((v, i) => dataCell(v, infoColWidths[i])),
+          cantSplit: true,
+        }),
+      ],
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      columnWidths: infoColWidths,
       layout: TableLayoutType.FIXED,
       visuallyRightToLeft: true,
     }));
 
-    children.push(para([], { spaceAfter: 200 }));
+    children.push(para([], { spaceAfter: 250 }));
 
-    // Images
+    // Images side by side
     const pf = s.files.find(f => f.fileType === 'PASSPORT');
     const nf = s.files.find(f => f.fileType === 'NATIONAL_ID');
 
@@ -224,7 +222,7 @@ export async function GET(request: Request, { params }: { params: { courseId: st
     const nfBuf = nf?.fileData ? await resizeImage(nf.fileData, IMG_WIDTH) : null;
 
     const spacerCell = new TableCell({
-      children: [new Paragraph({ children: [] })],
+      children: [new Paragraph({ children: [txt('', { size: 2 })] })],
       width: { size: 5, type: WidthType.PERCENTAGE },
       borders: { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER },
     });
@@ -239,7 +237,7 @@ export async function GET(request: Request, { params }: { params: { courseId: st
         ],
       })],
       width: { size: 100, type: WidthType.PERCENTAGE },
-      layout: TableLayoutType.FIXED,
+      layout: TableLayoutType.AUTOFIT,
       visuallyRightToLeft: true,
     }));
 
@@ -261,7 +259,6 @@ export async function GET(request: Request, { params }: { params: { courseId: st
         page: {
           margin: { top: cmToTwip(1.5), bottom: cmToTwip(1.5), right: cmToTwip(1.5), left: cmToTwip(1.5) },
           size: { width: cmToEmu(29.7), height: cmToEmu(21), orientation: PageOrientation.LANDSCAPE },
-          pageNumbers: { start: 1 },
         },
       },
       children,
@@ -273,7 +270,7 @@ export async function GET(request: Request, { params }: { params: { courseId: st
   return new NextResponse(buffer, {
     headers: {
       'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'Content-Disposition': `attachment; filename="${(course.activityName || 'course').replace(/[^a-zA-Z0-9\-_ ]/g, '')}-participants.docx"`,
+      'Content-Disposition': `attachment; filename="${(course.activityName || 'course').replace(/[^a-zA-Z0-9\-_ ]/g, '')}${course.venue ? '-' + course.venue.replace(/[^a-zA-Z0-9\-_ ]/g, '') : ''}-insurance.docx"`,
     },
   });
 }
