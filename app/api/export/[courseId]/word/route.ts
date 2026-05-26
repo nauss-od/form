@@ -10,14 +10,16 @@ import {
   TableLayoutType, ImageRun,
 } from 'docx';
 
-const IMG_WIDTH = 350;
-const IMG_HEIGHT = 263;
+const IMG_WIDTH = 420;
+const IMG_HEIGHT = 315;
 
 const MUTED = '666666';
 const DARK = '014f4d';
 const LINE = 'cccccc';
+const CREDIT = '999999';
 const BORDER = { style: BorderStyle.SINGLE as any, size: 6, color: LINE };
 const NO_BORDER = { style: BorderStyle.NONE as any, size: 0, color: 'ffffff' };
+const IMG_BORDER = { style: BorderStyle.SINGLE as any, size: 4, color: 'dddddd' };
 
 function cmToEmu(cm: number) { return Math.round(cm * 360000); }
 function cmToTwip(cm: number) { return Math.round(cm * 1440 / 2.54); }
@@ -36,7 +38,7 @@ function para(children: any[], opts: { align?: string; spaceBefore?: number; spa
 
 async function resizeImage(buffer: Buffer, maxWidth: number): Promise<Buffer | null> {
   try {
-    return await sharp(buffer).rotate().resize(maxWidth, undefined, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 80 }).toBuffer();
+    return await sharp(buffer).rotate().resize(maxWidth, undefined, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 90 }).toBuffer();
   } catch { return null; }
 }
 
@@ -44,8 +46,20 @@ function imgParagraph(data: Buffer, label: string, width: number, height: number
   const run = new ImageRun({ type: 'image' as any, data, transformation: { width, height } });
   return [
     new Paragraph({ children: [run], alignment: AlignmentType.CENTER, spacing: { after: 20 } }),
-    new Paragraph({ children: [txt(label, { size: 16, color: MUTED })], alignment: AlignmentType.CENTER }),
+    new Paragraph({ children: [txt(label, { size: 16, color: MUTED })], alignment: AlignmentType.CENTER, spacing: { after: 60 } }),
   ];
+}
+
+function imgCell(data: Buffer | null, label: string, fallback: string, widthPct: number): TableCell {
+  const children: Paragraph[] = data
+    ? imgParagraph(data, label, IMG_WIDTH, IMG_HEIGHT)
+    : [para([txt(fallback, { size: 16, color: MUTED })], { align: 'center' })];
+  return new TableCell({
+    children,
+    width: { size: widthPct, type: WidthType.PERCENTAGE },
+    verticalAlign: 'center' as any,
+    borders: { top: IMG_BORDER, bottom: IMG_BORDER, left: IMG_BORDER, right: IMG_BORDER },
+  });
 }
 
 function cell(children: Paragraph[], opts: { width?: number; shade?: string } = {}): TableCell {
@@ -169,6 +183,7 @@ export async function GET(request: Request, { params }: { params: { courseId: st
   }));
 
   children.push(para([txt(`تم التصدير من منصة تأمين المشاركين — ${new Date().toLocaleDateString('ar-SA')}`, { size: 14, color: MUTED })], { align: 'center', spaceBefore: 300 }));
+  children.push(para([txt('طُوِّر بواسطة نايف الشهراني', { size: 12, color: CREDIT })], { align: 'center' }));
 
   // --- Per-participant pages ---
   for (const s of course.submissions) {
@@ -183,40 +198,31 @@ export async function GET(request: Request, { params }: { params: { courseId: st
     const pf = s.files.find(f => f.fileType === 'PASSPORT');
     const nf = s.files.find(f => f.fileType === 'NATIONAL_ID');
 
-    const pfBuf = pf?.fileData ? await resizeImage(pf.fileData, IMG_WIDTH * 2) : null;
-    const nfBuf = nf?.fileData ? await resizeImage(nf.fileData, IMG_WIDTH * 2) : null;
+    const pfBuf = pf?.fileData ? await resizeImage(pf.fileData, IMG_WIDTH) : null;
+    const nfBuf = nf?.fileData ? await resizeImage(nf.fileData, IMG_WIDTH) : null;
 
-    // RTL: first cell = right (passport), second cell = left (national ID)
-    const rightCellPars: Paragraph[] = pfBuf
-      ? imgParagraph(pfBuf, 'صورة جواز السفر', IMG_WIDTH, IMG_HEIGHT)
-      : [para([txt('لا توجد صورة جواز السفر', { size: 16, color: MUTED })], { align: 'center' })];
-    const leftCellPars: Paragraph[] = nfBuf
-      ? imgParagraph(nfBuf, 'صورة بطاقة الهوية', IMG_WIDTH, IMG_HEIGHT)
-      : [para([txt('لا توجد صورة بطاقة الهوية', { size: 16, color: MUTED })], { align: 'center' })];
+    const spacerCell = new TableCell({
+      children: [new Paragraph({ children: [] })],
+      width: { size: 10, type: WidthType.PERCENTAGE },
+      borders: { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER },
+    });
 
     children.push(new Table({
       rows: [new TableRow({
         children: [
-          new TableCell({
-            children: rightCellPars,
-            width: { size: 50, type: WidthType.PERCENTAGE },
-            verticalAlign: 'center' as any,
-            borders: { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER },
-          }),
-          new TableCell({
-            children: leftCellPars,
-            width: { size: 50, type: WidthType.PERCENTAGE },
-            verticalAlign: 'center' as any,
-            borders: { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER },
-          }),
+          spacerCell,
+          imgCell(pfBuf, 'صورة جواز السفر', 'لا توجد صورة جواز السفر', 40),
+          imgCell(nfBuf, 'صورة بطاقة الهوية', 'لا توجد صورة بطاقة الهوية', 40),
+          spacerCell,
         ],
       })],
-      width: { size: 80, type: WidthType.PERCENTAGE },
+      width: { size: 100, type: WidthType.PERCENTAGE },
       layout: TableLayoutType.FIXED,
       visuallyRightToLeft: true,
     }));
 
     children.push(para([txt('منصة تأمين المشاركين للدورات الخارجية', { size: 14, color: MUTED })], { align: 'center', spaceBefore: 400 }));
+    children.push(para([txt('طُوِّر بواسطة نايف الشهراني', { size: 12, color: CREDIT })], { align: 'center' }));
   }
 
   const doc = new Document({
