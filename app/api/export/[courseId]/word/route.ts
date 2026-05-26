@@ -10,15 +10,15 @@ import {
   TableLayoutType, ImageRun,
 } from 'docx';
 
-const IMG_WIDTH = 480;
-const IMG_HEIGHT = 360;
+const IMG_WIDTH = 360;
+const IMG_HEIGHT = 270;
+const JPEG_QUALITY = 60;
 
 const MUTED = '666666';
 const DARK = '014f4d';
 const LINE = 'cccccc';
 const CREDIT = '999999';
 const BORDER = { style: BorderStyle.SINGLE as any, size: 6, color: LINE };
-const NO_BORDER = { style: BorderStyle.NONE as any, size: 0, color: 'ffffff' };
 const IMG_BORDER = { style: BorderStyle.SINGLE as any, size: 4, color: 'dddddd' };
 
 function cmToEmu(cm: number) { return Math.round(cm * 360000); }
@@ -38,7 +38,14 @@ function para(children: any[], opts: { align?: string; spaceBefore?: number; spa
 
 async function resizeImage(buffer: Buffer, maxWidth: number): Promise<Buffer | null> {
   try {
-    return await sharp(buffer).rotate().resize(maxWidth, undefined, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 90 }).toBuffer();
+    return await sharp(buffer).rotate().resize(maxWidth, undefined, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: JPEG_QUALITY }).toBuffer();
+  } catch { return null; }
+}
+
+async function processImage(data: Buffer | null | undefined): Promise<Buffer | null> {
+  if (!data) return null;
+  try {
+    return await resizeImage(data, IMG_WIDTH);
   } catch { return null; }
 }
 
@@ -50,13 +57,13 @@ function imgParagraph(data: Buffer, label: string, width: number, height: number
   ];
 }
 
-function imgCell(data: Buffer | null, label: string, fallback: string, widthPct: number): TableCell {
+function imgCell(data: Buffer | null, label: string, fallback: string): TableCell {
   const children: Paragraph[] = data
     ? imgParagraph(data, label, IMG_WIDTH, IMG_HEIGHT)
     : [para([txt(fallback, { size: 16, color: MUTED })], { align: 'center' })];
   return new TableCell({
     children,
-    width: { size: widthPct, type: WidthType.PERCENTAGE },
+    width: { size: 6000, type: WidthType.DXA },
     verticalAlign: 'center' as any,
     borders: { top: IMG_BORDER, bottom: IMG_BORDER, left: IMG_BORDER, right: IMG_BORDER },
   });
@@ -92,10 +99,11 @@ function dataCell(text: string, width?: number): TableCell {
 }
 
 export async function GET(request: Request, { params }: { params: { courseId: string } }) {
-  const session = getCurrentSession();
-  if (!session) return NextResponse.json({ message: 'غير مصرح' }, { status: 401 });
+  try {
+    const session = getCurrentSession();
+    if (!session) return NextResponse.json({ message: 'غير مصرح' }, { status: 401 });
 
-  const course = await prisma.course.findUnique({
+    const course = await prisma.course.findUnique({
     where: { id: params.courseId },
     include: {
       submissions: { include: { files: true }, orderBy: { createdAt: 'asc' } },
@@ -215,28 +223,19 @@ export async function GET(request: Request, { params }: { params: { courseId: st
     children.push(para([], { spaceAfter: 250 }));
 
     // Images side by side
-    const pf = s.files.find(f => f.fileType === 'PASSPORT');
-    const nf = s.files.find(f => f.fileType === 'NATIONAL_ID');
-
-    const pfBuf = pf?.fileData ? await resizeImage(pf.fileData, IMG_WIDTH) : null;
-    const nfBuf = nf?.fileData ? await resizeImage(nf.fileData, IMG_WIDTH) : null;
-
-    const spacerCell = new TableCell({
-      children: [new Paragraph({ children: [], spacing: { before: 0, after: 0 } })],
-      width: { size: 5, type: WidthType.PERCENTAGE },
-      borders: { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER },
-    });
+    const pfBuf = await processImage(s.files.find(f => f.fileType === 'PASSPORT')?.fileData);
+    const nfBuf = await processImage(s.files.find(f => f.fileType === 'NATIONAL_ID')?.fileData);
 
     children.push(new Table({
       rows: [new TableRow({
         children: [
-          spacerCell,
-          imgCell(pfBuf, 'صورة جواز السفر', 'لا توجد صورة جواز السفر', 45),
-          imgCell(nfBuf, 'صورة بطاقة الهوية', 'لا توجد صورة بطاقة الهوية', 45),
-          spacerCell,
+          imgCell(pfBuf, 'صورة جواز السفر', 'لا توجد صورة جواز السفر'),
+          imgCell(nfBuf, 'صورة بطاقة الهوية', 'لا توجد صورة بطاقة الهوية'),
         ],
       })],
       width: { size: 100, type: WidthType.PERCENTAGE },
+      columnWidths: [6000, 6000],
+      layout: TableLayoutType.FIXED,
       visuallyRightToLeft: true,
     }));
 
@@ -272,4 +271,8 @@ export async function GET(request: Request, { params }: { params: { courseId: st
       'Content-Disposition': `attachment; filename="${(course.activityName || 'course').replace(/[<>:"/\\|?*]/g, '')}${course.venue ? '-' + course.venue.replace(/[<>:"/\\|?*]/g, '') : ''}-insurance.docx"`,
     },
   });
+  } catch (err) {
+    console.error('Word export error:', err);
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
 }
