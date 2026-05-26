@@ -3,16 +3,21 @@ import { prisma } from '@/lib/prisma';
 import { formatDate } from '@/lib/utils';
 import { getCurrentSession } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
+import sharp from 'sharp';
 import {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
   PageBreak, AlignmentType, WidthType, BorderStyle, PageOrientation,
-  TableLayoutType,
+  TableLayoutType, ImageRun,
 } from 'docx';
+
+const IMG_WIDTH = 350;
+const IMG_HEIGHT = 263;
 
 const MUTED = '666666';
 const DARK = '014f4d';
 const LINE = 'cccccc';
 const BORDER = { style: BorderStyle.SINGLE as any, size: 6, color: LINE };
+const NO_BORDER = { style: BorderStyle.NONE as any, size: 0, color: 'ffffff' };
 
 function cmToEmu(cm: number) { return Math.round(cm * 360000); }
 function cmToTwip(cm: number) { return Math.round(cm * 1440 / 2.54); }
@@ -29,10 +34,17 @@ function para(children: any[], opts: { align?: string; spaceBefore?: number; spa
   });
 }
 
-function linkText(label: string, url: string): TextRun[] {
+async function resizeImage(buffer: Buffer, maxWidth: number): Promise<Buffer | null> {
+  try {
+    return await sharp(buffer).rotate().resize(maxWidth, undefined, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 80 }).toBuffer();
+  } catch { return null; }
+}
+
+function imgParagraph(data: Buffer, label: string, width: number, height: number): Paragraph[] {
+  const run = new ImageRun({ type: 'image' as any, data, transformation: { width, height } });
   return [
-    txt(label, { size: 18, bold: true, color: '0563C1' }),
-    txt(` (${url})`, { size: 14, color: MUTED }),
+    new Paragraph({ children: [run], alignment: AlignmentType.CENTER, spacing: { after: 20 } }),
+    new Paragraph({ children: [txt(label, { size: 16, color: MUTED })], alignment: AlignmentType.CENTER }),
   ];
 }
 
@@ -68,8 +80,6 @@ function dataCell(text: string, width?: number): TableCell {
 export async function GET(request: Request, { params }: { params: { courseId: string } }) {
   const session = getCurrentSession();
   if (!session) return NextResponse.json({ message: 'غير مصرح' }, { status: 401 });
-
-  const origin = new URL(request.url).origin;
 
   const course = await prisma.course.findUnique({
     where: { id: params.courseId },
@@ -163,53 +173,50 @@ export async function GET(request: Request, { params }: { params: { courseId: st
   // --- Per-participant pages ---
   for (const s of course.submissions) {
     children.push(new Paragraph({ children: [new PageBreak()] }));
-    children.push(para([txt(s.fullNamePassport, { size: 32, bold: true, color: DARK })], { align: 'center', spaceAfter: 60 }));
-    children.push(para([txt(`رقم الجواز: ${s.passportNumber}`, { size: 20, color: MUTED })], { align: 'center', spaceAfter: 120 }));
+    children.push(para([txt(s.fullNamePassport, { size: 36, bold: true, color: DARK })], { align: 'center', spaceAfter: 40 }));
+    children.push(para([
+      txt(`رقم الهوية: ${s.nationalId}`, { size: 20, color: MUTED }),
+      txt(`  —  `, { size: 20, color: MUTED }),
+      txt(`الجوال: ${s.mobile}`, { size: 20, color: MUTED }),
+    ], { align: 'center', spaceAfter: 300 }));
 
-    // Fields table
-    const fields = [
-      ['رقم الهوية', s.nationalId],
-      ['الجوال', s.mobile],
-      ['تاريخ الميلاد', formatDate(s.birthDate)],
-      ['IBAN', s.iban],
-      ['انتهاء الجواز', formatDate(s.passportExpiry)],
-    ];
-
-    const fieldRows = fields.map(([label, value]) => new TableRow({
-      children: [
-        cell([para([txt(label, { bold: true, size: 18 })], { align: 'right' })], { shade: 'f0f4f4', width: 2200 }),
-        cell([para([txt(value, { size: 18 })], { align: 'right' })], { width: 5000 }),
-      ],
-      cantSplit: true,
-    }));
-
-    // Add file attachments row if files exist
     const pf = s.files.find(f => f.fileType === 'PASSPORT');
     const nf = s.files.find(f => f.fileType === 'NATIONAL_ID');
 
-    if (pf || nf) {
-      const fileLinks: (TextRun)[] = [];
-      if (pf) fileLinks.push(...linkText('صورة جواز السفر', `${origin}/api/files/${pf.id}`));
-      if (pf && nf) fileLinks.push(txt('  |  ', { size: 14, color: MUTED }));
-      if (nf) fileLinks.push(...linkText('صورة بطاقة الهوية', `${origin}/api/files/${nf.id}`));
+    const pfBuf = pf?.fileData ? await resizeImage(pf.fileData, IMG_WIDTH * 2) : null;
+    const nfBuf = nf?.fileData ? await resizeImage(nf.fileData, IMG_WIDTH * 2) : null;
 
-      fieldRows.push(new TableRow({
-        children: [
-          cell([para([txt('المرفقات', { bold: true, size: 18 })], { align: 'right' })], { shade: 'f0f4f4', width: 2200 }),
-          cell([para(fileLinks, { align: 'right' })], { width: 5000 }),
-        ],
-      }));
-    }
+    // RTL: first cell = right (passport), second cell = left (national ID)
+    const rightCellPars: Paragraph[] = pfBuf
+      ? imgParagraph(pfBuf, 'صورة جواز السفر', IMG_WIDTH, IMG_HEIGHT)
+      : [para([txt('لا توجد صورة جواز السفر', { size: 16, color: MUTED })], { align: 'center' })];
+    const leftCellPars: Paragraph[] = nfBuf
+      ? imgParagraph(nfBuf, 'صورة بطاقة الهوية', IMG_WIDTH, IMG_HEIGHT)
+      : [para([txt('لا توجد صورة بطاقة الهوية', { size: 16, color: MUTED })], { align: 'center' })];
 
     children.push(new Table({
-      rows: fieldRows,
+      rows: [new TableRow({
+        children: [
+          new TableCell({
+            children: rightCellPars,
+            width: { size: 50, type: WidthType.PERCENTAGE },
+            verticalAlign: 'center' as any,
+            borders: { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER },
+          }),
+          new TableCell({
+            children: leftCellPars,
+            width: { size: 50, type: WidthType.PERCENTAGE },
+            verticalAlign: 'center' as any,
+            borders: { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER },
+          }),
+        ],
+      })],
       width: { size: 80, type: WidthType.PERCENTAGE },
-      columnWidths: [2200, 5000],
       layout: TableLayoutType.FIXED,
       visuallyRightToLeft: true,
     }));
 
-    children.push(para([txt(`تم التصدير من منصة تأمين المشاركين للدورات الخارجية — ${new Date().toLocaleDateString('ar-SA')}`, { size: 14, color: MUTED })], { align: 'center', spaceBefore: 400 }));
+    children.push(para([txt('منصة تأمين المشاركين للدورات الخارجية', { size: 14, color: MUTED })], { align: 'center', spaceBefore: 400 }));
   }
 
   const doc = new Document({
