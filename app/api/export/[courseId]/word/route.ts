@@ -10,8 +10,8 @@ import {
   TableLayoutType, ImageRun,
 } from 'docx';
 
-const IMG_WIDTH = 420;
-const IMG_HEIGHT = 315;
+const IMG_WIDTH = 480;
+const IMG_HEIGHT = 360;
 
 const MUTED = '666666';
 const DARK = '014f4d';
@@ -188,13 +188,35 @@ export async function GET(request: Request, { params }: { params: { courseId: st
   // --- Per-participant pages ---
   for (const s of course.submissions) {
     children.push(new Paragraph({ children: [new PageBreak()] }));
-    children.push(para([txt(s.fullNamePassport, { size: 36, bold: true, color: DARK })], { align: 'center', spaceAfter: 40 }));
-    children.push(para([
-      txt(`رقم الهوية: ${s.nationalId}`, { size: 20, color: MUTED }),
-      txt(`  —  `, { size: 20, color: MUTED }),
-      txt(`الجوال: ${s.mobile}`, { size: 20, color: MUTED }),
-    ], { align: 'center', spaceAfter: 300 }));
+    children.push(para([txt(s.fullNamePassport, { size: 36, bold: true, color: DARK })], { align: 'center', spaceAfter: 120 }));
 
+    // Full participant info table (2x6 grid: label, value, label, value)
+    const infoFields = [
+      ['رقم الجواز', s.passportNumber, 'انتهاء الجواز', formatDate(s.passportExpiry)],
+      ['رقم الهوية', s.nationalId, 'الجوال', s.mobile],
+      ['تاريخ الميلاد', formatDate(s.birthDate), 'IBAN', s.iban],
+    ];
+    const infoFieldRows = infoFields.map(([l1, v1, l2, v2]) => new TableRow({
+      children: [
+        cell([para([txt(l1, { bold: true, size: 18 })], { align: 'right' })], { shade: 'f0f4f4', width: 2200 }),
+        cell([para([txt(v1, { size: 18 })], { align: 'right' })], { width: 3400 }),
+        cell([para([txt(l2, { bold: true, size: 18 })], { align: 'right' })], { shade: 'f0f4f4', width: 2200 }),
+        cell([para([txt(v2, { size: 18 })], { align: 'right' })], { width: 3400 }),
+      ],
+      cantSplit: true,
+    }));
+
+    children.push(new Table({
+      rows: infoFieldRows,
+      width: { size: 80, type: WidthType.PERCENTAGE },
+      columnWidths: [2200, 3400, 2200, 3400],
+      layout: TableLayoutType.FIXED,
+      visuallyRightToLeft: true,
+    }));
+
+    children.push(para([], { spaceAfter: 200 }));
+
+    // Images
     const pf = s.files.find(f => f.fileType === 'PASSPORT');
     const nf = s.files.find(f => f.fileType === 'NATIONAL_ID');
 
@@ -203,7 +225,7 @@ export async function GET(request: Request, { params }: { params: { courseId: st
 
     const spacerCell = new TableCell({
       children: [new Paragraph({ children: [] })],
-      width: { size: 10, type: WidthType.PERCENTAGE },
+      width: { size: 5, type: WidthType.PERCENTAGE },
       borders: { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER },
     });
 
@@ -211,8 +233,8 @@ export async function GET(request: Request, { params }: { params: { courseId: st
       rows: [new TableRow({
         children: [
           spacerCell,
-          imgCell(pfBuf, 'صورة جواز السفر', 'لا توجد صورة جواز السفر', 40),
-          imgCell(nfBuf, 'صورة بطاقة الهوية', 'لا توجد صورة بطاقة الهوية', 40),
+          imgCell(pfBuf, 'صورة جواز السفر', 'لا توجد صورة جواز السفر', 45),
+          imgCell(nfBuf, 'صورة بطاقة الهوية', 'لا توجد صورة بطاقة الهوية', 45),
           spacerCell,
         ],
       })],
