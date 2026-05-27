@@ -30,12 +30,14 @@ export default function CourseForm() {
   if (result) {
     return (
       <div className="section-card success-card">
-        <h3>تم إنشاء الدورة ✅</h3>
-        <p>انسخ الرابط أدناه وأرسله للمشاركين:</p>
-        <div className="link-preview" dir="ltr">{result.publicUrl}</div>
-        <div className="hero-actions">
-          <button className="secondary-btn" onClick={() => { navigator.clipboard.writeText(result.publicUrl); alert('تم النسخ'); }}>نسخ الرابط</button>
-          <a href={`/courses/${result.courseId}`} className="btn btn-primary">متابعة الدورة</a>
+        <div className="section-body">
+          <h3>تم إنشاء الدورة</h3>
+          <p>انسخ الرابط أدناه وأرسله للمشاركين:</p>
+          <div className="link-preview" dir="ltr">{result.publicUrl}</div>
+          <div className="hero-actions">
+            <button className="secondary-btn" onClick={() => { navigator.clipboard.writeText(result.publicUrl); alert('تم النسخ'); }}>نسخ الرابط</button>
+            <a href={`/courses/${result.courseId}`} className="btn btn-primary">متابعة الدورة</a>
+          </div>
         </div>
       </div>
     );
@@ -43,38 +45,45 @@ export default function CourseForm() {
 
   return (
     <form className="form-panel" onSubmit={onSubmit}>
-      <h2>بيانات الدورة</h2>
-      <div className="grid grid-2">
+      <div className="form-panel-head">
         <div>
-          <label className="label">اسم النشاط *</label>
-          <input className="input" name="activityName" required placeholder="مثال: دورة الأمن السيبراني" />
-        </div>
-        <div>
-          <label className="label">مقر الانعقاد</label>
-          <input className="input" name="venue" placeholder="المدينة أو الدولة" />
+          <h2>بيانات الدورة</h2>
+          <p>أدخل معلومات النشاط لإنشاء رابط مشاركة آمن للمشاركين.</p>
         </div>
       </div>
-      <div className="grid grid-2" style={{ marginTop: 18 }}>
-        <div>
-          <label className="label">تاريخ البداية</label>
-          <input className="input" type="date" name="startDate" />
+      <div className="section-body course-form-body">
+        <div className="grid grid-2">
+          <div className="field">
+            <label className="label">اسم النشاط *</label>
+            <input className="input" name="activityName" required placeholder="مثال: دورة الأمن السيبراني" />
+          </div>
+          <div className="field">
+            <label className="label">مقر الانعقاد</label>
+            <input className="input" name="venue" placeholder="المدينة أو الدولة" />
+          </div>
         </div>
-        <div>
-          <label className="label">تاريخ النهاية</label>
-          <input className="input" type="date" name="endDate" />
+        <div className="grid grid-2">
+          <div className="field">
+            <label className="label">تاريخ البداية</label>
+            <input className="input" type="date" name="startDate" />
+          </div>
+          <div className="field">
+            <label className="label">تاريخ النهاية</label>
+            <input className="input" type="date" name="endDate" />
+          </div>
         </div>
-      </div>
-      <div className="grid grid-2" style={{ marginTop: 18 }}>
-        <div>
-          <label className="label">عدد المشاركين</label>
-          <input className="input" type="number" name="participantCount" min="0" />
+        <div className="grid grid-2">
+          <div className="field">
+            <label className="label">عدد المشاركين</label>
+            <input className="input" type="number" name="participantCount" min="0" />
+          </div>
         </div>
-      </div>
-      {error ? <p className="form-error">{error}</p> : null}
-      <div style={{ marginTop: 22 }}>
-        <button className="btn btn-primary" disabled={submitting}>
-          {submitting ? 'جاري الإنشاء...' : 'إنشاء الدورة والحصول على الرابط'}
-        </button>
+        {error ? <p className="form-error">{error}</p> : null}
+        <div className="form-submit-row">
+          <button className="btn btn-primary" disabled={submitting}>
+            {submitting ? 'جاري الإنشاء...' : 'إنشاء الدورة والحصول على الرابط'}
+          </button>
+        </div>
       </div>
     </form>
   );

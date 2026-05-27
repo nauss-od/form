@@ -104,8 +104,10 @@ export default function PassportScanner({ onResult, onClose }: PassportScannerPr
             setError('لم يتم التعرف على بيانات MRZ. يمكنك إدخال النص المستخرج يدوياً أدناه.');
             setShowManualMrz(true);
           }
-        } catch {
-          setError('حدث خطأ في معالجة الصورة');
+        } catch (e) {
+          console.error('Tesseract error:', e);
+          setError('تعذر التعرف على النص من الصورة. يمكنك إدخال البيانات يدوياً أدناه.');
+          setShowManualMrz(true);
           setStep('select');
         }
       };
