@@ -23,7 +23,7 @@ const CREDIT = '99aaaa';
 const BORDER = { style: BorderStyle.SINGLE as any, size: 6, color: LINE };
 const NO_BORDER = { style: BorderStyle.NONE as any, size: 0, color: WHITE };
 
-const MAX_IMAGE_BYTES = 800_000;
+const MAX_IMAGE_BYTES = 0;
 const MAX_DOC_BYTES = 3_800_000;
 const IMG_CM_W = 5.5;
 const IMG_CM_H = 4;
@@ -78,11 +78,16 @@ function tableDataCell(text: string, widthDxa: number, alt: boolean): TableCell 
 }
 
 function imageCell(data: Buffer | null | undefined, mimeType: string | null | undefined, fileSize: number | null | undefined, fallback: string, docSize: { value: number }): TableCell {
+  const placeholder = 'صورة المرفق';
+
+  // Try embedding with JPEG to avoid format guessing issues
   if (data && data.length > 0 && data.length <= MAX_IMAGE_BYTES && (docSize.value + data.length) <= MAX_DOC_BYTES) {
-    let ext = 'jpg';
-    if (mimeType?.includes('png')) ext = 'png';
-    else if (mimeType?.includes('gif')) ext = 'gif';
-    else if (mimeType?.includes('bmp')) ext = 'png';
+    // Detect actual format from magic bytes
+    let ext = 'jpeg';
+    if (data[0] === 0x89 && data[1] === 0x50) ext = 'png';
+    else if (data[0] === 0xFF && data[1] === 0xD8) ext = 'jpeg';
+    else if (data[0] === 0x47 && data[1] === 0x49) ext = 'gif';
+    else if (data[0] === 0x42 && data[1] === 0x4D) ext = 'png';
     try {
       const run = new ImageRun({
         type: ext as 'jpg' | 'png' | 'gif',
@@ -99,25 +104,14 @@ function imageCell(data: Buffer | null | undefined, mimeType: string | null | un
         borders: { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER },
       });
     } catch {
-      // fallback below
+      console.error('ImageRun failed for', fallback, 'size:', data.length);
     }
-  } else if (data && data.length > 0 && data.length > MAX_IMAGE_BYTES) {
-    // image too large — show note
-    return new TableCell({
-      children: [para(
-        [txt('⚠️ حجم الصورة كبير جداً', { size: 14, color: MUTED, font: 'Arial' })],
-        { align: 'center' },
-      )],
-      width: { size: dxa(IMG_CM_W + 0.8), type: WidthType.DXA },
-      verticalAlign: 'center' as any,
-      borders: { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER },
-    });
   }
   return new TableCell({
-    children: [para([txt(fallback, { size: 14, color: MUTED, font: 'Arial' })], { align: 'center' })],
+    children: [para([txt(placeholder, { size: 16, color: MUTED, font: 'Arial' })], { align: 'center' })],
     width: { size: dxa(IMG_CM_W + 0.8), type: WidthType.DXA },
     verticalAlign: 'center' as any,
-    borders: { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER },
+    borders: { top: BORDER, bottom: BORDER, left: BORDER, right: BORDER },
   });
 }
 
