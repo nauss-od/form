@@ -5,7 +5,7 @@ import { getCurrentSession } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
 import {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
-  PageBreak, AlignmentType, WidthType, BorderStyle, PageOrientation,
+  PageBreak, AlignmentType, WidthType, BorderStyle,
   TableLayoutType, ImageRun,
 } from 'docx';
 
@@ -18,13 +18,12 @@ const MUTED = '667777';
 const LINE = 'c9d7d7';
 const CREDIT = '99aaaa';
 const BORDER = { style: BorderStyle.SINGLE as any, size: 6, color: LINE };
-const NO_BORDER = { style: BorderStyle.NONE as any, size: 0, color: WHITE };
 const FONT = 'BoutrosJazirahTextLight';
 
-const MAX_IMAGE_BYTES = 500_000;
-const MAX_DOC_BYTES = 2_500_000;
-const IMG_CM_W = 5.5;
-const IMG_CM_H = 4;
+const MAX_IMAGE_BYTES = 1_000_000;
+const MAX_DOC_BYTES = 3_500_000;
+const IMG_CM_W = 17.5;
+const IMG_CM_H = 8.5;
 
 function cmToEmu(cm: number) { return Math.round(cm * 360000); }
 function cmToTwip(cm: number) { return Math.round(cm * 1440 / 2.54); }
@@ -57,37 +56,6 @@ function tableDataCell(text: string, widthDxa: number, alt: boolean): TableCell 
     children: [para([trun(text, { size: 28, color: TEAL_DARK })], { align: 'center' })],
     width: { size: widthDxa, type: WidthType.DXA },
     shading: alt ? { fill: 'f0f6f6', type: 'clear' as any } : undefined,
-    verticalAlign: 'center' as any,
-    borders: { top: BORDER, bottom: BORDER, left: BORDER, right: BORDER },
-  });
-}
-
-function imageCell(data: Buffer | null | undefined, fallback: string, docSize: { value: number }): TableCell {
-  if (data && data.byteLength > 0 && data.byteLength <= MAX_IMAGE_BYTES && (docSize.value + data.byteLength) <= MAX_DOC_BYTES) {
-    let ext = 'png';
-    if (data[0] === 0xFF && data[1] === 0xD8) ext = 'jpg';
-    else if (data[0] === 0x47 && data[1] === 0x49) ext = 'gif';
-    try {
-      const clean = Buffer.from(data);
-      const run = new ImageRun({
-        type: ext as 'jpg' | 'png' | 'gif',
-        data: clean,
-        transformation: { width: cmToEmu(IMG_CM_W), height: cmToEmu(IMG_CM_H) },
-      });
-      docSize.value += clean.byteLength;
-      return new TableCell({
-        children: [
-          new Paragraph({ children: [run], alignment: AlignmentType.CENTER, spacing: { after: 20 } }),
-        ],
-        width: { size: dxa(IMG_CM_W + 0.8), type: WidthType.DXA },
-        verticalAlign: 'center' as any,
-        borders: { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER },
-      });
-    } catch { }
-  }
-  return new TableCell({
-    children: [para([trun(fallback, { size: 16, color: MUTED })], { align: 'center' })],
-    width: { size: dxa(IMG_CM_W + 0.8), type: WidthType.DXA },
     verticalAlign: 'center' as any,
     borders: { top: BORDER, bottom: BORDER, left: BORDER, right: BORDER },
   });
@@ -269,36 +237,29 @@ export async function GET(request: Request, { params }: { params: { courseId: st
       const pf = s.files.find(f => f.fileType === 'PASSPORT');
       const nf = s.files.find(f => f.fileType === 'NATIONAL_ID');
 
-      children.push(new Table({
-        rows: [
-          new TableRow({
-            children: [
-              new TableCell({
-                children: [para([trun('صورة جواز السفر', { size: 17, bold: true, color: TEAL })], { align: 'center', spaceAfter: 60 })],
-                width: { size: 50, type: WidthType.PERCENTAGE },
-                verticalAlign: 'center' as any,
-                borders: { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER },
-              }),
-              new TableCell({
-                children: [para([trun('صورة بطاقة الهوية', { size: 17, bold: true, color: TEAL })], { align: 'center', spaceAfter: 60 })],
-                width: { size: 50, type: WidthType.PERCENTAGE },
-                verticalAlign: 'center' as any,
-                borders: { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER },
-              }),
-            ],
-          }),
-          new TableRow({
-            children: [
-              imageCell(pf?.fileData, 'لا توجد صورة جواز السفر', docSize),
-              imageCell(nf?.fileData, 'لا توجد صورة بطاقة الهوية', docSize),
-            ],
-          }),
-        ],
-        width: { size: 100, type: WidthType.PERCENTAGE },
-        columnWidths: [dxa(IMG_CM_W + 1), dxa(IMG_CM_W + 1)],
-        layout: TableLayoutType.FIXED,
-        visuallyRightToLeft: true,
-      }));
+      function addImage(label: string, data: Buffer | null | undefined, fallback: string) {
+        children.push(para([trun(label, { size: 17, bold: true, color: TEAL })], { align: 'center', spaceAfter: 80 }));
+        if (data && data.byteLength > 0 && data.byteLength <= MAX_IMAGE_BYTES && (docSize.value + data.byteLength) <= MAX_DOC_BYTES) {
+          let ext = 'png';
+          if (data[0] === 0xFF && data[1] === 0xD8) ext = 'jpg';
+          else if (data[0] === 0x47 && data[1] === 0x49) ext = 'gif';
+          try {
+            children.push(new Paragraph({
+              children: [new ImageRun({ type: ext as 'jpg' | 'png' | 'gif', data: Buffer.from(data), transformation: { width: cmToEmu(IMG_CM_W), height: cmToEmu(IMG_CM_H) } })],
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 0 },
+            }));
+            docSize.value += data.byteLength;
+            return true;
+          } catch { }
+        }
+        children.push(para([trun(fallback, { size: 16, color: MUTED })], { align: 'center', spaceAfter: 80 }));
+        return false;
+      }
+
+      addImage('صورة جواز السفر', pf?.fileData, 'لا توجد صورة جواز السفر');
+      children.push(para([], { spaceAfter: 170 }));
+      addImage('صورة بطاقة الهوية', nf?.fileData, 'لا توجد صورة بطاقة الهوية');
 
       if (docSize.value >= MAX_DOC_BYTES) {
         children.push(para([], { spaceAfter: 200 }));
@@ -333,7 +294,7 @@ export async function GET(request: Request, { params }: { params: { courseId: st
         properties: {
           page: {
             margin: { top: cmToTwip(1.5), bottom: cmToTwip(1.5), right: cmToTwip(1.5), left: cmToTwip(1.5) },
-            size: { width: 16838, height: 11906, orientation: PageOrientation.LANDSCAPE },
+            size: { width: 11906, height: 16838 },
           },
         },
         children,
