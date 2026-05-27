@@ -58,9 +58,7 @@ function imgParagraph(data: Buffer, label: string, width: number, height: number
 }
 
 function imgCell(data: Buffer | null, label: string, fallback: string): TableCell {
-  const children: Paragraph[] = data
-    ? imgParagraph(data, label, IMG_WIDTH, IMG_HEIGHT)
-    : [para([txt(fallback, { size: 16, color: MUTED })], { align: 'center' })];
+  const children: Paragraph[] = [para([txt(fallback, { size: 16, color: MUTED })], { align: 'center' })];
   return new TableCell({
     children,
     width: { size: 6000, type: WidthType.DXA },
