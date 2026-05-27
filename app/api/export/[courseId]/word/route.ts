@@ -22,12 +22,13 @@ const FONT = 'BoutrosJazirahTextLight';
 
 const MAX_IMAGE_BYTES = 1_000_000;
 const MAX_DOC_BYTES = 3_500_000;
-const IMG_CM_W = 17.5;
+const IMG_CM_W = 15.1;
 const IMG_CM_H = 8.5;
 
 function cmToEmu(cm: number) { return Math.round(cm * 360000); }
 function cmToTwip(cm: number) { return Math.round(cm * 1440 / 2.54); }
 function dxa(cm: number) { return Math.round(cm * 567); }
+function cmToPx(cm: number) { return Math.round(cm / 2.54 * 96); }
 
 function trun(text: string, opts: { bold?: boolean; size?: number; color?: string } = {}): TextRun {
   return new TextRun({ text, font: FONT, size: opts.size ?? 28, bold: opts.bold, color: opts.color });
@@ -103,6 +104,8 @@ export async function GET(request: Request, { params }: { params: { courseId: st
       { align: 'center', spaceAfter: 300 },
     ));
 
+    const subs = course!.submissions;
+
     const infoCols = [
       { label: 'النشاط', w: dxa(2.5) },
       { label: 'المكان', w: dxa(2.5) },
@@ -116,7 +119,7 @@ export async function GET(request: Request, { params }: { params: { courseId: st
       course.venue || '—',
       formatDate(course.startDate),
       formatDate(course.endDate),
-      String(course.submissions.length),
+      String(subs.length),
       course.createdBy?.name || '—',
     ];
 
@@ -139,44 +142,41 @@ export async function GET(request: Request, { params }: { params: { courseId: st
 
     children.push(para([], { spaceAfter: 400 }));
 
-    const partCols = [
-      { label: 'م', w: dxa(0.7) },
-      { label: 'الاسم', w: dxa(5.5) },
-      { label: 'رقم الجواز', w: dxa(3.2) },
-      { label: 'انتهاء الجواز', w: dxa(2.8) },
-      { label: 'رقم الهوية', w: dxa(3.2) },
-      { label: 'الجوال', w: dxa(3.2) },
-      { label: 'تاريخ الميلاد', w: dxa(2.8) },
-      { label: 'IBAN', w: dxa(5) },
-    ];
-
-    const partRows: TableRow[] = [
-      new TableRow({
-        children: partCols.map(c => tableHeaderCell(c.label, c.w)),
-        tableHeader: true,
-      }),
-      ...course.submissions.map((s, i) => new TableRow({
-        children: [
-          tableDataCell(String(i + 1), partCols[0].w, i % 2 === 1),
-          tableDataCell(s.fullNamePassport, partCols[1].w, i % 2 === 1),
-          tableDataCell(s.passportNumber, partCols[2].w, i % 2 === 1),
-          tableDataCell(formatDate(s.passportExpiry), partCols[3].w, i % 2 === 1),
-          tableDataCell(s.nationalId, partCols[4].w, i % 2 === 1),
-          tableDataCell(s.mobile, partCols[5].w, i % 2 === 1),
-          tableDataCell(formatDate(s.birthDate), partCols[6].w, i % 2 === 1),
-          tableDataCell(s.iban, partCols[7].w, i % 2 === 1),
-        ],
-        cantSplit: true,
-      })),
-    ];
-
-    children.push(new Table({
-      rows: partRows,
+    const makePartTable = (cols: { label: string; w: number }[], getVals: (s: typeof subs[0], i: number) => string[]) => new Table({
+      rows: [
+        new TableRow({ children: cols.map(c => tableHeaderCell(c.label, c.w)), tableHeader: true }),
+        ...subs.map((s, i) => new TableRow({
+          children: getVals(s, i).map((v, j) => tableDataCell(v, cols[j].w, i % 2 === 1)),
+          cantSplit: true,
+        })),
+      ],
       width: { size: 100, type: WidthType.PERCENTAGE },
-      columnWidths: partCols.map(c => c.w),
+      columnWidths: cols.map(c => c.w),
       layout: TableLayoutType.FIXED,
       visuallyRightToLeft: true,
-    }));
+    });
+
+    children.push(makePartTable(
+      [
+        { label: 'م', w: dxa(0.7) },
+        { label: 'الاسم', w: dxa(4.5) },
+        { label: 'رقم الجواز', w: dxa(3) },
+        { label: 'انتهاء الجواز', w: dxa(2.8) },
+        { label: 'رقم الهوية', w: dxa(3) },
+      ],
+      (s, i) => [String(i + 1), s.fullNamePassport, s.passportNumber, formatDate(s.passportExpiry), s.nationalId],
+    ));
+
+    children.push(para([], { spaceAfter: 60 }));
+
+    children.push(makePartTable(
+      [
+        { label: 'الجوال', w: dxa(3.2) },
+        { label: 'تاريخ الميلاد', w: dxa(3.2) },
+        { label: 'IBAN', w: dxa(5) },
+      ],
+      (s, i) => [s.mobile, formatDate(s.birthDate), s.iban],
+    ));
 
     children.push(para([], { spaceAfter: 200 }));
     children.push(para(
@@ -188,7 +188,7 @@ export async function GET(request: Request, { params }: { params: { courseId: st
       { align: 'center' },
     ));
 
-    for (const s of course.submissions) {
+    for (const s of subs) {
       children.push(new Paragraph({ children: [new PageBreak()] }));
 
       children.push(para([], { spaceAfter: 100 }));
@@ -240,12 +240,16 @@ export async function GET(request: Request, { params }: { params: { courseId: st
       function addImage(label: string, data: Buffer | null | undefined, fallback: string) {
         children.push(para([trun(label, { size: 17, bold: true, color: TEAL })], { align: 'center', spaceAfter: 80 }));
         if (data && data.byteLength > 0 && data.byteLength <= MAX_IMAGE_BYTES && (docSize.value + data.byteLength) <= MAX_DOC_BYTES) {
-          let ext = 'png';
-          if (data[0] === 0xFF && data[1] === 0xD8) ext = 'jpg';
+          let ext = 'jpg';
+          if (data[0] === 0x89 && data[1] === 0x50) ext = 'png';
           else if (data[0] === 0x47 && data[1] === 0x49) ext = 'gif';
           try {
             children.push(new Paragraph({
-              children: [new ImageRun({ type: ext as 'jpg' | 'png' | 'gif', data: Buffer.from(data), transformation: { width: cmToEmu(IMG_CM_W), height: cmToEmu(IMG_CM_H) } })],
+              children: [new ImageRun({
+                type: ext as 'jpg' | 'png' | 'gif',
+                data: Buffer.from(data),
+                transformation: { width: cmToPx(IMG_CM_W), height: cmToPx(IMG_CM_H) },
+              })],
               alignment: AlignmentType.CENTER,
               spacing: { after: 0 },
             }));
