@@ -23,6 +23,9 @@ function courseUrl(c: Course): string {
   return `${window.location.origin}/public/form/${c.publicToken}`;
 }
 
+function IconLoc() { return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>; }
+function IconCal() { return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>; }
+
 function CourseCard({ c }: { c: Course }) {
   const pct = coursePct(c);
   const target = c.participantCount || c._count.submissions;
@@ -35,8 +38,8 @@ function CourseCard({ c }: { c: Course }) {
           </span>
           <strong className="course-card-title">{c.activityName || 'دورة تدريبية'}</strong>
           <div className="course-card-meta">
-            <span>📍 {c.venue || '—'}</span>
-            <span>📅 {formatDate(c.startDate)}</span>
+            <span><IconLoc /> {c.venue || '—'}</span>
+            <span><IconCal /> {formatDate(c.startDate)}</span>
           </div>
         </div>
         <div className="course-card-figure">
@@ -44,8 +47,10 @@ function CourseCard({ c }: { c: Course }) {
           <div className="big-stat-label">/ {target}</div>
         </div>
       </div>
-      <div className="progress-bar-lg" style={{ margin: '10px 0' }}>
-        <div className={`progress-fill-lg ${pct >= 100 ? 'done' : ''}`} style={{ width: `${pct}%` }} />
+      <div className="progress-section" style={{ padding: '2px 0' }}>
+        <div className="progress-bar" style={{ margin: 0 }}>
+          <div className="progress-fill" style={{ width: `${pct}%` }} />
+        </div>
       </div>
       <div className="course-card-actions">
         <Link href={`/courses/${c.id}`} className="secondary-btn" style={{ minHeight: 38, fontSize: '0.82rem' }}>عرض</Link>

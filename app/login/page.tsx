@@ -32,21 +32,18 @@ export default function LoginPage() {
 
   return (
     <div className="login-screen">
-      <section className="login-visual">
-        <div className="pattern-grid" />
-        <div className="visual-card">
-          <img className="visual-brand" src="/images/nauss-logo-gold.png" alt="جامعة نايف" />
-          <h1 className="visual-title">منصة تأمين المشاركين<br />لللدورات الخارجية</h1>
-          <p className="visual-text">جامعة نايف العربية للعلوم الأمنية — وكالة التدريب</p>
-          <div className="visual-pills">
-            <div className="visual-pill">إصدار روابط نماذج لكل دورة خارجية</div>
-            <div className="visual-pill">متابعة تعبئة المشاركين للبيانات والمرفقات</div>
-            <div className="visual-pill">تصدير ملف منظم لإدارة السفر لإصدار التأمين</div>
+      <div className="login-container">
+        <div className="login-brand">
+          <img src="/images/nauss-logo-gold.png" alt="جامعة نايف" />
+          <h1>منصة تأمين المشاركين<br />لللدورات الخارجية</h1>
+          <p>جامعة نايف العربية للعلوم الأمنية — وكالة التدريب</p>
+          <div className="login-features">
+            <div className="login-feature">إصدار روابط نماذج لكل دورة خارجية</div>
+            <div className="login-feature">متابعة تعبئة المشاركين للبيانات والمرفقات</div>
+            <div className="login-feature">تصدير ملف منظم لإدارة السفر لإصدار التأمين</div>
           </div>
         </div>
-      </section>
 
-      <section className="login-panel">
         <div className="login-card">
           <div className="login-brand-mini">
             <img src="/images/nauss-logo-gold.png" alt="جامعة نايف" />
@@ -74,7 +71,7 @@ export default function LoginPage() {
             </p>
           </form>
         </div>
-      </section>
+      </div>
     </div>
   );
 }
