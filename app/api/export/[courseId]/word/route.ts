@@ -3,17 +3,13 @@ import { prisma } from '@/lib/prisma';
 import { formatDate } from '@/lib/utils';
 import { getCurrentSession } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
-import sharp from 'sharp';
 import {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
   PageBreak, AlignmentType, WidthType, BorderStyle, PageOrientation,
   TableLayoutType, ImageRun,
 } from 'docx';
 
-const IMG_WIDTH = 360;
-const IMG_HEIGHT = 270;
-const JPEG_QUALITY = 60;
-
+const MAX_IMG_KB = 200;
 const MUTED = '666666';
 const DARK = '014f4d';
 const LINE = 'cccccc';
@@ -36,29 +32,52 @@ function para(children: any[], opts: { align?: string; spaceBefore?: number; spa
   });
 }
 
-async function resizeImage(buffer: Buffer, maxWidth: number): Promise<Buffer | null> {
+type ImgInfo = { buf: Buffer; type: 'jpg' | 'png'; width: number; height: number };
+
+function detectImage(buf: Buffer | null | undefined): ImgInfo | null {
+  if (!buf || buf.length < 24) return null;
+  if (buf.length > MAX_IMG_KB * 1024) return null;
   try {
-    return await sharp(buffer).rotate().resize(maxWidth, undefined, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: JPEG_QUALITY }).toBuffer();
-  } catch { return null; }
+    if (buf[0] === 0xFF && buf[1] === 0xD8 && buf[2] === 0xFF) {
+      let pos = 2;
+      while (pos < buf.length - 1) {
+        if (buf[pos] !== 0xFF) break;
+        const marker = buf[pos + 1];
+        if (marker === 0xC0 || marker === 0xC1 || marker === 0xC2) {
+          return { buf, type: 'jpg', width: buf[pos + 7] * 256 + buf[pos + 8], height: buf[pos + 5] * 256 + buf[pos + 6] };
+        }
+        pos += 2;
+        if (marker === 0xD9 || marker === 0xDA) break;
+        if (marker >= 0xD0 && marker <= 0xD7) continue;
+        if (pos + 1 >= buf.length) break;
+        const len = buf[pos] * 256 + buf[pos + 1];
+        if (len < 2) break;
+        pos += len;
+      }
+      return { buf, type: 'jpg', width: 200, height: 150 };
+    }
+    if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4E && buf[3] === 0x47) {
+      return { buf, type: 'png', width: buf[16] * 256 + buf[17], height: buf[20] * 256 + buf[21] };
+    }
+  } catch { }
+  return null;
 }
 
-async function processImage(data: Buffer | null | undefined): Promise<Buffer | null> {
-  if (!data) return null;
-  try {
-    return await resizeImage(data, IMG_WIDTH);
-  } catch { return null; }
-}
-
-function imgParagraph(data: Buffer, label: string, width: number, height: number): Paragraph[] {
-  const run = new ImageRun({ type: 'jpg', data, transformation: { width, height } });
+function imgParagraph(img: ImgInfo, label: string): Paragraph[] {
+  const maxDisp = 360;
+  const scale = Math.min(maxDisp / img.width, maxDisp / img.height, 1);
+  const w = Math.round(img.width * scale);
+  const h = Math.round(img.height * scale);
+  const run = new ImageRun({ type: img.type, data: img.buf, transformation: { width: w, height: h } });
   return [
     new Paragraph({ children: [run], alignment: AlignmentType.CENTER, spacing: { after: 20 } }),
     new Paragraph({ children: [txt(label, { size: 16, color: MUTED })], alignment: AlignmentType.CENTER, spacing: { after: 60 } }),
   ];
 }
 
-function imgCell(data: Buffer | null, label: string, fallback: string): TableCell {
-  const children: Paragraph[] = [para([txt(fallback, { size: 16, color: MUTED })], { align: 'center' })];
+function imgCell(data: Buffer | null | undefined, label: string, fallback: string): TableCell {
+  const img = detectImage(data);
+  const children: Paragraph[] = img ? imgParagraph(img, label) : [para([txt(fallback, { size: 16, color: MUTED })], { align: 'center' })];
   return new TableCell({
     children,
     width: { size: 6000, type: WidthType.DXA },
@@ -221,14 +240,11 @@ export async function GET(request: Request, { params }: { params: { courseId: st
     children.push(para([], { spaceAfter: 250 }));
 
     // Images side by side
-    const pfBuf = await processImage(s.files.find(f => f.fileType === 'PASSPORT')?.fileData);
-    const nfBuf = await processImage(s.files.find(f => f.fileType === 'NATIONAL_ID')?.fileData);
-
     children.push(new Table({
       rows: [new TableRow({
         children: [
-          imgCell(pfBuf, 'صورة جواز السفر', 'لا توجد صورة جواز السفر'),
-          imgCell(nfBuf, 'صورة بطاقة الهوية', 'لا توجد صورة بطاقة الهوية'),
+          imgCell(s.files.find(f => f.fileType === 'PASSPORT')?.fileData, 'صورة جواز السفر', 'لا توجد صورة جواز السفر'),
+          imgCell(s.files.find(f => f.fileType === 'NATIONAL_ID')?.fileData, 'صورة بطاقة الهوية', 'لا توجد صورة بطاقة الهوية'),
         ],
       })],
       width: { size: 100, type: WidthType.PERCENTAGE },
