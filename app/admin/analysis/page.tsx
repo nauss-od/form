@@ -22,7 +22,7 @@ export default function AnalysisPage() {
 
   return (
     <AppShell title="تحليل أداء الموظفين" role="MANAGER" forceManager>
-      {loading ? <p>جاري التحليل...</p> : error ? <p style={{color:'var(--danger)'}}>{error}</p> : data ? (
+      {loading ? <div className="loading-wrap"><div className="loading-spinner" /><p>جاري التحليل...</p></div> : error ? <div className="empty-state"><p style={{color:'var(--danger)'}}>{error}</p></div> : data ? (
         <>
           <div className="section-card">
             <div className="section-head"><h3>تحليل مدعوم بالذكاء الاصطناعي</h3></div>

@@ -28,16 +28,16 @@ export default function EmployeesPage() {
 
   return (
     <AppShell title="الموظفون" role="MANAGER" forceManager>
-      <div className="dashboard-grid">
-        <div className="stat-card"><span className="stat-value">{employees.length}</span><span className="stat-label">إجمالي الموظفين</span></div>
-        <div className="stat-card accent"><span className="stat-value">{activeEmps.length}</span><span className="stat-label">موظفون نشطون</span></div>
-        <div className="stat-card"><span className="stat-value">{totalCourses}</span><span className="stat-label">إجمالي الدورات</span></div>
-        <div className="stat-card"><span className="stat-value">{totalSubmissions}</span><span className="stat-label">إجمالي المسجلين</span></div>
+      <div className="kpi-grid">
+        <div className="kpi-card"><span>إجمالي الموظفين</span><strong>{employees.length}</strong></div>
+        <div className="kpi-card"><span>موظفون نشطون</span><strong>{activeEmps.length}</strong></div>
+        <div className="kpi-card"><span>إجمالي الدورات</span><strong>{totalCourses}</strong></div>
+        <div className="kpi-card"><span>إجمالي المسجلين</span><strong>{totalSubmissions}</strong></div>
       </div>
 
       <div className="section-card">
         <div className="section-head"><h3>قائمة الموظفين</h3></div>
-        {loading ? <p style={{padding:24}}>جاري التحميل...</p> : error ? <p style={{padding:24,color:'var(--danger)'}}>{error}</p> : employees.length === 0 ? <p style={{padding:24}} className="muted">لا يوجد موظفون</p> : (
+        {loading ? <div className="loading-wrap"><div className="loading-spinner" /><p>جاري التحميل...</p></div> : error ? <div className="empty-state"><p style={{color:'var(--danger)'}}>{error}</p></div> : employees.length === 0 ? <div className="empty-state"><p>لا يوجد موظفون</p></div> : (
           <table className="data-table">
             <thead><tr><th>الموظف</th><th>البريد</th><th>الجوال</th><th>الحالة</th><th>الدورات</th><th>المسجلون</th><th>آخر نشاط</th></tr></thead>
             <tbody>

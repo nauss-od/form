@@ -35,6 +35,9 @@ function courseUrl(c: Course): string {
 
 function IconLoc() { return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>; }
 function IconCal() { return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>; }
+function IconCourses() { return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>; }
+function IconUsers() { return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>; }
+function IconActivity() { return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>; }
 
 function CourseCard({ c }: { c: Course }) {
   const pct = coursePct(c);
@@ -97,7 +100,7 @@ export default function DashboardPage() {
     return () => window.removeEventListener('nauss-role-change', handler);
   }, [data]);
 
-  if (loading) return <AppShell title="لوحة المستخدم"><p>جاري التحميل...</p></AppShell>;
+  if (loading) return <AppShell title="لوحة المستخدم"><div className="loading-wrap"><div className="loading-spinner" /><p>جاري التحميل...</p></div></AppShell>;
   if (!data) return null;
 
   const isManager = data.userRole === 'MANAGER';
@@ -109,15 +112,34 @@ export default function DashboardPage() {
     return (
       <AppShell title="لوحة المدير" role={appRole}>
         <div className="kpi-grid">
-          <div className="kpi-card"><span>إجمالي الدورات</span><strong>{data.totalCourses}</strong></div>
-          <div className="kpi-card"><span>إجمالي المسجلين</span><strong>{data.totalSubmissions}</strong></div>
-          <div className="kpi-card"><span>عدد الموظفين</span><strong>{emp.length}</strong></div>
-          <div className="kpi-card"><span>موظفون نشطون</span><strong>{emp.filter(e => e._count.courses > 0).length}</strong></div>
+          <div className="kpi-card">
+            <span><IconCourses /> إجمالي الدورات</span>
+            <strong>{data.totalCourses}</strong>
+          </div>
+          <div className="kpi-card">
+            <span><IconUsers /> إجمالي المسجلين</span>
+            <strong>{data.totalSubmissions}</strong>
+          </div>
+          <div className="kpi-card">
+            <span><IconUsers /> عدد الموظفين</span>
+            <strong>{emp.length}</strong>
+          </div>
+          <div className="kpi-card">
+            <span><IconActivity /> موظفون نشطون</span>
+            <strong>{emp.filter(e => e._count.courses > 0).length}</strong>
+          </div>
         </div>
 
         <div className="section-card">
           <div className="section-head"><h3>جميع الدورات ({data.recentCourses?.length || 0})</h3></div>
-          {!data.recentCourses?.length ? <p style={{ padding: 24 }} className="muted">لا توجد دورات</p> : (
+          {!data.recentCourses?.length ? (
+            <div className="empty-state">
+              <div className="empty-state-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+              </div>
+              <p>لا توجد دورات بعد</p>
+            </div>
+          ) : (
             <div className="course-grid">
               {data.recentCourses.map(c => (
                 <CourseCard key={c.id} c={c} />
@@ -148,9 +170,12 @@ export default function DashboardPage() {
           {data.recentCourses?.length ? <Link href="/courses" className="link-btn">عرض الكل</Link> : null}
         </div>
         {!data.recentCourses?.length ? (
-          <div style={{ padding: 32, textAlign: 'center' }}>
-            <p className="muted" style={{ marginBottom: 16 }}>لا توجد دورات بعد. ابدأ بإنشاء أول دورة.</p>
-            <Link href="/new-course" className="primary-btn" style={{ display: 'inline-flex', width: 'auto' }}>إنشاء دورة جديدة</Link>
+          <div className="empty-state">
+            <div className="empty-state-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            </div>
+            <p>لا توجد دورات بعد. ابدأ بإنشاء أول دورة.</p>
+            <Link href="/new-course" className="primary-btn" style={{ display: 'inline-flex', width: 'auto', marginTop: 8 }}>إنشاء دورة جديدة</Link>
           </div>
         ) : (
           <div className="course-grid">

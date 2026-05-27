@@ -82,7 +82,7 @@ export default function AdminUsersPage() {
   return (
     <AppShell title="إدارة المستخدمين" role="MANAGER" forceManager>
       {msg && <div style={{ padding: '12px 16px', borderRadius: 12, background: msg.includes('✓') ? '#f0fdf4' : '#fef2f2', color: msg.includes('✓') ? '#014f4d' : '#dc2626', marginBottom: 12, fontWeight:700 }}>{msg}</div>}
-      {loading ? <p>جاري التحميل...</p> : error ? <p style={{color:'var(--danger)'}}>{error}</p> : (
+      {loading ? <div className="loading-wrap"><div className="loading-spinner" /><p>جاري التحميل...</p></div> : error ? <div className="empty-state"><p style={{color:'var(--danger)'}}>{error}</p></div> : (
         <div className="section-card">
           <div className="section-head"><h3>جميع المستخدمين ({users.length})</h3></div>
           <table className="data-table">

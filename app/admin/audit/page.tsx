@@ -47,7 +47,7 @@ export default function AuditPage() {
             {Object.entries(actionLabels).map(([k,v]) => <option key={k} value={k}>{v}</option>)}
           </select>
         </div>
-        {loading ? <p style={{padding:24}}>جاري التحميل...</p> : logs.length === 0 ? <p style={{padding:24}} className="muted">لا توجد سجلات</p> : (
+        {loading ? <div className="loading-wrap"><div className="loading-spinner" /><p>جاري التحميل...</p></div> : logs.length === 0 ? <div className="empty-state"><p>لا توجد سجلات</p></div> : (
           <table className="data-table">
             <thead><tr><th>التاريخ</th><th>المستخدم</th><th>العملية</th><th>الكيان</th><th>التفاصيل</th></tr></thead>
             <tbody>

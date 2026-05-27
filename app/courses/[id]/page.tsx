@@ -38,8 +38,8 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
     if (course) setPublicUrl(`${window.location.origin}/public/form/${course.publicToken}`);
   }, [course]);
 
-  if (loading) return <AppShell title="تفاصيل الدورة"><p>جاري التحميل...</p></AppShell>;
-  if (!course || !course.submissions) return <AppShell title="خطأ"><p>الدورة غير موجودة</p></AppShell>;
+  if (loading) return <AppShell title="تفاصيل الدورة"><div className="loading-wrap"><div className="loading-spinner" /><p>جاري التحميل...</p></div></AppShell>;
+  if (!course || !course.submissions) return <AppShell title="خطأ"><div className="empty-state"><p>الدورة غير موجودة</p></div></AppShell>;
 
   const completed = course.submissions.length;
   const total = course.participantCount || completed;
@@ -74,7 +74,7 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
           {publicUrl ? (
             <>
               <div className="link-preview" dir="ltr">{publicUrl}</div>
-              <div className="inline-toolbar" style={{ marginTop: 8 }}>
+              <div className="section-actions" style={{ marginTop: 8 }}>
                 <button className="secondary-btn" onClick={() => { navigator.clipboard.writeText(publicUrl); alert('تم نسخ الرابط'); }}>نسخ الرابط</button>
                 <a href={`/api/export/${course.id}/word`} className="secondary-btn">Word</a>
                 <a href={`/api/export/${course.id}/excel`} className="secondary-btn">Excel</a>
@@ -92,6 +92,9 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
           </div>
           {completed === 0 ? (
             <div className="empty-state">
+              <div className="empty-state-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+              </div>
               <p>لا توجد استجابات بعد. أرسل الرابط للمشاركين.</p>
             </div>
           ) : (

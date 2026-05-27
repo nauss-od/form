@@ -124,6 +124,7 @@ export default function AppShell({ title, role = 'EMPLOYEE', forceManager = fals
             <span className="sidebar-icon"><Icon name="account" /></span>
             <span>الحساب</span>
           </Link>
+          <div className="sidebar-credit">طُوّر بواسطة نايف الشهراني</div>
         </div>
       </aside>
 

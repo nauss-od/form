@@ -80,11 +80,14 @@ export default function CoursesPage() {
 
   return (
     <AppShell title="الدورات" role={role}>
-      {loading ? <p>جاري التحميل...</p> : courses.length === 0 ? (
+      {loading ? <div className="loading-wrap"><div className="loading-spinner" /><p>جاري التحميل...</p></div> : courses.length === 0 ? (
         <div className="section-card">
-          <div style={{ padding: 32, textAlign: 'center' }}>
-            <p className="muted" style={{ marginBottom: 16 }}>لا توجد دورات بعد.</p>
-            <Link href="/new-course" className="primary-btn" style={{ display: 'inline-flex', width: 'auto' }}>إنشاء دورة جديدة</Link>
+          <div className="empty-state">
+            <div className="empty-state-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            </div>
+            <p>لا توجد دورات بعد.</p>
+            <Link href="/new-course" className="primary-btn" style={{ display: 'inline-flex', width: 'auto', marginTop: 8 }}>إنشاء دورة جديدة</Link>
           </div>
         </div>
       ) : (
