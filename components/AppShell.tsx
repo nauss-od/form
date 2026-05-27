@@ -93,13 +93,7 @@ export default function AppShell({ title, role = 'EMPLOYEE', forceManager = fals
     <div className="shell-root">
       <aside className={`shell-sidebar ${open ? 'is-open' : ''}`}>
         <div className="brand-wrap">
-          <div className="brand-mark">
-            <img src="/images/nauss-mark.svg" alt="NAUSS" />
-          </div>
-          <div className="brand-copy">
-            <strong>منصة التأمين</strong>
-            <span>الدورات الخارجية</span>
-          </div>
+          <img src="/images/nauss-logo-gold.png" alt="جامعة نايف العربية للعلوم الأمنية" className="sidebar-logo" />
         </div>
 
         <div className="sidebar-divider" />

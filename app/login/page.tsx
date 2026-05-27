@@ -35,7 +35,7 @@ export default function LoginPage() {
       <div className="login-container">
         <div className="login-brand">
           <img src="/images/nauss-logo-gold.png" alt="جامعة نايف" />
-          <h1>منصة تأمين المشاركين<br />لللدورات الخارجية</h1>
+          <h1>منصة تأمين المشاركين<br />للدورات الخارجية</h1>
           <p>جامعة نايف العربية للعلوم الأمنية — وكالة التدريب</p>
           <div className="login-features">
             <div className="login-feature">إصدار روابط نماذج لكل دورة خارجية</div>
@@ -45,9 +45,6 @@ export default function LoginPage() {
         </div>
 
         <div className="login-card">
-          <div className="login-brand-mini">
-            <img src="/images/nauss-logo-gold.png" alt="جامعة نايف" />
-          </div>
           <div className="login-heading">
             <h2>تسجيل الدخول</h2>
             <p>البريد الإلكتروني وكلمة المرور الخاصة بحسابك</p>
@@ -67,7 +64,7 @@ export default function LoginPage() {
               {loading ? 'جاري التحقق...' : 'تسجيل الدخول'}
             </button>
             <p style={{ marginTop: 16, textAlign: 'center', fontSize: '0.85rem' }}>
-              ليس لديك حساب؟ <a href="/register" style={{ color: '#014f4d', fontWeight: 600 }}>إنشاء حساب جديد</a>
+              ليس لديك حساب؟ <a href="/register" style={{ color: '#014f4d', fontWeight: 500 }}>إنشاء حساب جديد</a>
             </p>
           </form>
         </div>
