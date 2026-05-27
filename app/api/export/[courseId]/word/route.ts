@@ -142,41 +142,39 @@ export async function GET(request: Request, { params }: { params: { courseId: st
 
     children.push(para([], { spaceAfter: 400 }));
 
-    const makePartTable = (cols: { label: string; w: number }[], getVals: (s: typeof subs[0], i: number) => string[]) => new Table({
+    const partCols = [
+      { label: 'م', w: dxa(0.7) },
+      { label: 'الاسم', w: dxa(4.8) },
+      { label: 'رقم الجواز', w: dxa(2.8) },
+      { label: 'انتهاء الجواز', w: dxa(2.5) },
+      { label: 'رقم الهوية', w: dxa(2.5) },
+      { label: 'الجوال', w: dxa(2.5) },
+      { label: 'تاريخ الميلاد', w: dxa(2.5) },
+      { label: 'IBAN', w: dxa(3.7) },
+    ];
+
+    children.push(new Table({
       rows: [
-        new TableRow({ children: cols.map(c => tableHeaderCell(c.label, c.w)), tableHeader: true }),
+        new TableRow({ children: partCols.map(c => tableHeaderCell(c.label, c.w)), tableHeader: true }),
         ...subs.map((s, i) => new TableRow({
-          children: getVals(s, i).map((v, j) => tableDataCell(v, cols[j].w, i % 2 === 1)),
+          children: [
+            tableDataCell(String(i + 1), partCols[0].w, i % 2 === 1),
+            tableDataCell(s.fullNamePassport, partCols[1].w, i % 2 === 1),
+            tableDataCell(s.passportNumber, partCols[2].w, i % 2 === 1),
+            tableDataCell(formatDate(s.passportExpiry), partCols[3].w, i % 2 === 1),
+            tableDataCell(s.nationalId, partCols[4].w, i % 2 === 1),
+            tableDataCell(s.mobile, partCols[5].w, i % 2 === 1),
+            tableDataCell(formatDate(s.birthDate), partCols[6].w, i % 2 === 1),
+            tableDataCell(s.iban, partCols[7].w, i % 2 === 1),
+          ],
           cantSplit: true,
         })),
       ],
       width: { size: 100, type: WidthType.PERCENTAGE },
-      columnWidths: cols.map(c => c.w),
+      columnWidths: partCols.map(c => c.w),
       layout: TableLayoutType.FIXED,
       visuallyRightToLeft: true,
-    });
-
-    children.push(makePartTable(
-      [
-        { label: 'م', w: dxa(0.7) },
-        { label: 'الاسم', w: dxa(4.5) },
-        { label: 'رقم الجواز', w: dxa(3) },
-        { label: 'انتهاء الجواز', w: dxa(2.8) },
-        { label: 'رقم الهوية', w: dxa(3) },
-      ],
-      (s, i) => [String(i + 1), s.fullNamePassport, s.passportNumber, formatDate(s.passportExpiry), s.nationalId],
-    ));
-
-    children.push(para([], { spaceAfter: 60 }));
-
-    children.push(makePartTable(
-      [
-        { label: 'الجوال', w: dxa(3.2) },
-        { label: 'تاريخ الميلاد', w: dxa(3.2) },
-        { label: 'IBAN', w: dxa(5) },
-      ],
-      (s, i) => [s.mobile, formatDate(s.birthDate), s.iban],
-    ));
+    }));
 
     children.push(para([], { spaceAfter: 200 }));
     children.push(para(
