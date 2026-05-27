@@ -37,25 +37,19 @@ export default function RegisterPage() {
 
   return (
     <div className="login-screen">
-      <section className="login-visual">
-        <div className="pattern-grid" />
-        <div className="visual-card">
-          <img className="visual-brand" src="/images/nauss-logo-gold.png" alt="جامعة نايف" />
-          <h1 className="visual-title">إنشاء حساب جديد</h1>
-          <p className="visual-text">جامعة نايف العربية للعلوم الأمنية — وكالة التدريب</p>
-          <div className="visual-pills">
-            <div className="visual-pill">إصدار روابط نماذج لكل دورة خارجية</div>
-            <div className="visual-pill">متابعة تعبئة المشاركين للبيانات والمرفقات</div>
-            <div className="visual-pill">تصدير ملف منظم لإدارة السفر لإصدار التأمين</div>
+      <div className="login-container">
+        <div className="login-brand">
+          <img src="/images/nauss-logo-gold.png" alt="جامعة نايف" />
+          <h1>إنشاء حساب جديد</h1>
+          <p>جامعة نايف العربية للعلوم الأمنية — وكالة التدريب</p>
+          <div className="login-features">
+            <div className="login-feature">إصدار روابط نماذج لكل دورة خارجية</div>
+            <div className="login-feature">متابعة تعبئة المشاركين للبيانات والمرفقات</div>
+            <div className="login-feature">تصدير ملف منظم لإدارة السفر لإصدار التأمين</div>
           </div>
         </div>
-      </section>
 
-      <section className="login-panel">
         <div className="login-card">
-          <div className="login-brand-mini">
-            <img src="/images/nauss-logo-gold.png" alt="جامعة نايف" />
-          </div>
           <div className="login-heading">
             <h2>بيانات الموظف</h2>
             <p>إنشاء حساب للوصول إلى المنصة وإصدار روابط النماذج</p>
@@ -87,11 +81,11 @@ export default function RegisterPage() {
               {loading ? 'جاري إنشاء الحساب...' : 'إنشاء الحساب'}
             </button>
             <p style={{ marginTop: 16, textAlign: 'center', fontSize: '0.85rem' }}>
-              لديك حساب بالفعل؟ <a href="/login" style={{ color: '#014f4d', fontWeight: 600 }}>تسجيل الدخول</a>
+              لديك حساب بالفعل؟ <a href="/login" style={{ color: '#014f4d', fontWeight: 500 }}>تسجيل الدخول</a>
             </p>
           </form>
         </div>
-      </section>
+      </div>
     </div>
   );
 }
