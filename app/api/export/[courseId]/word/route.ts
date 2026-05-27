@@ -345,15 +345,19 @@ export async function GET(request: Request, { params }: { params: { courseId: st
 
     const buffer = Buffer.from(await Packer.toBuffer(doc));
 
-    // Build safe filename: activityName-venue.docx
-    const safeName = (course.activityName || 'course').replace(/[<>:"/\\|?*\n\r]/g, ' ').trim() || 'course';
-    const safeVenue = course.venue ? '-' + course.venue.replace(/[<>:"/\\|?*\n\r]/g, ' ').trim() : '';
-    const filename = `${safeName}${safeVenue}-insurance.docx`;
+    // Build filename: activityName-venue.docx
+    const rawName = (course.activityName || 'course').replace(/[<>:"/\\|?*\n\r]/g, ' ').trim() || 'course';
+    const rawVenue = course.venue ? '-' + course.venue.replace(/[<>:"/\\|?*\n\r]/g, ' ').trim() : '';
+    const rawFilename = `${rawName}${rawVenue}-insurance.docx`;
+
+    // HTTP headers must be ASCII. Use filename (ASCII fallback) + filename* (RFC 5987 UTF-8).
+    const asciiFilename = rawFilename.replace(/[^\x20-\x7E]/g, '');
+    const encodedFilename = encodeURIComponent(rawFilename);
 
     return new NextResponse(buffer, {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Content-Disposition': `attachment; filename="${asciiFilename}"; filename*=UTF-8''${encodedFilename}`,
       },
     });
   } catch (err) {
