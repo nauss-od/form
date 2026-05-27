@@ -9,22 +9,20 @@ import {
   TableLayoutType, ImageRun,
 } from 'docx';
 
-// ── NAUSS Brand Palette ──
 const TEAL = '016564';
 const TEAL_DARK = '014948';
-const TEAL_DEEP = '022f2f';
 const GOLD = 'd0b284';
 const GOLD_DARK = 'b8975c';
 const WHITE = 'ffffff';
 const MUTED = '667777';
 const LINE = 'c9d7d7';
 const CREDIT = '99aaaa';
-
 const BORDER = { style: BorderStyle.SINGLE as any, size: 6, color: LINE };
 const NO_BORDER = { style: BorderStyle.NONE as any, size: 0, color: WHITE };
+const FONT = 'BoutrosJazirahTextLight';
 
-const MAX_IMAGE_BYTES = 0;
-const MAX_DOC_BYTES = 3_800_000;
+const MAX_IMAGE_BYTES = 500_000;
+const MAX_DOC_BYTES = 2_500_000;
 const IMG_CM_W = 5.5;
 const IMG_CM_H = 4;
 
@@ -32,8 +30,8 @@ function cmToEmu(cm: number) { return Math.round(cm * 360000); }
 function cmToTwip(cm: number) { return Math.round(cm * 1440 / 2.54); }
 function dxa(cm: number) { return Math.round(cm * 567); }
 
-function txt(text: string, opts: { bold?: boolean; size?: number; color?: string; font?: string } = {}): TextRun {
-  return new TextRun({ text, font: opts.font ?? 'Arial', size: opts.size ?? 22, bold: opts.bold, color: opts.color });
+function trun(text: string, opts: { bold?: boolean; size?: number; color?: string } = {}): TextRun {
+  return new TextRun({ text, font: FONT, size: opts.size ?? 28, bold: opts.bold, color: opts.color });
 }
 
 function para(children: any[], opts: { align?: string; spaceBefore?: number; spaceAfter?: number } = {}): Paragraph {
@@ -44,22 +42,9 @@ function para(children: any[], opts: { align?: string; spaceBefore?: number; spa
   });
 }
 
-function infoCell(label: string, value: string, widthDxa: number, goldAccent: boolean): TableCell {
-  return new TableCell({
-    children: [
-      para([txt(label, { bold: true, size: 16, color: goldAccent ? GOLD : TEAL, font: 'Arial' })], { align: 'right', spaceAfter: 20 }),
-      para([txt(value, { size: 17, color: TEAL_DARK })], { align: 'right', spaceAfter: 40 }),
-    ],
-    width: { size: widthDxa, type: WidthType.DXA },
-    shading: { fill: 'f6fafa', type: 'clear' as any },
-    verticalAlign: 'center' as any,
-    borders: { top: BORDER, bottom: BORDER, left: BORDER, right: BORDER },
-  });
-}
-
 function tableHeaderCell(text: string, widthDxa: number): TableCell {
   return new TableCell({
-    children: [para([txt(text, { bold: true, size: 16, color: WHITE })], { align: 'center' })],
+    children: [para([trun(text, { bold: true, size: 28, color: WHITE })], { align: 'center' })],
     width: { size: widthDxa, type: WidthType.DXA },
     shading: { fill: TEAL, type: 'clear' as any },
     verticalAlign: 'center' as any,
@@ -69,7 +54,7 @@ function tableHeaderCell(text: string, widthDxa: number): TableCell {
 
 function tableDataCell(text: string, widthDxa: number, alt: boolean): TableCell {
   return new TableCell({
-    children: [para([txt(text, { size: 16, color: TEAL_DARK })], { align: 'center' })],
+    children: [para([trun(text, { size: 28, color: TEAL_DARK })], { align: 'center' })],
     width: { size: widthDxa, type: WidthType.DXA },
     shading: alt ? { fill: 'f0f6f6', type: 'clear' as any } : undefined,
     verticalAlign: 'center' as any,
@@ -77,24 +62,19 @@ function tableDataCell(text: string, widthDxa: number, alt: boolean): TableCell 
   });
 }
 
-function imageCell(data: Buffer | null | undefined, mimeType: string | null | undefined, fileSize: number | null | undefined, fallback: string, docSize: { value: number }): TableCell {
-  const placeholder = 'صورة المرفق';
-
-  // Try embedding with JPEG to avoid format guessing issues
-  if (data && data.length > 0 && data.length <= MAX_IMAGE_BYTES && (docSize.value + data.length) <= MAX_DOC_BYTES) {
-    // Detect actual format from magic bytes
-    let ext = 'jpeg';
-    if (data[0] === 0x89 && data[1] === 0x50) ext = 'png';
-    else if (data[0] === 0xFF && data[1] === 0xD8) ext = 'jpeg';
+function imageCell(data: Buffer | null | undefined, fallback: string, docSize: { value: number }): TableCell {
+  if (data && data.byteLength > 0 && data.byteLength <= MAX_IMAGE_BYTES && (docSize.value + data.byteLength) <= MAX_DOC_BYTES) {
+    let ext = 'png';
+    if (data[0] === 0xFF && data[1] === 0xD8) ext = 'jpg';
     else if (data[0] === 0x47 && data[1] === 0x49) ext = 'gif';
-    else if (data[0] === 0x42 && data[1] === 0x4D) ext = 'png';
     try {
+      const clean = Buffer.from(data);
       const run = new ImageRun({
         type: ext as 'jpg' | 'png' | 'gif',
-        data,
+        data: clean,
         transformation: { width: cmToEmu(IMG_CM_W), height: cmToEmu(IMG_CM_H) },
       });
-      docSize.value += data.length;
+      docSize.value += clean.byteLength;
       return new TableCell({
         children: [
           new Paragraph({ children: [run], alignment: AlignmentType.CENTER, spacing: { after: 20 } }),
@@ -103,20 +83,14 @@ function imageCell(data: Buffer | null | undefined, mimeType: string | null | un
         verticalAlign: 'center' as any,
         borders: { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER },
       });
-    } catch {
-      console.error('ImageRun failed for', fallback, 'size:', data.length);
-    }
+    } catch { }
   }
   return new TableCell({
-    children: [para([txt(placeholder, { size: 16, color: MUTED, font: 'Arial' })], { align: 'center' })],
+    children: [para([trun(fallback, { size: 16, color: MUTED })], { align: 'center' })],
     width: { size: dxa(IMG_CM_W + 0.8), type: WidthType.DXA },
     verticalAlign: 'center' as any,
     borders: { top: BORDER, bottom: BORDER, left: BORDER, right: BORDER },
   });
-}
-
-function goldBar(): Paragraph {
-  return para([txt('—', { size: 6, color: GOLD })], { align: 'center', spaceAfter: 20 });
 }
 
 export async function GET(request: Request, { params }: { params: { courseId: string } }) {
@@ -150,52 +124,53 @@ export async function GET(request: Request, { params }: { params: { courseId: st
     const children: (Paragraph | Table)[] = [];
     const docSize = { value: 0 };
 
-    // ── Cover / Title ──
     children.push(para([], { spaceAfter: 200 }));
     children.push(para(
-      [txt('بيانات المشاركين في الدورة الخارجية', { size: 36, bold: true, color: TEAL })],
+      [trun('بيانات المشاركين في الدورة الخارجية', { size: 36, bold: true, color: TEAL })],
       { align: 'center', spaceAfter: 40 },
     ));
-    children.push(goldBar());
+    children.push(para([trun('—', { size: 6, color: GOLD })], { align: 'center', spaceAfter: 20 }));
     children.push(para(
-      [txt('جامعة نايف العربية للعلوم الأمنية — كلية التدريب', { size: 20, color: GOLD_DARK })],
+      [trun('جامعة نايف العربية للعلوم الأمنية — كلية التدريب', { size: 20, color: GOLD_DARK })],
       { align: 'center', spaceAfter: 300 },
     ));
 
-    // ── Course info table ──
-    const infoPairs: [string, string][] = [
-      ['النشاط', course.activityName || '—'],
-      ['المكان', course.venue || '—'],
-      ['تاريخ البداية', formatDate(course.startDate)],
-      ['تاريخ النهاية', formatDate(course.endDate)],
-      ['عدد المشاركين', String(course.submissions.length)],
-      ['إعداد', course.createdBy?.name || '—'],
+    const infoCols = [
+      { label: 'النشاط', w: dxa(2.5) },
+      { label: 'المكان', w: dxa(2.5) },
+      { label: 'تاريخ البداية', w: dxa(2.3) },
+      { label: 'تاريخ النهاية', w: dxa(2.3) },
+      { label: 'عدد المشاركين', w: dxa(1.8) },
+      { label: 'إعداد', w: dxa(2.2) },
+    ];
+    const infoVals = [
+      course.activityName || '—',
+      course.venue || '—',
+      formatDate(course.startDate),
+      formatDate(course.endDate),
+      String(course.submissions.length),
+      course.createdBy?.name || '—',
     ];
 
-    const infoRows: TableRow[] = [];
-    for (let i = 0; i < infoPairs.length; i += 2) {
-      const [lLab, lVal] = infoPairs[i];
-      const [rLab, rVal] = infoPairs[i + 1] || ['', ''];
-      infoRows.push(new TableRow({
-        children: [
-          infoCell(lLab, lVal, dxa(3), i % 4 === 0),
-          infoCell(rLab, rVal, dxa(3), i % 4 === 0),
-        ],
-        cantSplit: true,
-      }));
-    }
-
     children.push(new Table({
-      rows: infoRows,
+      rows: [
+        new TableRow({
+          children: infoCols.map(c => tableHeaderCell(c.label, c.w)),
+          cantSplit: true,
+        }),
+        new TableRow({
+          children: infoVals.map((v, i) => tableDataCell(v, infoCols[i].w, false)),
+          cantSplit: true,
+        }),
+      ],
       width: { size: 100, type: WidthType.PERCENTAGE },
-      columnWidths: [dxa(13.35), dxa(13.35)],
+      columnWidths: infoCols.map(c => c.w),
       layout: TableLayoutType.FIXED,
       visuallyRightToLeft: true,
     }));
 
     children.push(para([], { spaceAfter: 400 }));
 
-    // ── Participants summary table ──
     const partCols = [
       { label: 'م', w: dxa(0.7) },
       { label: 'الاسم', w: dxa(5.5) },
@@ -237,26 +212,24 @@ export async function GET(request: Request, { params }: { params: { courseId: st
 
     children.push(para([], { spaceAfter: 200 }));
     children.push(para(
-      [txt(`تم التصدير من منصة تأمين المشاركين — ${new Date().toLocaleDateString('ar-SA')}`, { size: 14, color: MUTED })],
+      [trun(`تم التصدير من منصة تأمين المشاركين — ${new Date().toLocaleDateString('ar-SA')}`, { size: 14, color: MUTED })],
       { align: 'center', spaceBefore: 200 },
     ));
     children.push(para(
-      [txt('طُوِّر بواسطة نايف الشهراني', { size: 12, color: CREDIT })],
+      [trun('طُوِّر بواسطة نايف الشهراني', { size: 12, color: CREDIT })],
       { align: 'center' },
     ));
 
-    // ── Per-participant detail pages ──
     for (const s of course.submissions) {
       children.push(new Paragraph({ children: [new PageBreak()] }));
 
       children.push(para([], { spaceAfter: 100 }));
       children.push(para(
-        [txt(s.fullNamePassport, { size: 34, bold: true, color: TEAL })],
+        [trun(s.fullNamePassport, { size: 34, bold: true, color: TEAL })],
         { align: 'center', spaceAfter: 20 },
       ));
-      children.push(goldBar());
+      children.push(para([trun('—', { size: 6, color: GOLD })], { align: 'center', spaceAfter: 20 }));
 
-      // Detail info table (6-col headers + values)
       const detailCols = [
         { label: 'رقم الجواز', w: dxa(3.5) },
         { label: 'انتهاء الجواز', w: dxa(3) },
@@ -293,38 +266,34 @@ export async function GET(request: Request, { params }: { params: { courseId: st
 
       children.push(para([], { spaceAfter: 250 }));
 
-      // Images side by side
       const pf = s.files.find(f => f.fileType === 'PASSPORT');
       const nf = s.files.find(f => f.fileType === 'NATIONAL_ID');
 
-      const imageLabelStyle = { size: 17, bold: true, color: TEAL } as const;
-
       children.push(new Table({
-        rows: [new TableRow({
-          children: [
-            new TableCell({
-              children: [
-                para([txt('صورة جواز السفر', imageLabelStyle)], { align: 'center', spaceAfter: 60 }),
-              ],
-              width: { size: 50, type: WidthType.PERCENTAGE },
-              verticalAlign: 'center' as any,
-              borders: { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER },
-            }),
-            new TableCell({
-              children: [
-                para([txt('صورة بطاقة الهوية', imageLabelStyle)], { align: 'center', spaceAfter: 60 }),
-              ],
-              width: { size: 50, type: WidthType.PERCENTAGE },
-              verticalAlign: 'center' as any,
-              borders: { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER },
-            }),
-          ],
-        }), new TableRow({
-          children: [
-            imageCell(pf?.fileData, pf?.mimeType, pf?.fileSize, 'لا توجد صورة جواز السفر', docSize),
-            imageCell(nf?.fileData, nf?.mimeType, nf?.fileSize, 'لا توجد صورة بطاقة الهوية', docSize),
-          ],
-        })],
+        rows: [
+          new TableRow({
+            children: [
+              new TableCell({
+                children: [para([trun('صورة جواز السفر', { size: 17, bold: true, color: TEAL })], { align: 'center', spaceAfter: 60 })],
+                width: { size: 50, type: WidthType.PERCENTAGE },
+                verticalAlign: 'center' as any,
+                borders: { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER },
+              }),
+              new TableCell({
+                children: [para([trun('صورة بطاقة الهوية', { size: 17, bold: true, color: TEAL })], { align: 'center', spaceAfter: 60 })],
+                width: { size: 50, type: WidthType.PERCENTAGE },
+                verticalAlign: 'center' as any,
+                borders: { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER },
+              }),
+            ],
+          }),
+          new TableRow({
+            children: [
+              imageCell(pf?.fileData, 'لا توجد صورة جواز السفر', docSize),
+              imageCell(nf?.fileData, 'لا توجد صورة بطاقة الهوية', docSize),
+            ],
+          }),
+        ],
         width: { size: 100, type: WidthType.PERCENTAGE },
         columnWidths: [dxa(IMG_CM_W + 1), dxa(IMG_CM_W + 1)],
         layout: TableLayoutType.FIXED,
@@ -334,7 +303,7 @@ export async function GET(request: Request, { params }: { params: { courseId: st
       if (docSize.value >= MAX_DOC_BYTES) {
         children.push(para([], { spaceAfter: 200 }));
         children.push(para(
-          [txt('⚠️ تم تخطي عدد من الصور بسبب حدود حجم الملف', { size: 16, color: MUTED })],
+          [trun('⚠️ تم تخطي عدد من الصور بسبب حدود حجم الملف', { size: 16, color: MUTED })],
           { align: 'center' },
         ));
         break;
@@ -342,21 +311,20 @@ export async function GET(request: Request, { params }: { params: { courseId: st
 
       children.push(para([], { spaceAfter: 300 }));
       children.push(para(
-        [txt('منصة تأمين المشاركين للدورات الخارجية', { size: 14, color: MUTED })],
+        [trun('منصة تأمين المشاركين للدورات الخارجية', { size: 14, color: MUTED })],
         { align: 'center' },
       ));
       children.push(para(
-        [txt('طُوِّر بواسطة نايف الشهراني', { size: 12, color: CREDIT })],
+        [trun('طُوِّر بواسطة نايف الشهراني', { size: 12, color: CREDIT })],
         { align: 'center' },
       ));
     }
 
-    // ── Build document ──
     const doc = new Document({
       styles: {
         default: {
           document: {
-            run: { font: 'Arial', size: 22 },
+            run: { font: FONT, size: 28 },
             paragraph: { alignment: AlignmentType.RIGHT },
           },
         },
@@ -364,17 +332,8 @@ export async function GET(request: Request, { params }: { params: { courseId: st
       sections: [{
         properties: {
           page: {
-            margin: {
-              top: cmToTwip(1.5),
-              bottom: cmToTwip(1.5),
-              right: cmToTwip(1.5),
-              left: cmToTwip(1.5),
-            },
-            size: {
-              width: cmToEmu(29.7),
-              height: cmToEmu(21),
-              orientation: PageOrientation.LANDSCAPE,
-            },
+            margin: { top: cmToTwip(1.5), bottom: cmToTwip(1.5), right: cmToTwip(1.5), left: cmToTwip(1.5) },
+            size: { width: 16838, height: 11906, orientation: PageOrientation.LANDSCAPE },
           },
         },
         children,
