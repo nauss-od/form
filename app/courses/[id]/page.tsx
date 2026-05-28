@@ -117,9 +117,11 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
                     <td>{formatDate(s.birthDate)}</td>
                     <td style={{ fontSize: 11, direction: 'ltr' }}>{s.iban}</td>
                     <td>
-                      {s.files?.some(f => f.fileType === 'PASSPORT') ? 'جواز' : ''}
-                      {s.files?.some(f => f.fileType === 'NATIONAL_ID') && s.files?.some(f => f.fileType === 'PASSPORT') ? ' + ' : ''}
-                      {s.files?.some(f => f.fileType === 'NATIONAL_ID') ? 'هوية' : ''}
+                      {s.files?.map(f => (
+                        <a key={f.id} href={`/api/files/${f.id}`} target="_blank" className="file-link">
+                          {f.fileType === 'PASSPORT' ? '📄 جواز' : '🪪 هوية'}
+                        </a>
+                      ))}
                     </td>
                   </tr>
                 ))}

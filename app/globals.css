@@ -1042,6 +1042,20 @@ select.input:focus {
 .data-table tbody tr:last-child td:first-child { border-radius: 0 0 8px 0; }
 .data-table tbody tr:last-child td:last-child { border-radius: 0 0 0 8px; }
 
+.file-link {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(1, 101, 100, 0.06);
+  color: var(--nauss-teal);
+  font-size: 0.8rem;
+  text-decoration: none;
+  transition: background var(--transition-fast);
+  white-space: nowrap;
+}
+.file-link:hover { background: rgba(1, 101, 100, 0.12); }
+.file-link + .file-link { margin-right: 4px; }
+
 .td-title strong {
   display: block;
   font-size: 0.9rem;
