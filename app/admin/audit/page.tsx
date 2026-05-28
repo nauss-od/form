@@ -21,7 +21,7 @@ export default function AuditPage() {
   const actionLabels: Record<string, string> = {
     LOGIN: 'تسجيل دخول', CREATE_COURSE: 'إنشاء دورة', UPDATE_USER: 'تحديث مستخدم',
     DELETE_USER: 'حذف مستخدم', ACTIVATE_USER: 'تفعيل مستخدم', DEACTIVATE_USER: 'إيقاف مستخدم',
-    RESET_PASSWORD: 'إعادة تعيين كلمة المرور', EXPORT_WORD: 'تصدير Word', EXPORT_EML: 'تصدير EML',
+    RESET_PASSWORD: 'إعادة تعيين كلمة المرور', EXPORT_WORD: 'تصدير Word', EXPORT_PDF: 'تصدير PDF', EXPORT_EML: 'تصدير EML',
   };
 
   function load(p: number) {

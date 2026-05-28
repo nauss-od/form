@@ -77,7 +77,7 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
               <div className="section-actions" style={{ marginTop: 8 }}>
                 <button className="secondary-btn" onClick={() => { navigator.clipboard.writeText(publicUrl); alert('تم نسخ الرابط'); }}>نسخ الرابط</button>
                 <a href={`/api/export/${course.id}/word`} className="secondary-btn">Word</a>
-                <a href={`/api/export/${course.id}/excel`} className="secondary-btn">Excel</a>
+                <a href={`/api/export/${course.id}/pdf`} className="secondary-btn">PDF</a>
                 <a href={`/api/export/${course.id}/eml`} className="secondary-btn">EML</a>
               </div>
             </>

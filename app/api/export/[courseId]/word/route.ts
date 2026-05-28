@@ -6,7 +6,7 @@ import { logAudit } from '@/lib/audit';
 import {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
   AlignmentType, WidthType, BorderStyle,
-  TableLayoutType,
+  TableLayoutType, ExternalHyperlink,
 } from 'docx';
 
 const TEAL = '016564';
@@ -48,6 +48,21 @@ function tableHeaderCell(text: string, widthDxa: number): TableCell {
 function tableDataCell(text: string, widthDxa: number, alt: boolean): TableCell {
   return new TableCell({
     children: [para([trun(text, { size: 28, color: TEAL_DARK })], { align: 'center' })],
+    width: { size: widthDxa, type: WidthType.DXA },
+    shading: alt ? { fill: 'f0f6f6', type: 'clear' as any } : undefined,
+    verticalAlign: 'center' as any,
+    borders: { top: BORDER, bottom: BORDER, left: BORDER, right: BORDER },
+  });
+}
+
+function tableLinkCell(url: string, widthDxa: number, alt: boolean): TableCell {
+  return new TableCell({
+    children: [para([
+      new ExternalHyperlink({
+        children: [trun('لمعلومات المشارك كاملة', { size: 28, color: '0563C1' })],
+        link: url,
+      }),
+    ], { align: 'center' })],
     width: { size: widthDxa, type: WidthType.DXA },
     shading: alt ? { fill: 'f0f6f6', type: 'clear' as any } : undefined,
     verticalAlign: 'center' as any,
@@ -154,7 +169,7 @@ export async function GET(request: Request, { params }: { params: { courseId: st
           children: [
             tableDataCell(String(i + 1), partCols[0].w, i % 2 === 1),
             tableDataCell(s.fullNamePassport, partCols[1].w, i % 2 === 1),
-            tableDataCell(`${baseUrl}/participant/${s.id}`, partCols[2].w, i % 2 === 1),
+            tableLinkCell(`${baseUrl}/participant/${s.id}`, partCols[2].w, i % 2 === 1),
           ],
           cantSplit: true,
         })),

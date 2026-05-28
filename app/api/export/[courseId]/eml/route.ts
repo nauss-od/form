@@ -3,8 +3,19 @@ import { prisma } from '@/lib/prisma';
 import { formatDate } from '@/lib/utils';
 import { getCurrentSession } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
+import { generatePdfBuffer } from '@/lib/generate-pdf';
 
-export async function GET(_request: Request, { params }: { params: { courseId: string } }) {
+function addDays(date: Date, days: number): Date {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
+
+function fmt(date: Date): string {
+  return date.toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+export async function GET(request: Request, { params }: { params: { courseId: string } }) {
   const session = getCurrentSession();
   if (!session) return NextResponse.json({ message: 'غير مصرح' }, { status: 401 });
 
@@ -16,33 +27,57 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
     },
   });
   if (!course) return NextResponse.json({ message: 'الدورة غير موجودة' }, { status: 404 });
-
   if (session.role !== 'MANAGER' && course.createdByUserId !== session.userId) {
     return NextResponse.json({ message: 'غير مصرح' }, { status: 401 });
   }
 
   await logAudit({ userId: session.userId, action: 'EXPORT_EML', entityType: 'Course', entityId: params.courseId });
 
-  const to = process.env.HR_EMAIL || 'travel@nauss.edu.sa';
-  const cc = process.env.MANAGER_CC_EMAIL || '';
-  const subject = `طلب إصدار تأمين طبي للمشاركين في الدورة الخارجية — ${course.activityName || 'دورة خارجية'}`;
+  const baseUrl = new URL(request.url).origin;
 
-  const participantsList = course.submissions.map((s, i) =>
-    `  ${i + 1}. ${s.fullNamePassport}
-     - رقم الجواز: ${s.passportNumber} (ينتهي: ${formatDate(s.passportExpiry)})
-     - رقم الهوية: ${s.nationalId}
-     - رقم الجوال: ${s.mobile}
-     - تاريخ الميلاد: ${formatDate(s.birthDate)}
-     - رقم الآيبان: ${s.iban}`
-  ).join('\n');
+  // Generate PDF attachment
+  const participants = course.submissions.map((s, i) => ({
+    index: i + 1,
+    fullNamePassport: s.fullNamePassport,
+    passportNumber: s.passportNumber,
+    passportExpiry: formatDate(s.passportExpiry),
+    nationalId: s.nationalId,
+    mobile: s.mobile,
+    birthDate: formatDate(s.birthDate),
+    iban: s.iban,
+    id: s.id,
+  }));
+
+  const pdfBuffer = await generatePdfBuffer(
+    {
+      activityName: course.activityName,
+      venue: course.venue,
+      startDate: course.startDate,
+      endDate: course.endDate,
+      createdByName: course.createdBy?.name || '—',
+    },
+    participants,
+    baseUrl,
+  );
+
+  const pdfBase64 = pdfBuffer.toString('base64');
+
+  const insuranceStart = course.startDate ? addDays(course.startDate, -1) : null;
+  const insuranceEnd = course.endDate ? addDays(course.endDate, 3) : null;
+
+  const to = 'HR@nauss.edu.sa, AAbouelatta@nauss.edu.sa';
+  const cc = 'OD@nauss.edu.sa';
+  const subject = `طلب إصدار تأمين طبي — ${course.activityName || 'دورة خارجية'}`;
 
   const body = `السلام عليكم ورحمة الله وبركاته،
 
-نرفق لكم طلب إصدار تأمين طبي للمشاركين في الدورة الخارجية أدناه:
+أتمنى أن تكونوا بأفضل حال،
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━
+نرفق لكم ملف PDF يتضمن بيانات المشاركين في الدورة الخارجية أدناه، ونأمل منكم التكرم بإصدار التأمين الطبي لهم.
+
+─────────────────────────
 بيانات الدورة
-━━━━━━━━━━━━━━━━━━━━━━━━━━
+─────────────────────────
 
 اسم النشاط: ${course.activityName || '—'}
 مقر الانعقاد: ${course.venue || '—'}
@@ -51,38 +86,53 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
 عدد المشاركين: ${course.submissions.length}
 إعداد: ${course.createdBy?.name || '—'}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-بيانات المشاركين
-━━━━━━━━━━━━━━━━━━━━━━━━━━
+─────────────────────────
+بيانات التأمين المقترحة
+─────────────────────────
 
-${participantsList}
+تاريخ بداية التأمين: ${insuranceStart ? fmt(insuranceStart) : '—'}
+تاريخ نهاية التأمين: ${insuranceEnd ? fmt(insuranceEnd) : '—'}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━
+(بداية التأمين قبل الدورة بيوم، ونهايته بعد الدورة بثلاثة أيام)
 
-نأمل منكم التكرم بإصدار التأمين الطبي للمشاركين المذكورين أعلاه، وإفادتنا بما يلزم.
+نشكركم جزيل الشكر على تعاونكم الدائم، ونقدر لكم جهودكم.
 
-وتفضلوا بقبول فائق الشكر والتقدير،
+وتفضلوا بقبول فائق الاحترام،
 
 ${course.createdBy?.name || 'موظف التدريب'}
 إدارة عمليات التدريب
 وكالة التدريب
 جامعة نايف العربية للعلوم الأمنية`;
 
-  const safeName = (course.activityName || 'course').replace(/[<>:"/\\|?*]/g, '');
-  const encodedSubject = '=?UTF-8?B?' + Buffer.from(subject).toString('base64') + '?=';
+  const boundary = 'nauss-email-boundary-2026';
+  const pdfFilename = `${(course.activityName || 'course').replace(/[<>:"/\\|?*]/g, '')}-insurance.pdf`;
 
   const eml = [
     'MIME-Version: 1.0',
-    'Content-Type: text/plain; charset="UTF-8"',
-    'Content-Transfer-Encoding: base64',
-    `To: <${to}>`,
-    cc ? `CC: <${cc}>` : '',
-    `Subject: ${encodedSubject}`,
+    `Content-Type: multipart/mixed; boundary="${boundary}"`,
+    `To: ${to}`,
+    `CC: ${cc}`,
+    `Subject: =?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`,
     'X-Mailer: NAUSS Forms Platform v1.0',
     'X-Priority: Normal',
     '',
+    `--${boundary}`,
+    'Content-Type: text/plain; charset="UTF-8"',
+    'Content-Transfer-Encoding: base64',
+    '',
     Buffer.from(body).toString('base64'),
-  ].filter(Boolean).join('\n');
+    '',
+    `--${boundary}`,
+    'Content-Type: application/pdf',
+    'Content-Transfer-Encoding: base64',
+    `Content-Disposition: attachment; filename="${pdfFilename}"`,
+    '',
+    pdfBase64.match(/.{1,76}/g)?.join('\n') || pdfBase64,
+    '',
+    `--${boundary}--`,
+  ].join('\n');
+
+  const safeName = (course.activityName || 'course').replace(/[<>:"/\\|?*]/g, '');
 
   return new NextResponse(eml, {
     headers: {

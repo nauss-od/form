@@ -30,10 +30,10 @@ export default async function ParticipantPage({ params }: { params: { id: string
           </div>
         ) : (
           <>
-            <div className="form-header">
-              <img src="/images/nauss-logo-gold.png" alt="NAUSS" className="form-logo" />
+            <div className="form-header" style={{ textAlign: 'center' }}>
+              <img src="/images/nauss-logo-gold.png" alt="NAUSS" className="form-logo" style={{ marginLeft: 'auto', marginRight: 'auto' }} />
               <h2>معلومات المشارك</h2>
-              <p>{submission.course.activityName || 'دورة خارجية'} — {submission.course.venue || ''}</p>
+              <p style={{ marginLeft: 'auto', marginRight: 'auto' }}>{submission.course.activityName || 'دورة خارجية'} — {submission.course.venue || ''}</p>
             </div>
 
             <div style={{ padding: '30px 34px 34px', display: 'grid', gap: 24 }}>

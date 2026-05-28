@@ -72,6 +72,10 @@ Technical rules:
 
 
 
+GitHub & Deploy rule:
+
+Every change made must be automatically committed, pushed to GitHub, and deployed to Vercel without asking the user. This is a standing rule.
+
 Before finishing:
 
 Review the UI critically.
