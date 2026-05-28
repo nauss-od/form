@@ -14,7 +14,11 @@ const MUTED = '#667777';
 
 Font.register({
   family: 'Cairo',
-  src: path.join(process.cwd(), 'public/fonts/Cairo-Variable.ttf'),
+  fonts: [
+    { src: path.join(process.cwd(), 'public/fonts/Cairo-Variable.ttf'), fontWeight: 400 },
+    { src: path.join(process.cwd(), 'public/fonts/Cairo-Variable.ttf'), fontWeight: 700 },
+    { src: path.join(process.cwd(), 'public/fonts/Cairo-Variable.ttf'), fontWeight: 900 },
+  ],
 });
 
 const styles = StyleSheet.create({
@@ -247,8 +251,8 @@ export async function generatePdfBuffer(
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
           <Image
-            src={path.join(process.cwd(), 'public/images/nauss-logo-white.svg')}
-            style={{ width: 140 }}
+            src={path.join(process.cwd(), 'public/images/nauss-logo-gold.png')}
+            style={{ width: 120 }}
           />
           <Text style={styles.headerTitle}>جامعة نايف العربية للعلوم الأمنية</Text>
           <Text style={styles.headerSub}>كلية التدريب — منصة تأمين المشاركين</Text>

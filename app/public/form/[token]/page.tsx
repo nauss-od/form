@@ -73,12 +73,26 @@ export default function PublicFormPage({ params }: { params: { token: string } }
       const { data } = await Tesseract.recognize(file, 'eng', {
         logger: (m) => { if (m.status === 'recognizing text') setScanning(true); },
       });
-      const mrzText = data.text.replace(/[^A-Z0-9<]/g, '').toUpperCase();
-      const pIdx = mrzText.indexOf('P');
-      if (pIdx >= 0) {
-        const raw = mrzText.substring(pIdx, Math.min(pIdx + 100, mrzText.length));
+      // Try to find MRZ: two lines of 44 chars each, starting with P<, followed by letters/</
+      const lines = data.text.split('\n').map(l => l.replace(/\r/g, '').trim()).filter(Boolean);
+      let rawMrz = '';
+      for (let i = 0; i < lines.length - 1; i++) {
+        const a = lines[i].replace(/[^A-Z0-9<]/g, '').toUpperCase();
+        const b = lines[i + 1].replace(/[^A-Z0-9<]/g, '').toUpperCase();
+        if (a.startsWith('P') && a.length >= 30 && b.length >= 30) {
+          rawMrz = a.substring(0, 44) + b.substring(0, 44);
+          break;
+        }
+      }
+      if (!rawMrz) {
+        // Fallback: flatten everything and find P< pattern
+        const flat = data.text.replace(/[^A-Z0-9<]/g, '').toUpperCase();
+        const pIdx = flat.indexOf('P');
+        if (pIdx >= 0) rawMrz = flat.substring(pIdx, Math.min(pIdx + 88, flat.length));
+      }
+      if (rawMrz) {
         const { parseMrz } = await import('@/lib/mrz-parser');
-        const result = parseMrz(raw);
+        const result = parseMrz(rawMrz);
         if (result?.fullNamePassport) {
           setName(result.fullNamePassport);
           if (result.passportNumber) setPassport(result.passportNumber);

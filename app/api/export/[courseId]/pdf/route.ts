@@ -63,8 +63,12 @@ export async function GET(request: Request, { params }: { params: { courseId: st
         'Content-Disposition': `attachment; filename="${asciiFilename}"; filename*=UTF-8''${encodedFilename}`,
       },
     });
-  } catch (err) {
-    console.error('PDF export error:', err);
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+  } catch (err: any) {
+    console.error('=== PDF EXPORT ERROR ===');
+    console.error('Name:', err?.name);
+    console.error('Message:', err?.message);
+    console.error('Stack:', err?.stack);
+    console.error('========================');
+    return NextResponse.json({ error: err?.message || String(err) }, { status: 500 });
   }
 }
