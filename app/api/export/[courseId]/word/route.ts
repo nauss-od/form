@@ -5,8 +5,8 @@ import { getCurrentSession } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
 import {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
-  PageBreak, AlignmentType, WidthType, BorderStyle,
-  TableLayoutType, ImageRun,
+  AlignmentType, WidthType, BorderStyle,
+  TableLayoutType,
 } from 'docx';
 
 const TEAL = '016564';
@@ -20,15 +20,8 @@ const CREDIT = '99aaaa';
 const BORDER = { style: BorderStyle.SINGLE as any, size: 6, color: LINE };
 const FONT = 'BoutrosJazirahTextLight';
 
-const MAX_IMAGE_BYTES = 3_000_000;
-const MAX_DOC_BYTES = 4_000_000;
-const IMG_CM_W = 15.1;
-const IMG_CM_H = 8.5;
-
-function cmToEmu(cm: number) { return Math.round(cm * 360000); }
 function cmToTwip(cm: number) { return Math.round(cm * 1440 / 2.54); }
 function dxa(cm: number) { return Math.round(cm * 567); }
-function cmToPx(cm: number) { return Math.round(cm / 2.54 * 96); }
 
 function trun(text: string, opts: { bold?: boolean; size?: number; color?: string } = {}): TextRun {
   return new TextRun({ text, font: FONT, size: opts.size ?? 28, bold: opts.bold, color: opts.color });
@@ -90,22 +83,22 @@ export async function GET(request: Request, { params }: { params: { courseId: st
       entityId: params.courseId,
     });
 
+    const baseUrl = new URL(request.url).origin;
     const children: (Paragraph | Table)[] = [];
-    const docSize = { value: 0 };
+    const subs = course.submissions;
 
+    // Title
     children.push(para([], { spaceAfter: 200 }));
     children.push(para(
       [trun('بيانات المشاركين في الدورة الخارجية', { size: 36, bold: true, color: TEAL })],
       { align: 'center', spaceAfter: 40 },
     ));
-    children.push(para([trun('—', { size: 6, color: GOLD })], { align: 'center', spaceAfter: 20 }));
     children.push(para(
       [trun('جامعة نايف العربية للعلوم الأمنية — كلية التدريب', { size: 20, color: GOLD_DARK })],
       { align: 'center', spaceAfter: 300 },
     ));
 
-    const subs = course!.submissions;
-
+    // Course info table
     const infoCols = [
       { label: 'النشاط', w: dxa(2.5) },
       { label: 'المكان', w: dxa(2.5) },
@@ -142,16 +135,17 @@ export async function GET(request: Request, { params }: { params: { courseId: st
 
     children.push(para([], { spaceAfter: 400 }));
 
+    // Participant table: index + name + link to attachments
     const partCols = [
-      { label: 'م', w: dxa(0.7) },
-      { label: 'الاسم', w: dxa(4.8) },
-      { label: 'رقم الجواز', w: dxa(2.8) },
-      { label: 'انتهاء الجواز', w: dxa(2.5) },
-      { label: 'رقم الهوية', w: dxa(2.5) },
-      { label: 'الجوال', w: dxa(2.5) },
-      { label: 'تاريخ الميلاد', w: dxa(2.5) },
-      { label: 'IBAN', w: dxa(3.7) },
+      { label: 'م', w: dxa(0.8) },
+      { label: 'الاسم', w: dxa(5.5) },
+      { label: 'رابط المرفقات', w: dxa(13) },
     ];
+
+    children.push(para(
+      [trun('قائمة المشاركين', { size: 22, bold: true, color: TEAL })],
+      { align: 'right', spaceAfter: 150 },
+    ));
 
     children.push(new Table({
       rows: [
@@ -160,12 +154,7 @@ export async function GET(request: Request, { params }: { params: { courseId: st
           children: [
             tableDataCell(String(i + 1), partCols[0].w, i % 2 === 1),
             tableDataCell(s.fullNamePassport, partCols[1].w, i % 2 === 1),
-            tableDataCell(s.passportNumber, partCols[2].w, i % 2 === 1),
-            tableDataCell(formatDate(s.passportExpiry), partCols[3].w, i % 2 === 1),
-            tableDataCell(s.nationalId, partCols[4].w, i % 2 === 1),
-            tableDataCell(s.mobile, partCols[5].w, i % 2 === 1),
-            tableDataCell(formatDate(s.birthDate), partCols[6].w, i % 2 === 1),
-            tableDataCell(s.iban, partCols[7].w, i % 2 === 1),
+            tableDataCell(`${baseUrl}/participant/${s.id}`, partCols[2].w, i % 2 === 1),
           ],
           cantSplit: true,
         })),
@@ -185,106 +174,6 @@ export async function GET(request: Request, { params }: { params: { courseId: st
       [trun('طُوِّر بواسطة نايف الشهراني', { size: 12, color: CREDIT })],
       { align: 'center' },
     ));
-
-    for (const s of subs) {
-      children.push(new Paragraph({ children: [new PageBreak()] }));
-
-      children.push(para([], { spaceAfter: 100 }));
-      children.push(para(
-        [trun(s.fullNamePassport, { size: 34, bold: true, color: TEAL })],
-        { align: 'center', spaceAfter: 20 },
-      ));
-      children.push(para([trun('—', { size: 6, color: GOLD })], { align: 'center', spaceAfter: 20 }));
-
-      const detailCols = [
-        { label: 'رقم الجواز', w: dxa(3.5) },
-        { label: 'انتهاء الجواز', w: dxa(3) },
-        { label: 'رقم الهوية', w: dxa(4) },
-        { label: 'الجوال', w: dxa(4) },
-        { label: 'تاريخ الميلاد', w: dxa(3.5) },
-        { label: 'IBAN', w: dxa(5.7) },
-      ];
-      const detailValues = [
-        s.passportNumber,
-        formatDate(s.passportExpiry),
-        s.nationalId,
-        s.mobile,
-        formatDate(s.birthDate),
-        s.iban,
-      ];
-
-      children.push(new Table({
-        rows: [
-          new TableRow({
-            children: detailCols.map(c => tableHeaderCell(c.label, c.w)),
-            cantSplit: true,
-          }),
-          new TableRow({
-            children: detailValues.map((v, i) => tableDataCell(v, detailCols[i].w, false)),
-            cantSplit: true,
-          }),
-        ],
-        width: { size: 100, type: WidthType.PERCENTAGE },
-        columnWidths: detailCols.map(c => c.w),
-        layout: TableLayoutType.FIXED,
-        visuallyRightToLeft: true,
-      }));
-
-      children.push(para([], { spaceAfter: 250 }));
-
-      const pf = s.files.find(f => f.fileType === 'PASSPORT');
-      const nf = s.files.find(f => f.fileType === 'NATIONAL_ID');
-
-      function addImage(label: string, data: Buffer | null | undefined, fallback: string): boolean {
-        children.push(para([trun(label, { size: 17, bold: true, color: TEAL })], { align: 'center', spaceAfter: 80 }));
-        if (data && data.byteLength > 0 && data.byteLength <= MAX_IMAGE_BYTES && (docSize.value + data.byteLength) <= MAX_DOC_BYTES) {
-          let ext = 'jpg';
-          if (data[0] === 0x89 && data[1] === 0x50) ext = 'png';
-          else if (data[0] === 0x47 && data[1] === 0x49) ext = 'gif';
-
-          try {
-            children.push(new Paragraph({
-              children: [new ImageRun({
-                type: ext as 'jpg' | 'png' | 'gif',
-                data: Buffer.from(data),
-                transformation: { width: cmToPx(IMG_CM_W), height: cmToPx(IMG_CM_H) },
-              })],
-              alignment: AlignmentType.CENTER,
-              spacing: { after: 0 },
-            }));
-            docSize.value += data.byteLength;
-            return true;
-          } catch (e) { console.error('ImageRun image error for', label, String(e)); }
-        } else {
-          console.log('Image skip condition for', label, JSON.stringify({ hasData: !!data, len: data?.byteLength, maxImg: MAX_IMAGE_BYTES, docSize: docSize.value, maxDoc: MAX_DOC_BYTES }));
-        }
-        children.push(para([trun(fallback, { size: 16, color: MUTED })], { align: 'center', spaceAfter: 80 }));
-        return false;
-      }
-
-      addImage('صورة جواز السفر', pf?.fileData, 'لا توجد صورة جواز السفر');
-      children.push(para([], { spaceAfter: 170 }));
-      addImage('صورة بطاقة الهوية', nf?.fileData, 'لا توجد صورة بطاقة الهوية');
-
-      if (docSize.value >= MAX_DOC_BYTES) {
-        children.push(para([], { spaceAfter: 200 }));
-        children.push(para(
-          [trun('⚠️ تم تخطي عدد من الصور بسبب حدود حجم الملف', { size: 16, color: MUTED })],
-          { align: 'center' },
-        ));
-        break;
-      }
-
-      children.push(para([], { spaceAfter: 300 }));
-      children.push(para(
-        [trun('منصة تأمين المشاركين للدورات الخارجية', { size: 14, color: MUTED })],
-        { align: 'center' },
-      ));
-      children.push(para(
-        [trun('طُوِّر بواسطة نايف الشهراني', { size: 12, color: CREDIT })],
-        { align: 'center' },
-      ));
-    }
 
     const doc = new Document({
       styles: {
