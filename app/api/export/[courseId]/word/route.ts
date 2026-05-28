@@ -235,12 +235,13 @@ export async function GET(request: Request, { params }: { params: { courseId: st
       const pf = s.files.find(f => f.fileType === 'PASSPORT');
       const nf = s.files.find(f => f.fileType === 'NATIONAL_ID');
 
-      function addImage(label: string, data: Buffer | null | undefined, fallback: string) {
+      function addImage(label: string, data: Buffer | null | undefined, fallback: string): boolean {
         children.push(para([trun(label, { size: 17, bold: true, color: TEAL })], { align: 'center', spaceAfter: 80 }));
         if (data && data.byteLength > 0 && data.byteLength <= MAX_IMAGE_BYTES && (docSize.value + data.byteLength) <= MAX_DOC_BYTES) {
           let ext = 'jpg';
           if (data[0] === 0x89 && data[1] === 0x50) ext = 'png';
           else if (data[0] === 0x47 && data[1] === 0x49) ext = 'gif';
+
           try {
             children.push(new Paragraph({
               children: [new ImageRun({
@@ -253,7 +254,9 @@ export async function GET(request: Request, { params }: { params: { courseId: st
             }));
             docSize.value += data.byteLength;
             return true;
-          } catch { }
+          } catch (e) { console.error('ImageRun image error for', label, String(e)); }
+        } else {
+          console.log('Image skip condition for', label, JSON.stringify({ hasData: !!data, len: data?.byteLength, maxImg: MAX_IMAGE_BYTES, docSize: docSize.value, maxDoc: MAX_DOC_BYTES }));
         }
         children.push(para([trun(fallback, { size: 16, color: MUTED })], { align: 'center', spaceAfter: 80 }));
         return false;
