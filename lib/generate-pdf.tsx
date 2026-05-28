@@ -1,6 +1,6 @@
 import React from 'react';
-import ReactPDF, {
-  Document, Page, View, Text, Image, Font, StyleSheet, Link,
+import {
+  Document, Page, View, Text, Image, Font, StyleSheet, Link, renderToBuffer,
 } from '@react-pdf/renderer';
 import path from 'path';
 
@@ -305,6 +305,6 @@ export async function generatePdfBuffer(
     </Document>
   );
 
-  const buffer = await ReactPDF.renderToBuffer(PdfDocument);
+  const buffer = await renderToBuffer(PdfDocument);
   return buffer;
 }

@@ -70,25 +70,39 @@ export default function PublicFormPage({ params }: { params: { token: string } }
     setPassportPhoto(URL.createObjectURL(file));
     setScanning(true);
     try {
-      const { data } = await Tesseract.recognize(file, 'eng', {
-        logger: (m) => { if (m.status === 'recognizing text') setScanning(true); },
+      const worker = await Tesseract.createWorker('eng');
+      await worker.setParameters({
+        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<',
+        tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK,
       });
+      const { data } = await worker.recognize(file);
+      await worker.terminate();
       // Try to find MRZ: two lines of 44 chars each, starting with P<, followed by letters/</
       const lines = data.text.split('\n').map(l => l.replace(/\r/g, '').trim()).filter(Boolean);
       let rawMrz = '';
       for (let i = 0; i < lines.length - 1; i++) {
-        const a = lines[i].replace(/[^A-Z0-9<]/g, '').toUpperCase();
-        const b = lines[i + 1].replace(/[^A-Z0-9<]/g, '').toUpperCase();
+        const a = lines[i].toUpperCase();
+        const b = lines[i + 1].toUpperCase();
         if (a.startsWith('P') && a.length >= 30 && b.length >= 30) {
           rawMrz = a.substring(0, 44) + b.substring(0, 44);
           break;
         }
       }
       if (!rawMrz) {
-        // Fallback: flatten everything and find P< pattern
-        const flat = data.text.replace(/[^A-Z0-9<]/g, '').toUpperCase();
+        // Fallback: look for P anywhere in flattened text
+        const flat = data.text.replace(/\s/g, '').toUpperCase();
         const pIdx = flat.indexOf('P');
         if (pIdx >= 0) rawMrz = flat.substring(pIdx, Math.min(pIdx + 88, flat.length));
+      }
+      if (!rawMrz) {
+        // Last resort: scan each line for a 30+ char block that looks like MRZ
+        for (const line of lines) {
+          const clean = line.toUpperCase();
+          if (clean.length >= 30 && /[A-Z0-9<]{30,}/.test(clean)) {
+            rawMrz += clean.substring(0, 44);
+            if (rawMrz.length >= 44) break;
+          }
+        }
       }
       if (rawMrz) {
         const { parseMrz } = await import('@/lib/mrz-parser');
