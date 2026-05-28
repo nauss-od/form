@@ -20,8 +20,8 @@ const CREDIT = '99aaaa';
 const BORDER = { style: BorderStyle.SINGLE as any, size: 6, color: LINE };
 const FONT = 'BoutrosJazirahTextLight';
 
-const MAX_IMAGE_BYTES = 1_000_000;
-const MAX_DOC_BYTES = 3_500_000;
+const MAX_IMAGE_BYTES = 3_000_000;
+const MAX_DOC_BYTES = 4_000_000;
 const IMG_CM_W = 15.1;
 const IMG_CM_H = 8.5;
 
