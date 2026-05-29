@@ -118,10 +118,8 @@ export default function InsuranceReviewPage({ params }: { params: { courseId: st
                 {participants.map((p, i) => (
                   <Fragment key={p.id}>
                     <tr
-                      onClick={() => setExpandedId(expandedId === p.id ? null : p.id)}
                       style={{
                         ...(expandedId === p.id ? { background: '#eef6f6' } : i % 2 === 1 ? { background: '#fafcfc' } : {}),
-                        cursor: 'pointer',
                         transition: 'background 0.12s',
                         borderBottom: expandedId === p.id ? 'none' : '1px solid #eef3f3',
                       }}
@@ -130,14 +128,17 @@ export default function InsuranceReviewPage({ params }: { params: { courseId: st
                     >
                       <td style={tdStyle}>{i + 1}</td>
                       <td style={{ ...tdStyle, fontWeight: 600, color: '#014948', textAlign: 'right' }}>{p.fullNamePassport}</td>
-                      <td style={tdStyle} dir="ltr">{p.passportNumber}</td>
-                      <td style={tdStyle}>{p.passportExpiry ? new Date(p.passportExpiry).toLocaleDateString('ar-SA') : '—'}</td>
-                      <td style={tdStyle} dir="ltr">{p.nationalId}</td>
+                      <td style={{ ...tdStyle, userSelect: 'text' }} dir="ltr">{p.passportNumber}</td>
+                      <td style={{ ...tdStyle, userSelect: 'text' }}>{p.passportExpiry ? new Date(p.passportExpiry).toLocaleDateString('ar-SA') : '—'}</td>
+                      <td style={{ ...tdStyle, userSelect: 'text' }} dir="ltr">{p.nationalId}</td>
                       <td style={tdStyle}>
                         <FileBadge files={p.files} />
                       </td>
                       <td style={tdStyle}>
-                        <ExpandIcon expanded={expandedId === p.id} />
+                        <button onClick={() => setExpandedId(expandedId === p.id ? null : p.id)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}>
+                          <ExpandIcon expanded={expandedId === p.id} />
+                        </button>
                       </td>
                     </tr>
                     {expandedId === p.id && (
@@ -215,6 +216,7 @@ const tdStyle: React.CSSProperties = {
   color: '#2d4141',
   fontSize: '0.78rem',
   textAlign: 'center',
+  userSelect: 'text', WebkitUserSelect: 'text',
 };
 
 function FileBadge({ files }: { files: any[] }) {
@@ -247,38 +249,29 @@ function ExpandedPreview({ participant }: { participant: any }) {
   const passportFile = participant.files?.find((f: any) => f.fileType === 'PASSPORT');
   const nationalIdFile = participant.files?.find((f: any) => f.fileType === 'NATIONAL_ID');
 
-  // Only fields NOT already in the table: mobile, birthDate, IBAN
-  const extraFields = [
+  const allFields = [
+    { label: 'اسم المشارك', value: participant.fullNamePassport, ltr: false },
+    { label: 'رقم الجواز', value: participant.passportNumber, ltr: true },
+    { label: 'انتهاء الجواز', value: participant.passportExpiry ? new Date(participant.passportExpiry).toLocaleDateString('ar-SA') : '—', ltr: false },
+    { label: 'رقم الهوية', value: participant.nationalId, ltr: true },
     { label: 'رقم الجوال', value: participant.mobile, ltr: true },
-    { label: 'تاريخ الميلاد', value: participant.birthDate ? new Date(participant.birthDate).toLocaleDateString('ar-SA') : '—' },
+    { label: 'تاريخ الميلاد', value: participant.birthDate ? new Date(participant.birthDate).toLocaleDateString('ar-SA') : '—', ltr: false },
     { label: 'رقم الآيبان', value: participant.iban, ltr: true },
   ];
 
   return (
     <div style={{ padding: '14px 20px 20px', background: '#f7fbfb' }}>
-      {/* Extra fields + name in one row */}
-      <div style={{
-        display: 'grid', gridTemplateColumns: '2.5fr 2fr 2fr 2fr',
-        gap: '6px 10px', marginBottom: 14, alignItems: 'center',
-      }}>
-        <div style={{
-          background: '#016564', borderRadius: 8, padding: '6px 12px',
-          color: '#fff', fontWeight: 700, fontSize: '0.82rem', height: 38,
-          display: 'flex', alignItems: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-        }}>
-          {participant.fullNamePassport}
-        </div>
-        {extraFields.map(f => (
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 14 }}>
+        {allFields.map(f => (
           <div key={f.label} style={{
-            background: '#fff', borderRadius: 8, border: '1px solid #e4ebeb',
-            padding: '4px 10px', height: 38,
-            display: 'flex', flexDirection: 'column', justifyContent: 'center',
+            background: '#fff', borderRadius: 10, border: '1px solid #e2ebeb',
+            padding: '8px 12px',
           }}>
-            <div style={{ fontSize: '0.6rem', color: '#889f9f', fontWeight: 600, lineHeight: 1.1 }}>{f.label}</div>
+            <div style={{ fontSize: '0.62rem', color: '#889f9f', fontWeight: 600, marginBottom: 2, userSelect: 'text' }}>{f.label}</div>
             <div style={{
-              fontSize: '0.78rem', color: '#014948', fontWeight: 700, lineHeight: 1.3,
+              fontSize: '0.82rem', color: '#014948', fontWeight: 700, userSelect: 'text',
               direction: f.ltr ? 'ltr' : undefined, textAlign: f.ltr ? 'left' : 'right',
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              overflowWrap: 'break-word',
             }}>
               {f.value || '—'}
             </div>

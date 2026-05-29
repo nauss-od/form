@@ -243,10 +243,9 @@ export default function PublicInsurancePage({ params }: { params: { courseId: st
                 {participants.map((p, i) => (
                   <Fragment key={p.id}>
                     <tr
-                      onClick={() => setExpandedId(expandedId === p.id ? null : p.id)}
                       style={{
                         ...(expandedId === p.id ? { background: '#f0f7f7' } : i % 2 === 1 ? { background: '#fafcfc' } : {}),
-                        cursor: 'pointer', transition: 'background 0.12s',
+                        transition: 'background 0.12s',
                         borderBottom: expandedId === p.id ? 'none' : '1px solid #e8efef',
                       }}
                       onMouseEnter={e => { if (expandedId !== p.id) e.currentTarget.style.background = '#f2f8f8'; }}
@@ -254,24 +253,27 @@ export default function PublicInsurancePage({ params }: { params: { courseId: st
                     >
                       <td style={tdS}>{i + 1}</td>
                       <td style={{ ...tdS, fontWeight: 600, color: '#014948', textAlign: 'right' }}>{p.fullNamePassport}</td>
-                      <td style={tdS} dir="ltr">{p.passportNumber}</td>
-                      <td style={tdS}>{p.passportExpiry ? new Date(p.passportExpiry).toLocaleDateString('ar-SA') : '—'}</td>
-                      <td style={tdS} dir="ltr">{p.nationalId}</td>
+                      <td style={{ ...tdS, userSelect: 'text' }} dir="ltr">{p.passportNumber}</td>
+                      <td style={{ ...tdS, userSelect: 'text' }}>{p.passportExpiry ? new Date(p.passportExpiry).toLocaleDateString('ar-SA') : '—'}</td>
+                      <td style={{ ...tdS, userSelect: 'text' }} dir="ltr">{p.nationalId}</td>
                       <td style={tdS}>
                         {p.files?.length > 0 ? (
                           <span style={{ fontSize: '0.63rem', background: '#e2f0ee', color: '#016564', padding: '2px 8px', borderRadius: 6, fontWeight: 700 }}>{p.files.length} ملف</span>
                         ) : <span style={{ color: '#aac0c0' }}>—</span>}
                       </td>
                       <td style={tdS}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#889f9f" strokeWidth="2.5"
-                          strokeLinecap="round" strokeLinejoin="round"
-                          style={{ transition: 'transform 0.25s', transform: expandedId === p.id ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                        >
-                          <polyline points="6 9 12 15 18 9" />
-                        </svg>
+                        <button onClick={() => setExpandedId(expandedId === p.id ? null : p.id)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#667777" strokeWidth="2.5"
+                            strokeLinecap="round" strokeLinejoin="round"
+                            style={{ transition: 'transform 0.25s', transform: expandedId === p.id ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                          >
+                            <polyline points="6 9 12 15 18 9" />
+                          </svg>
+                        </button>
                       </td>
                     </tr>
-                    {/* ── Expanded row: ONLY non-repeated fields + images ── */}
+                    {/* ── Expanded row: all fields + images ── */}
                     {expandedId === p.id && (
                       <tr>
                         <td colSpan={7} style={{ padding: 0, borderBottom: '1px solid #e8efef' }}>
@@ -330,29 +332,38 @@ const thS: React.CSSProperties = {
 };
 const tdS: React.CSSProperties = {
   padding: '10px 13px', color: '#2d4141', fontSize: '0.78rem', textAlign: 'center',
+  userSelect: 'text', WebkitUserSelect: 'text',
 };
 
 function ExpandedContent({ participant }: { participant: Participant }) {
   const passportFile = participant.files?.find(f => f.fileType === 'PASSPORT');
   const nationalIdFile = participant.files?.find(f => f.fileType === 'NATIONAL_ID');
+  const allFields = [
+    { label: 'اسم المشارك', value: participant.fullNamePassport, ltr: false },
+    { label: 'رقم الجواز', value: participant.passportNumber, ltr: true },
+    { label: 'انتهاء الجواز', value: participant.passportExpiry ? new Date(participant.passportExpiry).toLocaleDateString('ar-SA') : '—', ltr: false },
+    { label: 'رقم الهوية', value: participant.nationalId, ltr: true },
+    { label: 'رقم الجوال', value: participant.mobile, ltr: true },
+    { label: 'تاريخ الميلاد', value: participant.birthDate ? new Date(participant.birthDate).toLocaleDateString('ar-SA') : '—', ltr: false },
+    { label: 'رقم الآيبان', value: participant.iban, ltr: true },
+  ];
 
   return (
     <div style={{ padding: '14px 24px 18px', background: '#f7fbfb' }}>
-      {/* Extra fields (only what's NOT in the table) */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
-        {[
-          { label: 'رقم الجوال', value: participant.mobile, icon: '📱' },
-          { label: 'تاريخ الميلاد', value: participant.birthDate ? new Date(participant.birthDate).toLocaleDateString('ar-SA') : '—' },
-          { label: 'رقم الآيبان', value: participant.iban, icon: '🏦' },
-        ].map(f => (
+      {/* All fields in a clean copyable layout */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 12 }}>
+        {allFields.map(f => (
           <div key={f.label} style={{
-            flex: 1, background: '#fff', borderRadius: 12, border: '1px solid #e4ebeb',
-            padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10,
+            background: '#fff', borderRadius: 10, border: '1px solid #e2ebeb',
+            padding: '8px 12px',
           }}>
-            <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>{f.icon}</span>
-            <div>
-              <div style={{ fontSize: '0.65rem', color: '#889f9f', fontWeight: 600 }}>{f.label}</div>
-              <div style={{ fontSize: '0.82rem', color: '#014948', fontWeight: 700, direction: 'ltr', textAlign: 'left' }}>{f.value || '—'}</div>
+            <div style={{ fontSize: '0.62rem', color: '#889f9f', fontWeight: 600, marginBottom: 2, userSelect: 'text' }}>{f.label}</div>
+            <div style={{
+              fontSize: '0.82rem', color: '#014948', fontWeight: 700, userSelect: 'text',
+              direction: f.ltr ? 'ltr' : undefined, textAlign: f.ltr ? 'left' : 'right',
+              overflowWrap: 'break-word',
+            }}>
+              {f.value || '—'}
             </div>
           </div>
         ))}
