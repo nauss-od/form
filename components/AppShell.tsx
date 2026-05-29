@@ -41,7 +41,7 @@ const managerNav: NavItem[] = [
   { href: '/courses', label: 'الدورات النشطة', icon: 'courses' },
   { href: '/admin/users', label: 'إدارة المستخدمين', icon: 'settings' },
   { href: '/admin/audit', label: 'سجل التدقيق', icon: 'audit' },
-  { href: '/admin/analysis', label: 'تحليل الأداء', icon: 'chart' },
+  { href: '/admin/reports', label: 'التقارير', icon: 'chart' },
   { href: '/account', label: 'الحساب', icon: 'account' },
 ];
 
