@@ -146,15 +146,21 @@ function EmployeeCard({ emp }: { emp: Employee }) {
 }
 
 export default function AnalysisPage() {
-  const [data, setData] = useState<{analysis: string; rawData: Employee[]; message?: string; error?: string} | null>(null);
+  const [data, setData] = useState<{analysis: string; rawData: Employee[]} | null>(null);
   const [loading, setLoading] = useState(true);
   const [fetchStatus, setFetchStatus] = useState<number | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/admin/analysis')
-      .then(async r => { setFetchStatus(r.status); if (r.status === 401) throw new Error('401'); if (!r.ok) throw new Error('ERR'); return r.json(); })
-      .then(d => setData(d))
-      .catch(e => { if (e.message !== '401') console.error('Analysis fetch error:', e); })
+      .then(async r => {
+        setFetchStatus(r.status);
+        const body = await r.json();
+        if (r.status === 401) throw new Error('401');
+        if (!r.ok) { setFetchError(body.message || body.error || 'خطأ غير معروف'); throw new Error('ERR'); }
+        setData(body);
+      })
+      .catch(e => { if (e.message !== '401') { console.error('Analysis fetch error:', e); setFetchError(e.message); } })
       .finally(() => setLoading(false));
   }, []);
 
@@ -210,6 +216,11 @@ export default function AnalysisPage() {
               <p style={{ fontSize: '0.82rem', color: '#667777', margin: '0 0 4px', lineHeight: 1.6 }}>
                 تعذر الاتصال بقاعدة البيانات أو تحليل الأداء. يرجى التأكد من اتصال قاعدة البيانات والمحاولة مرة أخرى.
               </p>
+              {fetchError && (
+                <p style={{ fontSize: '0.7rem', color: '#bf3d30', margin: '8px 0 0', direction: 'ltr', textAlign: 'left', wordBreak: 'break-all', background: '#fef2f2', padding: 8, borderRadius: 8 }}>
+                  {fetchError}
+                </p>
+              )}
               <button onClick={() => window.location.reload()}
                 style={{ marginTop: 16, padding: '10px 24px', borderRadius: 12, border: '1px solid #d4e0e0', background: '#fff', color: '#014948', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}>
                 إعادة المحاولة
