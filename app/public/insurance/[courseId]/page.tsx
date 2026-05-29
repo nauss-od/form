@@ -1,16 +1,15 @@
 'use client';
 
-import React, { useState, useEffect, Fragment } from 'react';
-import AppShell from '@/components/AppShell';
+import { useState, useEffect, Fragment } from 'react';
 
-export default function InsuranceReviewPage({ params }: { params: { courseId: string } }) {
+export default function PublicInsurancePage({ params }: { params: { courseId: string } }) {
   const [course, setCourse] = useState<any>(null);
   const [participants, setParticipants] = useState<any[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/insurance/${params.courseId}`)
+    fetch(`/api/public/insurance/${params.courseId}`)
       .then(r => r.json())
       .then(data => {
         setCourse(data.course);
@@ -25,28 +24,33 @@ export default function InsuranceReviewPage({ params }: { params: { courseId: st
 
   const goToPrev = () => {
     if (!expandedId || participants.length === 0) return;
-    const idx = participants.findIndex(p => p.id === expandedId);
+    const idx = participants.findIndex((p: any) => p.id === expandedId);
     if (idx > 0) setExpandedId(participants[idx - 1].id);
   };
   const goToNext = () => {
     if (!expandedId || participants.length === 0) return;
-    const idx = participants.findIndex(p => p.id === expandedId);
+    const idx = participants.findIndex((p: any) => p.id === expandedId);
     if (idx < participants.length - 1) setExpandedId(participants[idx + 1].id);
   };
 
   if (loading) {
     return (
-      <AppShell title="مراجعة التأمين">
-        <div className="loading-wrap"><div className="loading-spinner" /><p>جاري التحميل...</p></div>
-      </AppShell>
+      <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#f2f6f6' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div className="loading-spinner" />
+          <p style={{ color: '#667777', marginTop: 12 }}>جاري التحميل...</p>
+        </div>
+      </div>
     );
   }
 
   if (!course) {
     return (
-      <AppShell title="مراجعة التأمين">
-        <div className="empty-state"><p>الدورة غير موجودة</p></div>
-      </AppShell>
+      <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#f2f6f6' }}>
+        <div style={{ background: '#fff', borderRadius: 16, padding: '40px', textAlign: 'center', color: '#667777' }}>
+          الدورة غير موجودة
+        </div>
+      </div>
     );
   }
 
@@ -54,21 +58,25 @@ export default function InsuranceReviewPage({ params }: { params: { courseId: st
   const insuranceEnd = course.endDate ? new Date(new Date(course.endDate).getTime() + 86400000 * 3) : null;
 
   return (
-    <AppShell title="مراجعة التأمين">
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+    <div style={{
+      minHeight: '100vh', background: '#f2f6f6',
+      fontFamily: 'system-ui, -apple-system, sans-serif',
+      padding: '24px 16px 48px',
+    }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
 
-        {/* Document-style header */}
+        {/* Header */}
         <div style={{
           background: 'linear-gradient(135deg, #016564 0%, #014948 100%)',
           borderRadius: 16, padding: '24px 28px', marginBottom: 20, color: '#ffffff',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
-            <img src="/images/nauss-logo-gold.png" alt="" style={{ width: 52, height: 'auto' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
+            <img src="/images/nauss-logo-gold.png" alt="" style={{ width: 48, height: 'auto', opacity: 0.9 }} />
             <div>
-              <h1 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.01em' }}>
+              <h1 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, letterSpacing: '-0.01em' }}>
                 {course.activityName || 'دورة تدريبية'}
               </h1>
-              <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: '#d0b284' }}>
+              <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: '#d0b284', opacity: 0.85 }}>
                 {course.venue || ''}
               </p>
             </div>
@@ -77,15 +85,15 @@ export default function InsuranceReviewPage({ params }: { params: { courseId: st
             display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: '0.78rem', color: '#bcd0d0',
             borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 12,
           }}>
-            <span>بداية الدورة: {course.startDate ? new Date(course.startDate).toLocaleDateString('ar-SA') : '—'}</span>
-            <span>نهاية الدورة: {course.endDate ? new Date(course.endDate).toLocaleDateString('ar-SA') : '—'}</span>
+            {course.startDate && <span>بداية الدورة: {new Date(course.startDate).toLocaleDateString('ar-SA')}</span>}
+            {course.endDate && <span>نهاية الدورة: {new Date(course.endDate).toLocaleDateString('ar-SA')}</span>}
             <span>عدد المشاركين: {participants.length}</span>
             {insuranceStart && <span>بداية التأمين: {insuranceStart.toLocaleDateString('ar-SA')}</span>}
             {insuranceEnd && <span>نهاية التأمين: {insuranceEnd.toLocaleDateString('ar-SA')}</span>}
           </div>
         </div>
 
-        {/* Participant table - document style */}
+        {/* Participant Table */}
         <div style={{
           background: '#ffffff', borderRadius: 16, border: '1px solid #dce5e5',
           overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
@@ -115,7 +123,7 @@ export default function InsuranceReviewPage({ params }: { params: { courseId: st
                 </tr>
               </thead>
               <tbody>
-                {participants.map((p, i) => (
+                {participants.map((p: any, i: number) => (
                   <Fragment key={p.id}>
                     <tr
                       onClick={() => setExpandedId(expandedId === p.id ? null : p.id)}
@@ -133,11 +141,14 @@ export default function InsuranceReviewPage({ params }: { params: { courseId: st
                       <td style={tdStyle} dir="ltr">{p.passportNumber}</td>
                       <td style={tdStyle}>{p.passportExpiry ? new Date(p.passportExpiry).toLocaleDateString('ar-SA') : '—'}</td>
                       <td style={tdStyle} dir="ltr">{p.nationalId}</td>
+                      <td style={tdStyle}>{p.files?.some((f: any) => f.fileType === 'PASSPORT') || p.files?.some((f: any) => f.fileType === 'NATIONAL_ID') ? '📎' : '—'}</td>
                       <td style={tdStyle}>
-                        <FileBadge files={p.files} />
-                      </td>
-                      <td style={tdStyle}>
-                        <ExpandIcon expanded={expandedId === p.id} />
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#667777" strokeWidth="2.5"
+                          strokeLinecap="round" strokeLinejoin="round"
+                          style={{ transition: 'transform 0.2s', transform: expandedId === p.id ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                        >
+                          <polyline points="6 9 12 15 18 9" />
+                        </svg>
                       </td>
                     </tr>
                     {expandedId === p.id && (
@@ -161,12 +172,12 @@ export default function InsuranceReviewPage({ params }: { params: { courseId: st
         }}>
           <button
             onClick={goToPrev}
-            disabled={!expandedId || participants.findIndex(p => p.id === expandedId) <= 0}
+            disabled={!expandedId || participants.findIndex((p: any) => p.id === expandedId) <= 0}
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
               padding: '8px 18px', borderRadius: 10, border: '1px solid #dce5e5',
               background: '#ffffff', color: '#014948', fontSize: '0.8rem', fontWeight: 600,
-              cursor: 'pointer', opacity: !expandedId || participants.findIndex(p => p.id === expandedId) <= 0 ? 0.4 : 1,
+              cursor: 'pointer', opacity: !expandedId || participants.findIndex((p: any) => p.id === expandedId) <= 0 ? 0.4 : 1,
             }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#014948" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: 'scaleX(-1)' }}>
@@ -175,16 +186,16 @@ export default function InsuranceReviewPage({ params }: { params: { courseId: st
             السابق
           </button>
           <span style={{ fontSize: '0.78rem', color: '#667777' }}>
-            {expandedId ? `${participants.findIndex(p => p.id === expandedId) + 1} / ${participants.length}` : '—'}
+            {expandedId ? `${participants.findIndex((p: any) => p.id === expandedId) + 1} / ${participants.length}` : '—'}
           </span>
           <button
             onClick={goToNext}
-            disabled={!expandedId || participants.findIndex(p => p.id === expandedId) >= participants.length - 1}
+            disabled={!expandedId || participants.findIndex((p: any) => p.id === expandedId) >= participants.length - 1}
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
               padding: '8px 18px', borderRadius: 10, border: '1px solid #dce5e5',
               background: '#ffffff', color: '#014948', fontSize: '0.8rem', fontWeight: 600,
-              cursor: 'pointer', opacity: !expandedId || participants.findIndex(p => p.id === expandedId) >= participants.length - 1 ? 0.4 : 1,
+              cursor: 'pointer', opacity: !expandedId || participants.findIndex((p: any) => p.id === expandedId) >= participants.length - 1 ? 0.4 : 1,
             }}
           >
             التالي
@@ -193,8 +204,13 @@ export default function InsuranceReviewPage({ params }: { params: { courseId: st
             </svg>
           </button>
         </div>
+
+        {/* Footer */}
+        <div style={{ textAlign: 'center', marginTop: 24, fontSize: '0.72rem', color: '#94a3b8' }}>
+          طُوِّر بواسطة نايف الشهراني — جامعة نايف العربية للعلوم الأمنية
+        </div>
       </div>
-    </AppShell>
+    </div>
   );
 }
 
@@ -215,39 +231,12 @@ const tdStyle: React.CSSProperties = {
   textAlign: 'center',
 };
 
-function FileBadge({ files }: { files: any[] }) {
-  const hasPassport = files?.some((f: any) => f.fileType === 'PASSPORT');
-  const hasNationalId = files?.some((f: any) => f.fileType === 'NATIONAL_ID');
-
-  if (!hasPassport && !hasNationalId) return <span style={{ color: '#94a3b8', fontSize: '0.7rem' }}>—</span>;
-
-  return (
-    <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
-      {hasPassport && <span style={{ fontSize: '0.65rem', background: '#e2f0ee', color: '#016564', padding: '2px 8px', borderRadius: 6, fontWeight: 600 }}>جواز</span>}
-      {hasNationalId && <span style={{ fontSize: '0.65rem', background: '#f0ede6', color: '#8a7440', padding: '2px 8px', borderRadius: 6, fontWeight: 600 }}>هوية</span>}
-    </div>
-  );
-}
-
-function ExpandIcon({ expanded }: { expanded: boolean }) {
-  return (
-    <svg
-      width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#667777" strokeWidth="2.5"
-      strokeLinecap="round" strokeLinejoin="round"
-      style={{ transition: 'transform 0.2s', transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
-    >
-      <polyline points="6 9 12 15 18 9" />
-    </svg>
-  );
-}
-
 function ExpandedPreview({ participant }: { participant: any }) {
   const passportFile = participant.files?.find((f: any) => f.fileType === 'PASSPORT');
   const nationalIdFile = participant.files?.find((f: any) => f.fileType === 'NATIONAL_ID');
 
   return (
     <div style={{ padding: '16px 20px 20px', background: '#f8fbfb' }}>
-      {/* Image previews */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 14 }}>
         {passportFile && (
           <div style={{ background: '#ffffff', borderRadius: 12, border: '1px solid #dce5e5', overflow: 'hidden' }}>
@@ -280,7 +269,6 @@ function ExpandedPreview({ participant }: { participant: any }) {
         )}
       </div>
 
-      {/* Detail fields */}
       <div style={{
         background: '#ffffff', borderRadius: 12, border: '1px solid #dce5e5',
         padding: '12px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 24px',

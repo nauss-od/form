@@ -70,6 +70,8 @@ export async function GET(request: Request, { params }: { params: { courseId: st
     const boundary = `----=_NAUSS_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
     const msgId = `<nauss-${Date.now()}-${Math.random().toString(36).slice(2, 14)}@nauss.edu.sa>`;
 
+    const insurancePublicUrl = `${baseUrl}/public/insurance/${params.courseId}`;
+
     const bodyText = `السلام عليكم ورحمة الله وبركاته،
 
 أتمنى أن تكونوا بأفضل حال،
@@ -89,6 +91,9 @@ export async function GET(request: Request, { params }: { params: { courseId: st
 - تاريخ نهاية التأمين: ${insuranceEnd ? fmt(insuranceEnd) : '—'}
 
 (بداية التأمين قبل الدورة بيوم، ونهايته بعد الدورة بثلاثة أيام)
+
+للاطلاع على قائمة المشاركين مع معاينة المرفقات، يمكنكم فتح الرابط التالي:
+${insurancePublicUrl}
 
 نشكركم جزيل الشكر على تعاونكم الدائم، ونقدر لكم جهودكم.
 

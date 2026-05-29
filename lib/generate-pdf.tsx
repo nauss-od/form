@@ -200,13 +200,28 @@ function addDays(date: Date, days: number): Date {
   return result;
 }
 
-function formatDate(date: Date | null | undefined): string {
+const ARABIC_MONTHS = [
+  'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+  'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
+];
+const ARABIC_DAYS = [
+  'الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت',
+];
+
+function formatDateArabic(date: Date | null | undefined): string {
   if (!date) return '—';
-  return date.toLocaleDateString('ar-SA', { year: 'numeric', month: 'numeric', day: 'numeric' });
+  const d = date.getDate();
+  const m = date.getMonth();
+  const y = date.getFullYear();
+  return `${d} ${ARABIC_MONTHS[m]} ${y}`;
 }
 
-function formatReportDate(date: Date): string {
-  return date.toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'numeric', day: 'numeric' });
+function formatReportDateArabic(date: Date): string {
+  const day = ARABIC_DAYS[date.getDay()];
+  const d = date.getDate();
+  const m = date.getMonth();
+  const y = date.getFullYear();
+  return `${day}، ${d} ${ARABIC_MONTHS[m]} ${y}`;
 }
 
 function ParticipantsTable({ participants, baseUrl }: { participants: Participant[]; baseUrl: string }) {
@@ -269,13 +284,13 @@ export async function generatePdfBuffer(
           </View>
           <View style={styles.infoBlock}>
             <Text style={styles.infoLabel}>تاريخ البداية</Text>
-            <Text style={styles.infoValue}>{formatDate(course.startDate)}</Text>
+            <Text style={styles.infoValue}>{formatDateArabic(course.startDate)}</Text>
           </View>
         </View>
         <View style={[styles.infoRow, { marginBottom: 3 }]}>
           <View style={styles.infoBlock}>
             <Text style={styles.infoLabel}>تاريخ النهاية</Text>
-            <Text style={styles.infoValue}>{formatDate(course.endDate)}</Text>
+            <Text style={styles.infoValue}>{formatDateArabic(course.endDate)}</Text>
           </View>
           <View style={styles.infoBlock}>
             <Text style={styles.infoLabel}>إعداد</Text>
@@ -291,11 +306,11 @@ export async function generatePdfBuffer(
           <Text style={styles.insuranceTitle}>تواريخ التأمين الطبي المقترحة</Text>
           <View style={styles.insuranceRow}>
             <Text style={styles.insuranceLabel}>تاريخ بداية التأمين:</Text>
-            <Text style={styles.insuranceValue}>{insuranceStart ? formatDate(insuranceStart) : '—'}</Text>
+            <Text style={styles.insuranceValue}>{insuranceStart ? formatDateArabic(insuranceStart) : '—'}</Text>
           </View>
           <View style={styles.insuranceRow}>
             <Text style={styles.insuranceLabel}>تاريخ نهاية التأمين:</Text>
-            <Text style={styles.insuranceValue}>{insuranceEnd ? formatDate(insuranceEnd) : '—'}</Text>
+            <Text style={styles.insuranceValue}>{insuranceEnd ? formatDateArabic(insuranceEnd) : '—'}</Text>
           </View>
           <Text style={styles.insuranceNote}>بداية التأمين قبل الدورة بيوم، ونهايته بعد الدورة بثلاثة أيام</Text>
         </View>
@@ -305,7 +320,7 @@ export async function generatePdfBuffer(
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            تم التصدير من منصة تأمين المشاركين — {formatReportDate(new Date())}
+            تم التصدير من منصة تأمين المشاركين — {formatReportDateArabic(new Date())}
           </Text>
           <Text style={styles.creditText}>طُوِّر بواسطة نايف الشهراني</Text>
         </View>

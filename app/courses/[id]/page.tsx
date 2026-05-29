@@ -80,6 +80,7 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
                 <a href={`/api/export/${course.id}/pdf`} className="secondary-btn">PDF</a>
                 <a href={`/api/export/${course.id}/eml`} className="secondary-btn">EML</a>
                 <a href={`/insurance/${course.id}`} className="secondary-btn" style={{ background: '#016564', color: '#fff' }}>تأمين</a>
+                <a href={`/public/insurance/${course.id}`} className="secondary-btn" style={{ background: '#014948', color: '#d0b284', border: '1px solid #d0b284' }}>رابط التأمين العام</a>
               </div>
             </>
           ) : null}
