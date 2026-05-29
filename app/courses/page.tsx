@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import AppShell from '@/components/AppShell';
 import Link from 'next/link';
 import { formatDate } from '@/lib/utils';
@@ -59,10 +59,6 @@ function LinkRow({ label, url, icon }: { label: string; url: string; icon: React
       </div>
     </div>
   );
-}
-
-function MenuDots() {
-  return <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><circle cx="10" cy="4" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="10" cy="16" r="1.5"/></svg>;
 }
 
 function ConfirmDialog({ message, onConfirm, onCancel }: { message: string; onConfirm: () => void; onCancel: () => void }) {
@@ -126,21 +122,11 @@ function EditModal({ course, onClose, onSaved }: { course: Course; onClose: () =
 }
 
 function CourseCard({ c, onDeleted, onEdited }: { c: Course; onDeleted: (id: string) => void; onEdited: (id: string) => void }) {
-  const [menuOpen, setMenuOpen] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const pct = coursePct(c);
   const target = c.participantCount || c._count.submissions;
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
-    }
-    if (menuOpen) document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [menuOpen]);
 
   async function handleDelete() {
     setDeleting(true);
@@ -172,14 +158,13 @@ function CourseCard({ c, onDeleted, onEdited }: { c: Course; onDeleted: (id: str
             <div className="big-stat">{c._count.submissions}</div>
             <div className="big-stat-label">/ {target}</div>
           </div>
-          <div ref={menuRef} style={{ position: 'relative' }}>
-            <button className="card-menu-btn" onClick={() => setMenuOpen(!menuOpen)}><MenuDots /></button>
-            {menuOpen && (
-              <div className="card-menu-dropdown">
-                <button onClick={() => { setShowEdit(true); setMenuOpen(false); }}>تعديل</button>
-                <button className="danger" onClick={() => { setShowDelete(true); setMenuOpen(false); }}>حذف</button>
-              </div>
-            )}
+              <div style={{ display: 'flex', gap: 4 }}>
+            <button className="ghost-btn" style={{ minHeight: 30, minWidth: 36, padding: '0 6px', fontSize: '0.72rem' }} onClick={() => setShowEdit(true)} title="تعديل">
+              <svg viewBox="0 0 20 20" fill="none" width="14" height="14"><path d="M13.5 3.5l3 3L7 16H4v-3l9.5-9.5z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"/></svg>
+            </button>
+            <button className="ghost-btn" style={{ minHeight: 30, minWidth: 36, padding: '0 6px', fontSize: '0.72rem', color: 'var(--danger)' }} onClick={() => setShowDelete(true)} title="حذف">
+              <svg viewBox="0 0 20 20" fill="none" width="14" height="14"><path d="M3 5h14M8 5V3a1 1 0 011-1h2a1 1 0 011 1v2M16 5v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
           </div>
         </div>
       </div>
