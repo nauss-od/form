@@ -1,8 +1,7 @@
 'use client';
 
-import { FormEvent, useState, useRef, useCallback } from 'react';
+import { FormEvent, useState } from 'react';
 import SmartDatePicker from '@/components/SmartDatePicker';
-import Tesseract from 'tesseract.js';
 
 function UploadIcon() {
   return (
@@ -60,63 +59,6 @@ export default function PublicFormPage({ params }: { params: { token: string } }
 
   const [passportFile, setPassportFile] = useState<File | null>(null);
   const [nationalIdFile, setNationalIdFile] = useState<File | null>(null);
-  const [passportPhoto, setPassportPhoto] = useState<string | null>(null);
-  const [scanning, setScanning] = useState(false);
-  const cameraRef = useRef<HTMLInputElement>(null);
-
-  const handlePassportCapture = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setPassportPhoto(URL.createObjectURL(file));
-    setScanning(true);
-    try {
-      const worker = await Tesseract.createWorker('eng');
-      await worker.setParameters({
-        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<',
-        tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK,
-      });
-      const { data } = await worker.recognize(file);
-      await worker.terminate();
-      // Try to find MRZ: two lines of 44 chars each, starting with P<, followed by letters/</
-      const lines = data.text.split('\n').map(l => l.replace(/\r/g, '').trim()).filter(Boolean);
-      let rawMrz = '';
-      for (let i = 0; i < lines.length - 1; i++) {
-        const a = lines[i].toUpperCase();
-        const b = lines[i + 1].toUpperCase();
-        if (a.startsWith('P') && a.length >= 30 && b.length >= 30) {
-          rawMrz = a.substring(0, 44) + b.substring(0, 44);
-          break;
-        }
-      }
-      if (!rawMrz) {
-        // Fallback: look for P anywhere in flattened text
-        const flat = data.text.replace(/\s/g, '').toUpperCase();
-        const pIdx = flat.indexOf('P');
-        if (pIdx >= 0) rawMrz = flat.substring(pIdx, Math.min(pIdx + 88, flat.length));
-      }
-      if (!rawMrz) {
-        // Last resort: scan each line for a 30+ char block that looks like MRZ
-        for (const line of lines) {
-          const clean = line.toUpperCase();
-          if (clean.length >= 30 && /[A-Z0-9<]{30,}/.test(clean)) {
-            rawMrz += clean.substring(0, 44);
-            if (rawMrz.length >= 44) break;
-          }
-        }
-      }
-      if (rawMrz) {
-        const { parseMrz } = await import('@/lib/mrz-parser');
-        const result = parseMrz(rawMrz);
-        if (result?.fullNamePassport) {
-          setName(result.fullNamePassport);
-          if (result.passportNumber) setPassport(result.passportNumber);
-          if (result.passportExpiry) setExpiry(result.passportExpiry);
-          if (result.birthDate) setBirthDate(result.birthDate);
-        }
-      }
-    } catch { /* OCR failed silently, photo is shown as reference */ }
-    setScanning(false);
-  }, []);
 
   const today = new Date().toISOString().split('T')[0];
   const maxBirth = new Date();
@@ -236,35 +178,7 @@ export default function PublicFormPage({ params }: { params: { token: string } }
             <div className="section-step">
               <span className="step-num">1</span>
               <h3>البيانات الشخصية</h3>
-              <button type="button" onClick={() => cameraRef.current?.click()} disabled={scanning} className="scan-btn">
-                <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
-                  <path d="M4 4h3l2-2h2l2 2h3a2 2 0 012 2v9a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-                  <circle cx="10" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
-                  <path d="M14 16l-3-4-2 2-2-2-3 4" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-                </svg>
-                {scanning ? 'يتم المسح...' : 'مسح الجواز'}
-              </button>
-              <input ref={cameraRef} type="file" accept="image/*" capture="environment" onChange={handlePassportCapture} style={{ display: 'none' }} />
             </div>
-
-            {scanning && (
-              <div className="scanner-spinner" style={{ marginBottom: 16 }}>
-                <svg className="spinner" viewBox="0 0 24 24" fill="none" width="28" height="28">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" opacity="0.2"/>
-                  <path d="M12 2a10 10 0 019.95 9" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
-                </svg>
-                <span>جارٍ التعرف على بيانات الجواز...</span>
-              </div>
-            )}
-
-            {passportPhoto && !scanning && (
-              <div style={{ borderRadius: 18, overflow: 'hidden', border: '1px solid var(--nauss-line)', background: '#f8fafc' }}>
-                <img src={passportPhoto} alt="صورة الجواز" style={{ width: '100%', maxHeight: 300, objectFit: 'contain', display: 'block' }} />
-                <div style={{ padding: '8px 12px', fontSize: '0.78rem', color: 'var(--nauss-muted)', textAlign: 'center', background: '#f4f8f8', borderTop: '1px solid var(--nauss-line)' }}>
-                  تم التعرف على البيانات — راجع الحقول أعلاه
-                </div>
-              </div>
-            )}
 
             <div className="field">
               <label>الاسم حسب جواز السفر <span className="req">*</span></label>
