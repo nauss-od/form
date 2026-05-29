@@ -173,14 +173,24 @@ export default function AnalysisPage() {
       {loading ? (
         <div className="loading-wrap"><div className="loading-spinner" /><p>جاري التحليل...</p></div>
       ) : !data ? (
-        <div style={{ maxWidth: 600, margin: '60px auto', textAlign: 'center' }}>
+        <div style={{ maxWidth: 480, margin: '60px auto', textAlign: 'center' }}>
           <div style={{ width: 64, height: 64, borderRadius: 20, background: '#f0f7f7', display: 'grid', placeItems: 'center', margin: '0 auto 16px' }}>
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#016564" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+            <svg width="28" height="28" viewBox="0 0 26 26" fill="none">
+              <defs><linearGradient id="an-lg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#016564"/><stop offset="100%" stopColor="#014948"/></linearGradient></defs>
+              <circle cx="13" cy="13" r="11" fill="url(#an-lg)" opacity="0.08"/>
+              <circle cx="13" cy="13" r="11" stroke="url(#an-lg)" strokeWidth="1.8"/>
+              <line x1="13" y1="9" x2="13" y2="14" stroke="url(#an-lg)" strokeWidth="1.8" strokeLinecap="round"/>
+              <circle cx="13" cy="17.5" r="1" fill="url(#an-lg)"/>
             </svg>
           </div>
-          <h2 style={{ fontSize: '1.1rem', color: '#014948', margin: '0 0 6px' }}>غير مصرح</h2>
-          <p style={{ fontSize: '0.82rem', color: '#667777', margin: 0 }}>صلاحية المدير مطلوبة للوصول إلى هذه الصفحة</p>
+          <h2 style={{ fontSize: '1.05rem', color: '#014948', margin: '0 0 6px' }}>يتطلب صلاحية المدير</h2>
+          <p style={{ fontSize: '0.82rem', color: '#667777', margin: '0 0 4px', lineHeight: 1.6 }}>
+            قد يكون حسابك مسجلاً بصلاحية قديمة. إذا كنت تملك صلاحية مدير، جرّب تسجيل الخروج وإعادة تسجيل الدخول.
+          </p>
+          <button onClick={() => { fetch('/api/auth/logout', { method: 'POST' }).then(() => { window.location.href = '/login'; }); }}
+            style={{ marginTop: 16, padding: '10px 24px', borderRadius: 12, border: '1px solid #d4e0e0', background: '#fff', color: '#014948', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}>
+            تسجيل الخروج
+          </button>
         </div>
       ) : (
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>

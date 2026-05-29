@@ -17,6 +17,7 @@ export default function AdminUsersPage() {
   const [error, setError] = useState('');
   const [editId, setEditId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ name: '', email: '', mobile: '', extension: '', role: '' });
+  const [originalRole, setOriginalRole] = useState('');
   const [pwdId, setPwdId] = useState<string | null>(null);
   const [pwdValue, setPwdValue] = useState('');
   const [msg, setMsg] = useState('');
@@ -35,6 +36,7 @@ export default function AdminUsersPage() {
 
   function startEdit(u: AdminUser) {
     setEditId(u.id);
+    setOriginalRole(u.role);
     setEditForm({ name: u.name, email: u.email, mobile: u.mobile || '', extension: u.extension || '', role: u.role });
   }
 
@@ -44,8 +46,11 @@ export default function AdminUsersPage() {
     fetch(`/api/admin/users/${editId}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(editForm) })
       .then(r => { if (!r.ok) throw new Error('401'); return r.json(); })
       .then(d => {
-        if (d.user) { setMsg('تم التحديث ✓'); setEditId(null); load(); }
-        else setMsg(d.message || 'خطأ');
+        if (d.user) {
+          const roleChanged = originalRole !== editForm.role;
+          setMsg(roleChanged ? 'تم التحديث ✓ — يجب على المستخدم تسجيل الخروج وإعادة الدخول لتفعيل الصلاحية الجديدة' : 'تم التحديث ✓');
+          setEditId(null); load();
+        } else setMsg(d.message || 'خطأ');
       })
       .catch(e => { if (e.message === '401') window.location.href = '/login'; else setMsg('فشل التحديث'); });
   }
@@ -81,7 +86,7 @@ export default function AdminUsersPage() {
 
   return (
     <AppShell title="إدارة المستخدمين" role="MANAGER" forceManager>
-      {msg && <div style={{ padding: '12px 16px', borderRadius: 12, background: msg.includes('✓') ? '#f0fdf4' : '#fef2f2', color: msg.includes('✓') ? '#014f4d' : '#dc2626', marginBottom: 12, fontWeight:700 }}>{msg}</div>}
+      {msg && <div style={{ padding: '12px 16px', borderRadius: 12, background: msg.includes('✓') ? '#f0fdf4' : '#fef2f2', color: msg.includes('✓') ? '#014f4d' : '#dc2626', marginBottom: 12, fontWeight:700, fontSize: '0.85rem' }}>{msg}</div>}
       {loading ? <div className="loading-wrap"><div className="loading-spinner" /><p>جاري التحميل...</p></div> : error ? <div className="empty-state"><p style={{color:'var(--danger)'}}>{error}</p></div> : (
         <div className="section-card">
           <div className="section-head"><h3>جميع المستخدمين ({users.length})</h3></div>
