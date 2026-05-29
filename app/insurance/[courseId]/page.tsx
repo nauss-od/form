@@ -247,43 +247,11 @@ function ExpandedPreview({ participant }: { participant: any }) {
 
   return (
     <div style={{ padding: '16px 20px 20px', background: '#f8fbfb' }}>
-      {/* Image previews */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 14 }}>
-        {passportFile && (
-          <div style={{ background: '#ffffff', borderRadius: 12, border: '1px solid #dce5e5', overflow: 'hidden' }}>
-            <div style={{ padding: '8px 14px', background: '#eef6f6', fontSize: '0.72rem', fontWeight: 700, color: '#014948', borderBottom: '1px solid #dce5e5' }}>
-              صورة جواز السفر
-            </div>
-            <div style={{ padding: 10, display: 'flex', justifyContent: 'center' }}>
-              <img src={`/api/files/${passportFile.id}`} alt=""
-                style={{ maxWidth: '100%', maxHeight: 280, borderRadius: 8, objectFit: 'contain' }}
-              />
-            </div>
-          </div>
-        )}
-        {nationalIdFile && (
-          <div style={{ background: '#ffffff', borderRadius: 12, border: '1px solid #dce5e5', overflow: 'hidden' }}>
-            <div style={{ padding: '8px 14px', background: '#f8f5ee', fontSize: '0.72rem', fontWeight: 700, color: '#8a7440', borderBottom: '1px solid #dce5e5' }}>
-              صورة الهوية الوطنية
-            </div>
-            <div style={{ padding: 10, display: 'flex', justifyContent: 'center' }}>
-              <img src={`/api/files/${nationalIdFile.id}`} alt=""
-                style={{ maxWidth: '100%', maxHeight: 280, borderRadius: 8, objectFit: 'contain' }}
-              />
-            </div>
-          </div>
-        )}
-        {!passportFile && !nationalIdFile && (
-          <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 32, color: '#94a3b8', fontSize: '0.82rem' }}>
-            لا توجد ملفات مرفوعة لهذا المشارك
-          </div>
-        )}
-      </div>
-
-      {/* Detail fields */}
+      {/* Info at top */}
       <div style={{
         background: '#ffffff', borderRadius: 12, border: '1px solid #dce5e5',
-        padding: '12px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 24px',
+        padding: '14px 18px', marginBottom: 14,
+        display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px 20px',
       }}>
         {[
           { label: 'رقم الجوال', value: participant.mobile, ltr: true },
@@ -291,14 +259,48 @@ function ExpandedPreview({ participant }: { participant: any }) {
           { label: 'رقم الهوية', value: participant.nationalId, ltr: true },
           { label: 'رقم الآيبان', value: participant.iban, ltr: true },
         ].map((f: any) => (
-          <div key={f.label} style={{ display: 'flex', gap: 6, alignItems: 'baseline' }}>
-            <span style={{ fontSize: '0.7rem', color: '#667777', fontWeight: 600, whiteSpace: 'nowrap' }}>{f.label}:</span>
-            <span style={{ fontSize: '0.8rem', color: '#014948', direction: f.ltr ? 'ltr' : undefined, textAlign: f.ltr ? 'left' : undefined }}>
-              {f.value}
-            </span>
+          <div key={f.label}>
+            <div style={{ fontSize: '0.68rem', color: '#667777', fontWeight: 600, marginBottom: 2 }}>{f.label}</div>
+            <div style={{ fontSize: '0.85rem', color: '#014948', fontWeight: 600, direction: f.ltr ? 'ltr' : undefined, textAlign: f.ltr ? 'left' : 'right' }}>
+              {f.value || '—'}
+            </div>
           </div>
         ))}
       </div>
+
+      {/* Images below */}
+      {passportFile || nationalIdFile ? (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          {passportFile && (
+            <div style={{ background: '#ffffff', borderRadius: 12, border: '1px solid #dce5e5', overflow: 'hidden' }}>
+              <div style={{ padding: '8px 14px', background: '#eef6f6', fontSize: '0.72rem', fontWeight: 700, color: '#014948', borderBottom: '1px solid #dce5e5' }}>
+                صورة جواز السفر
+              </div>
+              <div style={{ padding: 10, display: 'flex', justifyContent: 'center' }}>
+                <img src={`/api/files/${passportFile.id}`} alt=""
+                  style={{ maxWidth: '100%', maxHeight: 280, borderRadius: 8, objectFit: 'contain' }}
+                />
+              </div>
+            </div>
+          )}
+          {nationalIdFile && (
+            <div style={{ background: '#ffffff', borderRadius: 12, border: '1px solid #dce5e5', overflow: 'hidden' }}>
+              <div style={{ padding: '8px 14px', background: '#f8f5ee', fontSize: '0.72rem', fontWeight: 700, color: '#8a7440', borderBottom: '1px solid #dce5e5' }}>
+                صورة الهوية الوطنية
+              </div>
+              <div style={{ padding: 10, display: 'flex', justifyContent: 'center' }}>
+                <img src={`/api/files/${nationalIdFile.id}`} alt=""
+                  style={{ maxWidth: '100%', maxHeight: 280, borderRadius: 8, objectFit: 'contain' }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div style={{ textAlign: 'center', padding: 24, color: '#94a3b8', fontSize: '0.82rem', background: '#ffffff', borderRadius: 12, border: '1px solid #dce5e5' }}>
+          لا توجد ملفات مرفوعة لهذا المشارك
+        </div>
+      )}
     </div>
   );
 }

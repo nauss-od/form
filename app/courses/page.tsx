@@ -22,6 +22,9 @@ function coursePct(c: Course): number {
 function courseUrl(c: Course): string {
   return `${window.location.origin}/public/form/${c.publicToken}`;
 }
+function insuranceUrl(c: Course): string {
+  return `${window.location.origin}/public/insurance/${c.id}`;
+}
 
 function IconLoc() { return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>; }
 function IconCal() { return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>; }
@@ -54,7 +57,8 @@ function CourseCard({ c }: { c: Course }) {
       </div>
       <div className="course-card-actions">
         <Link href={`/courses/${c.id}`} className="secondary-btn" style={{ minHeight: 38, fontSize: '0.82rem' }}>عرض</Link>
-        <button className="ghost-btn" style={{ minHeight: 38, fontSize: '0.82rem' }} onClick={() => { navigator.clipboard.writeText(courseUrl(c)); alert('تم نسخ الرابط'); }}>نسخ الرابط</button>
+        <button className="ghost-btn" style={{ minHeight: 38, fontSize: '0.82rem' }} onClick={() => { navigator.clipboard.writeText(courseUrl(c)); alert('تم نسخ الرابط'); }}>رابط النموذج</button>
+        <button className="ghost-btn" style={{ minHeight: 38, fontSize: '0.82rem' }} onClick={() => { navigator.clipboard.writeText(insuranceUrl(c)); alert('تم نسخ رابط التأمين'); }}>رابط التأمين</button>
         <a href={`/api/export/${c.id}/word`} className="ghost-btn" style={{ minHeight: 38, fontSize: '0.82rem' }}>Word</a>
         <a href={`/api/export/${c.id}/pdf`} className="ghost-btn" style={{ minHeight: 38, fontSize: '0.82rem' }}>PDF</a>
         <a href={`/api/export/${c.id}/eml`} className="ghost-btn" style={{ minHeight: 38, fontSize: '0.82rem' }}>EML</a>

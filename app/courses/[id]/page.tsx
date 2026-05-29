@@ -75,12 +75,12 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
             <>
               <div className="link-preview" dir="ltr">{publicUrl}</div>
               <div className="section-actions" style={{ marginTop: 8 }}>
-                <button className="secondary-btn" onClick={() => { navigator.clipboard.writeText(publicUrl); alert('تم نسخ الرابط'); }}>نسخ الرابط</button>
+                <button className="secondary-btn" onClick={() => { navigator.clipboard.writeText(publicUrl); alert('تم نسخ الرابط'); }}>رابط النموذج</button>
+                <button className="secondary-btn" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/public/insurance/${course.id}`); alert('تم نسخ رابط التأمين'); }}>رابط التأمين</button>
                 <a href={`/api/export/${course.id}/word`} className="secondary-btn">Word</a>
                 <a href={`/api/export/${course.id}/pdf`} className="secondary-btn">PDF</a>
                 <a href={`/api/export/${course.id}/eml`} className="secondary-btn">EML</a>
-                <a href={`/insurance/${course.id}`} className="secondary-btn" style={{ background: '#016564', color: '#fff' }}>تأمين</a>
-                <a href={`/public/insurance/${course.id}`} className="secondary-btn" style={{ background: '#014948', color: '#d0b284', border: '1px solid #d0b284' }}>رابط التأمين العام</a>
+                <a href={`/insurance/${course.id}`} className="secondary-btn" style={{ background: '#016564', color: '#fff' }}>مراجعة التأمين</a>
               </div>
             </>
           ) : null}
