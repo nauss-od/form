@@ -247,56 +247,31 @@ function ExpandedPreview({ participant }: { participant: any }) {
   const passportFile = participant.files?.find((f: any) => f.fileType === 'PASSPORT');
   const nationalIdFile = participant.files?.find((f: any) => f.fileType === 'NATIONAL_ID');
 
-  const fields = [
+  // Only fields NOT already in the table: mobile, birthDate, IBAN
+  const extraFields = [
     { label: 'رقم الجوال', value: participant.mobile, ltr: true },
     { label: 'تاريخ الميلاد', value: participant.birthDate ? new Date(participant.birthDate).toLocaleDateString('ar-SA') : '—' },
-    { label: 'رقم الجواز', value: participant.passportNumber, ltr: true },
-    { label: 'انتهاء الجواز', value: participant.passportExpiry ? new Date(participant.passportExpiry).toLocaleDateString('ar-SA') : '—' },
-    { label: 'رقم الهوية', value: participant.nationalId, ltr: true },
     { label: 'رقم الآيبان', value: participant.iban, ltr: true },
   ];
 
   return (
     <div style={{ padding: '14px 20px 20px', background: '#f7fbfb' }}>
-      {/* Name + fields compact grid — first row: 6 columns */}
+      {/* Extra fields + name in one row */}
       <div style={{
-        display: 'grid', gridTemplateColumns: '3fr 2fr 2fr 2fr 2fr 2fr',
-        gap: '6px 10px', marginBottom: 8, alignItems: 'center',
+        display: 'grid', gridTemplateColumns: '2.5fr 2fr 2fr 2fr',
+        gap: '6px 10px', marginBottom: 14, alignItems: 'center',
       }}>
         <div style={{
           background: '#016564', borderRadius: 8, padding: '6px 12px',
           color: '#fff', fontWeight: 700, fontSize: '0.82rem', height: 38,
-          display: 'flex', alignItems: 'center',
+          display: 'flex', alignItems: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>
           {participant.fullNamePassport}
         </div>
-        {fields.slice(1).map(f => (
+        {extraFields.map(f => (
           <div key={f.label} style={{
             background: '#fff', borderRadius: 8, border: '1px solid #e4ebeb',
             padding: '4px 10px', height: 38,
-            display: 'flex', flexDirection: 'column', justifyContent: 'center',
-          }}>
-            <div style={{ fontSize: '0.6rem', color: '#889f9f', fontWeight: 600, lineHeight: 1.1 }}>{f.label}</div>
-            <div style={{
-              fontSize: '0.78rem', color: '#014948', fontWeight: 700, lineHeight: 1.3,
-              direction: f.ltr ? 'ltr' : undefined, textAlign: f.ltr ? 'left' : 'right',
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-            }}>
-              {f.value || '—'}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Second row: passport expiry + national ID + IBAN */}
-      <div style={{
-        display: 'grid', gridTemplateColumns: '3fr 2fr 2fr',
-        gap: '6px 10px', marginBottom: 14,
-      }}>
-        {[fields[3], fields[4], fields[5]].map(f => (
-          <div key={f.label} style={{
-            background: '#fff', borderRadius: 8, border: '1px solid #e4ebeb',
-            padding: '4px 10px', height: 36,
             display: 'flex', flexDirection: 'column', justifyContent: 'center',
           }}>
             <div style={{ fontSize: '0.6rem', color: '#889f9f', fontWeight: 600, lineHeight: 1.1 }}>{f.label}</div>
