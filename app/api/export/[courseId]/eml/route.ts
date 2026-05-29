@@ -12,7 +12,11 @@ function addDays(date: Date, days: number): Date {
 }
 
 function fmt(date: Date): string {
-  return date.toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  return date.toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+function wrapBase64(s: string): string {
+  return s.match(/.{1,76}/g)?.join('\r\n') || s;
 }
 
 export async function GET(request: Request, { params }: { params: { courseId: string } }) {
@@ -35,7 +39,6 @@ export async function GET(request: Request, { params }: { params: { courseId: st
 
   const baseUrl = new URL(request.url).origin;
 
-  // Generate PDF attachment
   const participants = course.submissions.map((s, i) => ({
     index: i + 1,
     fullNamePassport: s.fullNamePassport,
@@ -61,35 +64,28 @@ export async function GET(request: Request, { params }: { params: { courseId: st
 
   const fromName = course.createdBy?.name || 'موظف التدريب';
   const fromEmail = course.createdBy?.email || 'training@nauss.edu.sa';
-  const to = 'HR@nauss.edu.sa, AAbouelatta@nauss.edu.sa';
-  const cc = 'OD@nauss.edu.sa';
   const subject = `طلب إصدار تأمين طبي — ${course.activityName || 'دورة خارجية'}`;
   const dateStr = new Date().toUTCString();
-  const msgId = `<nauss-${Date.now()}-${Math.random().toString(36).slice(2, 10)}@nauss.edu.sa>`;
+  const boundary = `----=_NAUSS_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+  const msgId = `<nauss-${Date.now()}-${Math.random().toString(36).slice(2, 14)}@nauss.edu.sa>`;
 
-  const body = `السلام عليكم ورحمة الله وبركاته،
+  const bodyText = `السلام عليكم ورحمة الله وبركاته،
 
 أتمنى أن تكونوا بأفضل حال،
 
-نرفق لكم ملف PDF يتضمن بيانات المشاركين في الدورة الخارجية أدناه، ونأمل منكم التكرم بإصدار التأمين الطبي لهم.
+نرفق لكم ملف PDF يتضمن بيانات المشاركين في الدورة التدريبية أدناه، ونأمل منكم التكرم بإصدار التأمين الطبي لهم.
 
-─────────────────────────
-بيانات الدورة
-─────────────────────────
+بيانات الدورة:
+- اسم النشاط: ${course.activityName || '—'}
+- مقر الانعقاد: ${course.venue || '—'}
+- تاريخ البداية: ${formatDate(course.startDate)}
+- تاريخ النهاية: ${formatDate(course.endDate)}
+- عدد المشاركين: ${course.submissions.length}
+- إعداد: ${course.createdBy?.name || '—'}
 
-اسم النشاط: ${course.activityName || '—'}
-مقر الانعقاد: ${course.venue || '—'}
-تاريخ البداية: ${formatDate(course.startDate)}
-تاريخ النهاية: ${formatDate(course.endDate)}
-عدد المشاركين: ${course.submissions.length}
-إعداد: ${course.createdBy?.name || '—'}
-
-─────────────────────────
-بيانات التأمين المقترحة
-─────────────────────────
-
-تاريخ بداية التأمين: ${insuranceStart ? fmt(insuranceStart) : '—'}
-تاريخ نهاية التأمين: ${insuranceEnd ? fmt(insuranceEnd) : '—'}
+بيانات التأمين المقترحة:
+- تاريخ بداية التأمين: ${insuranceStart ? fmt(insuranceStart) : '—'}
+- تاريخ نهاية التأمين: ${insuranceEnd ? fmt(insuranceEnd) : '—'}
 
 (بداية التأمين قبل الدورة بيوم، ونهايته بعد الدورة بثلاثة أيام)
 
@@ -98,51 +94,47 @@ export async function GET(request: Request, { params }: { params: { courseId: st
 وتفضلوا بقبول فائق الاحترام،
 
 ${course.createdBy?.name || 'موظف التدريب'}
-إدارة عمليات التدريب
-وكالة التدريب
+إدارة عمليات التدريب — وكالة التدريب
 جامعة نايف العربية للعلوم الأمنية`;
 
-  const boundary = 'nauss-email-boundary-2026';
-  const pdfFilename = `${(course.activityName || 'course').replace(/[<>:"/\\|?*]/g, '')}-insurance.pdf`;
-
-  function wrapBase64(s: string): string {
-    return s.match(/.{1,76}/g)?.join('\r\n') || s;
-  }
+  const safeName = (course.activityName || 'course').replace(/[<>:"/\\|?*]/g, '').trim() || 'course';
+  const pdfFilename = `${safeName}-insurance.pdf`;
 
   const eml = [
     'MIME-Version: 1.0',
-    `To: ${to}`,
-    `CC: ${cc}`,
+    `Content-Type: multipart/mixed; boundary="${boundary}"`,
+    `To: HR@nauss.edu.sa, AAbouelatta@nauss.edu.sa`,
+    `CC: OD@nauss.edu.sa`,
     `From: ${fromName} <${fromEmail}>`,
     `Subject: =?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`,
     `Date: ${dateStr}`,
     `Message-ID: ${msgId}`,
-    'X-Mailer: NAUSS Forms Platform v1.0',
-    'Content-Type: multipart/mixed; boundary="' + boundary + '"',
+    'X-Mailer: NAUSS Training Platform v1.0',
+    'X-Priority: Normal (3)',
+    'X-MSMail-Priority: Normal',
+    'Importance: Normal',
     '',
-    '--' + boundary,
-    'Content-Type: text/plain; charset="UTF-8"',
+    `--${boundary}`,
+    'Content-Type: text/plain; charset="utf-8"',
     'Content-Transfer-Encoding: base64',
     '',
-    wrapBase64(Buffer.from(body).toString('base64')),
+    wrapBase64(Buffer.from(bodyText, 'utf-8').toString('base64')),
     '',
-    '--' + boundary,
-    'Content-Type: application/pdf',
+    `--${boundary}`,
+    `Content-Type: application/pdf; name="${pdfFilename}"`,
     'Content-Transfer-Encoding: base64',
-    'Content-Disposition: attachment; filename="' + pdfFilename + '"',
+    `Content-Disposition: attachment; filename="${pdfFilename}"`,
     '',
     wrapBase64(pdfBase64),
     '',
-    '--' + boundary + '--',
+    `--${boundary}--`,
     '',
   ].join('\r\n');
-
-  const safeName = (course.activityName || 'course').replace(/[<>:"/\\|?*]/g, '');
 
   return new NextResponse(eml, {
     headers: {
       'Content-Type': 'message/rfc822',
-      'Content-Disposition': `attachment; filename="${safeName}-insurance-request.eml"`
-    }
+      'Content-Disposition': `attachment; filename="${safeName}-insurance-request.eml"`,
+    },
   });
 }

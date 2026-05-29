@@ -13,11 +13,9 @@ const LINE = '#c9d7d7';
 const MUTED = '#667777';
 
 const fontData = fs.readFileSync(path.join(process.cwd(), 'public/fonts/Cairo-Variable.ttf'));
-const fontBase64 = fontData.toString('base64');
-
 Font.register({
   family: 'Cairo',
-  src: `data:font/ttf;base64,${fontBase64}`,
+  src: `data:font/ttf;base64,${fontData.toString('base64')}`,
 });
 
 const logoData = fs.readFileSync(path.join(process.cwd(), 'public/images/nauss-logo-gold.png'));
@@ -41,11 +39,13 @@ const styles = StyleSheet.create({
     color: WHITE,
     fontWeight: 700,
     marginTop: 8,
+    textAlign: 'center',
   },
   headerSub: {
     fontSize: 10,
     color: GOLD,
     marginTop: 2,
+    textAlign: 'center',
   },
   sectionTitle: {
     fontSize: 12,
@@ -54,6 +54,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     borderBottom: `1px solid ${GOLD}`,
     paddingBottom: 2,
+    textAlign: 'right',
   },
   infoRow: {
     flexDirection: 'row',
@@ -62,16 +63,19 @@ const styles = StyleSheet.create({
   infoBlock: {
     flex: 1,
     padding: '3 5',
+    alignItems: 'flex-end',
   },
   infoLabel: {
     fontSize: 7,
     color: MUTED,
     marginBottom: 1,
+    textAlign: 'right',
   },
   infoValue: {
     fontSize: 9,
     color: TEAL_DARK,
     fontWeight: 700,
+    textAlign: 'right',
   },
   insuranceBlock: {
     padding: 10,
@@ -81,12 +85,14 @@ const styles = StyleSheet.create({
     borderColor: LINE,
     borderStyle: 'solid',
     marginBottom: 14,
+    alignItems: 'flex-end',
   },
   insuranceTitle: {
     fontSize: 10,
     color: TEAL_DARK,
     fontWeight: 700,
     marginBottom: 4,
+    textAlign: 'right',
   },
   insuranceRow: {
     flexDirection: 'row',
@@ -96,16 +102,19 @@ const styles = StyleSheet.create({
     fontSize: 8,
     color: MUTED,
     width: 130,
+    textAlign: 'right',
   },
   insuranceValue: {
     fontSize: 8,
     color: TEAL_DARK,
     fontWeight: 700,
+    textAlign: 'right',
   },
   insuranceNote: {
     fontSize: 7,
     color: MUTED,
     marginTop: 3,
+    textAlign: 'right',
   },
   table: {
     width: '100%',
@@ -163,10 +172,12 @@ const styles = StyleSheet.create({
     fontSize: 7,
     color: MUTED,
     marginBottom: 1,
+    textAlign: 'center',
   },
   creditText: {
     fontSize: 6,
     color: '#99aaaa',
+    textAlign: 'center',
   },
 });
 
@@ -196,7 +207,7 @@ function formatDate(date: Date | null | undefined): string {
 }
 
 function formatReportDate(date: Date): string {
-  return date.toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  return date.toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'numeric', day: 'numeric' });
 }
 
 function ParticipantsTable({ participants, baseUrl }: { participants: Participant[]; baseUrl: string }) {
