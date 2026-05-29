@@ -146,14 +146,15 @@ function EmployeeCard({ emp }: { emp: Employee }) {
 }
 
 export default function AnalysisPage() {
-  const [data, setData] = useState<{analysis: string; rawData: Employee[]} | null>(null);
+  const [data, setData] = useState<{analysis: string; rawData: Employee[]; message?: string; error?: string} | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fetchStatus, setFetchStatus] = useState<number | null>(null);
 
   useEffect(() => {
     fetch('/api/admin/analysis')
-      .then(r => { if (r.status === 401) throw new Error('401'); if (!r.ok) throw new Error('ERR'); return r.json(); })
+      .then(async r => { setFetchStatus(r.status); if (r.status === 401) throw new Error('401'); if (!r.ok) throw new Error('ERR'); return r.json(); })
       .then(d => setData(d))
-      .catch(e => { if (e.message !== '401') console.error(e); })
+      .catch(e => { if (e.message !== '401') console.error('Analysis fetch error:', e); })
       .finally(() => setLoading(false));
   }, []);
 
@@ -174,23 +175,47 @@ export default function AnalysisPage() {
         <div className="loading-wrap"><div className="loading-spinner" /><p>جاري التحليل...</p></div>
       ) : !data ? (
         <div style={{ maxWidth: 480, margin: '60px auto', textAlign: 'center' }}>
-          <div style={{ width: 64, height: 64, borderRadius: 20, background: '#f0f7f7', display: 'grid', placeItems: 'center', margin: '0 auto 16px' }}>
-            <svg width="28" height="28" viewBox="0 0 26 26" fill="none">
-              <defs><linearGradient id="an-lg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#016564"/><stop offset="100%" stopColor="#014948"/></linearGradient></defs>
-              <circle cx="13" cy="13" r="11" fill="url(#an-lg)" opacity="0.08"/>
-              <circle cx="13" cy="13" r="11" stroke="url(#an-lg)" strokeWidth="1.8"/>
-              <line x1="13" y1="9" x2="13" y2="14" stroke="url(#an-lg)" strokeWidth="1.8" strokeLinecap="round"/>
-              <circle cx="13" cy="17.5" r="1" fill="url(#an-lg)"/>
-            </svg>
-          </div>
-          <h2 style={{ fontSize: '1.05rem', color: '#014948', margin: '0 0 6px' }}>يتطلب صلاحية المدير</h2>
-          <p style={{ fontSize: '0.82rem', color: '#667777', margin: '0 0 4px', lineHeight: 1.6 }}>
-            قد يكون حسابك مسجلاً بصلاحية قديمة. إذا كنت تملك صلاحية مدير، جرّب تسجيل الخروج وإعادة تسجيل الدخول.
-          </p>
-          <button onClick={() => { fetch('/api/auth/logout', { method: 'POST' }).then(() => { window.location.href = '/login'; }); }}
-            style={{ marginTop: 16, padding: '10px 24px', borderRadius: 12, border: '1px solid #d4e0e0', background: '#fff', color: '#014948', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}>
-            تسجيل الخروج
-          </button>
+          {fetchStatus === 401 ? (
+            <>
+              <div style={{ width: 64, height: 64, borderRadius: 20, background: '#fef6e6', display: 'grid', placeItems: 'center', margin: '0 auto 16px' }}>
+                <svg width="28" height="28" viewBox="0 0 26 26" fill="none">
+                  <defs><linearGradient id="an-lg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#b8933a"/><stop offset="100%" stopColor="#8a6a20"/></linearGradient></defs>
+                  <circle cx="13" cy="13" r="11" fill="url(#an-lg)" opacity="0.08"/>
+                  <circle cx="13" cy="13" r="11" stroke="url(#an-lg)" strokeWidth="1.8"/>
+                  <line x1="13" y1="9" x2="13" y2="14" stroke="url(#an-lg)" strokeWidth="1.8" strokeLinecap="round"/>
+                  <circle cx="13" cy="17.5" r="1" fill="url(#an-lg)"/>
+                </svg>
+              </div>
+              <h2 style={{ fontSize: '1.05rem', color: '#014948', margin: '0 0 6px' }}>يتطلب صلاحية المدير</h2>
+              <p style={{ fontSize: '0.82rem', color: '#667777', margin: '0 0 4px', lineHeight: 1.6 }}>
+                قد يكون حسابك مسجلاً بصلاحية قديمة. إذا كنت تملك صلاحية مدير، جرّب تسجيل الخروج وإعادة تسجيل الدخول.
+              </p>
+              <button onClick={() => { fetch('/api/auth/logout', { method: 'POST' }).then(() => { window.location.href = '/login'; }); }}
+                style={{ marginTop: 16, padding: '10px 24px', borderRadius: 12, border: '1px solid #d4e0e0', background: '#fff', color: '#014948', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}>
+                تسجيل الخروج
+              </button>
+            </>
+          ) : (
+            <>
+              <div style={{ width: 64, height: 64, borderRadius: 20, background: '#fef2f2', display: 'grid', placeItems: 'center', margin: '0 auto 16px' }}>
+                <svg width="28" height="28" viewBox="0 0 26 26" fill="none">
+                  <defs><linearGradient id="an-eg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#bf3d30"/><stop offset="100%" stopColor="#8b2a1e"/></linearGradient></defs>
+                  <circle cx="13" cy="13" r="11" fill="url(#an-eg)" opacity="0.08"/>
+                  <circle cx="13" cy="13" r="11" stroke="url(#an-eg)" strokeWidth="1.8"/>
+                  <line x1="8" y1="8" x2="18" y2="18" stroke="url(#an-eg)" strokeWidth="1.8" strokeLinecap="round"/>
+                  <line x1="18" y1="8" x2="8" y2="18" stroke="url(#an-eg)" strokeWidth="1.8" strokeLinecap="round"/>
+                </svg>
+              </div>
+              <h2 style={{ fontSize: '1.05rem', color: '#014948', margin: '0 0 6px' }}>خطأ في تحميل البيانات</h2>
+              <p style={{ fontSize: '0.82rem', color: '#667777', margin: '0 0 4px', lineHeight: 1.6 }}>
+                تعذر الاتصال بقاعدة البيانات أو تحليل الأداء. يرجى التأكد من اتصال قاعدة البيانات والمحاولة مرة أخرى.
+              </p>
+              <button onClick={() => window.location.reload()}
+                style={{ marginTop: 16, padding: '10px 24px', borderRadius: 12, border: '1px solid #d4e0e0', background: '#fff', color: '#014948', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}>
+                إعادة المحاولة
+              </button>
+            </>
+          )}
         </div>
       ) : (
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>

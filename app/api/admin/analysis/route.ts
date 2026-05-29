@@ -4,58 +4,59 @@ import { prisma } from '@/lib/prisma';
 import OpenAI from 'openai';
 
 export async function GET() {
-  const session = getCurrentSession();
-  if (!session || session.role !== 'MANAGER') {
-    return NextResponse.json({ message: 'غير مصرح' }, { status: 401 });
-  }
-
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || '' });
-
-  const employees = await prisma.user.findMany({
-    where: { role: 'EMPLOYEE', isActive: true },
-    select: {
-      id: true, name: true, email: true, createdAt: true, lastLoginAt: true,
-      _count: { select: { courses: true } }
+  try {
+    const session = getCurrentSession();
+    if (!session || session.role !== 'MANAGER') {
+      return NextResponse.json({ message: 'غير مصرح' }, { status: 401 });
     }
-  });
 
-  const enriched = await Promise.all(employees.map(async (emp) => {
-    const courses = await prisma.course.findMany({
-      where: { createdByUserId: emp.id },
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || '' });
+
+    const employees = await prisma.user.findMany({
+      where: { role: 'EMPLOYEE', isActive: true },
       select: {
-        id: true, activityName: true, createdAt: true, status: true,
-        _count: { select: { submissions: true } }
-      },
-      orderBy: { createdAt: 'desc' }
+        id: true, name: true, email: true, createdAt: true, lastLoginAt: true,
+        _count: { select: { courses: true } }
+      }
     });
-    const totalSubmissions = courses.reduce((s, c) => s + c._count.submissions, 0);
-    const activeCourses = courses.filter(c => c.status === 'PUBLISHED').length;
-    return {
-      id: emp.id,
-      name: emp.name,
-      email: emp.email,
-      createdAt: emp.createdAt.toISOString(),
-      lastLoginAt: emp.lastLoginAt?.toISOString() || null,
-      totalCourses: emp._count.courses,
-      totalSubmissions,
-      activeCourses,
-      courses: courses.map(c => ({
-        activityName: c.activityName,
-        status: c.status,
-        submissions: c._count.submissions,
-        createdAt: c.createdAt.toISOString()
-      }))
-    };
-  }));
 
-  if (!openai.apiKey) {
-    return NextResponse.json({
-      analysis: 'مفتاح API للذكاء الاصطناعي غير مضبط. يرجى إضافة OPENAI_API_KEY إلى متغيرات البيئة.',
-      rawData: enriched
-    });
-  }
+    const enriched = await Promise.all(employees.map(async (emp) => {
+      const courses = await prisma.course.findMany({
+        where: { createdByUserId: emp.id },
+        select: {
+          id: true, activityName: true, createdAt: true, status: true,
+          _count: { select: { submissions: true } }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+      const totalSubmissions = courses.reduce((s, c) => s + c._count.submissions, 0);
+      const activeCourses = courses.filter(c => c.status === 'PUBLISHED').length;
+      return {
+        id: emp.id,
+        name: emp.name,
+        email: emp.email,
+        createdAt: emp.createdAt.toISOString(),
+        lastLoginAt: emp.lastLoginAt?.toISOString() || null,
+        totalCourses: emp._count.courses,
+        totalSubmissions,
+        activeCourses,
+        courses: courses.map(c => ({
+          activityName: c.activityName,
+          status: c.status,
+          submissions: c._count.submissions,
+          createdAt: c.createdAt.toISOString()
+        }))
+      };
+    }));
 
-  const prompt = `حلل أداء الموظفين في منصة الدورات الخارجية بناءً على البيانات التالية بصيغة JSON وقم بالتوصيات بالعربية:
+    if (!openai.apiKey) {
+      return NextResponse.json({
+        analysis: 'مفتاح API للذكاء الاصطناعي غير مضبط. يرجى إضافة OPENAI_API_KEY إلى متغيرات البيئة.',
+        rawData: enriched
+      });
+    }
+
+    const prompt = `حلل أداء الموظفين في منصة الدورات الخارجية بناءً على البيانات التالية بصيغة JSON وقم بالتوصيات بالعربية:
 
 ${JSON.stringify(enriched, null, 2)}
 
@@ -66,25 +67,33 @@ ${JSON.stringify(enriched, null, 2)}
 4. توصيات لتحسين الأداء
 5. مؤشرات خطر (إن وجدت)`;
 
-  try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.5,
-      max_tokens: 2000,
-    });
+    try {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.5,
+        max_tokens: 2000,
+      });
 
-    return NextResponse.json({
-      analysis: response.choices[0]?.message?.content || 'تعذر الحصول على التحليل',
-      rawData: enriched,
-      model: response.model,
-      usage: response.usage
-    });
+      return NextResponse.json({
+        analysis: response.choices[0]?.message?.content || 'تعذر الحصول على التحليل',
+        rawData: enriched,
+        model: response.model,
+        usage: response.usage
+      });
+    } catch (err) {
+      return NextResponse.json({
+        message: 'حدث خطأ أثناء الاتصال بالذكاء الاصطناعي',
+        analysis: 'حدث خطأ أثناء الاتصال بالذكاء الاصطناعي',
+        error: String(err),
+        rawData: enriched
+      });
+    }
   } catch (err) {
+    console.error('Analysis error:', err);
     return NextResponse.json({
-      analysis: 'حدث خطأ أثناء الاتصال بالذكاء الاصطناعي',
+      message: 'حدث خطأ في تحليل البيانات، يرجى المحاولة لاحقاً',
       error: String(err),
-      rawData: enriched
-    });
+    }, { status: 500 });
   }
 }
