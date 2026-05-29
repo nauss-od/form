@@ -25,7 +25,6 @@ const styles = StyleSheet.create({
   page: {
     padding: 36,
     fontFamily: 'Cairo',
-    direction: 'rtl',
   },
   header: {
     padding: 16,
@@ -57,7 +56,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   infoRow: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     marginBottom: 3,
   },
   infoBlock: {
@@ -95,7 +94,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   insuranceRow: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     marginBottom: 1,
   },
   insuranceLabel: {
@@ -121,7 +120,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   tableHeaderRow: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     backgroundColor: TEAL,
     borderTopLeftRadius: 8,
     borderTopRightRadius: 8,
@@ -134,14 +133,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   tableRow: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     borderBottomWidth: 1,
     borderBottomColor: LINE,
     borderBottomStyle: 'solid',
     alignItems: 'center',
   },
   tableRowAlt: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     backgroundColor: '#f4f8f8',
     borderBottomWidth: 1,
     borderBottomColor: LINE,
