@@ -155,12 +155,12 @@ export default function AnalysisPage() {
     fetch('/api/admin/analysis')
       .then(async r => {
         setFetchStatus(r.status);
-        const body = await r.json();
         if (r.status === 401) throw new Error('401');
-        if (!r.ok) { setFetchError(body.message || body.error || 'خطأ غير معروف'); throw new Error('ERR'); }
+        const body = await r.json();
+        if (!r.ok) { setFetchError(body.message || body.error || 'خطأ غير معروف'); return; }
         setData(body);
       })
-      .catch(e => { if (e.message !== '401') { console.error('Analysis fetch error:', e); setFetchError(e.message); } })
+      .catch(e => { if (e.message !== '401') { console.error('Analysis fetch error:', e); setFetchError(e.message || 'خطأ غير متوقع'); } })
       .finally(() => setLoading(false));
   }, []);
 
