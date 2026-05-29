@@ -145,12 +145,12 @@ export default function SmartDatePicker({ value, onChange, min, max, placeholder
 
       {open && (
         <div ref={panelRef} className={`dp-panel ${animIn ? 'dp-panel-open' : ''}`}>
-          <div className="dp-header">
+          <div className="dp-header" dir="rtl">
             <div className="dp-nav">
-              <button className="dp-nav-btn" onClick={prevYear} title="السنة السابقة">
+              <button className="dp-nav-btn" onClick={nextYear} title="السنة التالية">
                 <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M12 5l-5 5 5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </button>
-              <button className="dp-nav-btn" onClick={prevMonth} title="الشهر السابق">
+              <button className="dp-nav-btn" onClick={nextMonth} title="الشهر التالي">
                 <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M12 5l-5 5 5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </button>
             </div>
@@ -159,10 +159,10 @@ export default function SmartDatePicker({ value, onChange, min, max, placeholder
               <span className="dp-year-name">{viewYear}</span>
             </div>
             <div className="dp-nav">
-              <button className="dp-nav-btn" onClick={nextMonth} title="الشهر التالي">
+              <button className="dp-nav-btn" onClick={prevMonth} title="الشهر السابق">
                 <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M8 5l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </button>
-              <button className="dp-nav-btn" onClick={nextYear} title="السنة التالية">
+              <button className="dp-nav-btn" onClick={prevYear} title="السنة السابقة">
                 <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M8 5l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </button>
             </div>

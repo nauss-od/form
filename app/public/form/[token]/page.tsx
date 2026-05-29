@@ -1,13 +1,22 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useRef, useState } from 'react';
 import SmartDatePicker from '@/components/SmartDatePicker';
 
 function UploadIcon() {
   return (
-    <svg viewBox="0 0 40 40" fill="none" width="40" height="40" style={{ opacity: 0.5, marginBottom: 6 }}>
+    <svg viewBox="0 0 40 40" fill="none" width="36" height="36" style={{ opacity: 0.5 }}>
       <rect x="4" y="14" width="32" height="22" rx="3" stroke="currentColor" strokeWidth="1.8" fill="none"/>
       <path d="M20 2v20m0 0l-6-6m6 6l6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+function CameraIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
+      <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2v11z" stroke="currentColor" strokeWidth="1.6" fill="none"/>
+      <circle cx="12" cy="13" r="4" stroke="currentColor" strokeWidth="1.6" fill="none"/>
     </svg>
   );
 }
@@ -27,6 +36,43 @@ function SuccessIcon() {
       <circle cx="30" cy="30" r="28" stroke="#14805a" strokeWidth="2.5" fill="rgba(20,128,90,0.06)"/>
       <path d="M18 30l8 8 16-16" stroke="#14805a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
+  );
+}
+
+function UploadField({ label, value, onChange, accept }: {
+  label: string;
+  value: File | null;
+  onChange: (f: File | null) => void;
+  accept: string;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+
+  return (
+    <div className="field">
+      <label>{label} <span className="req">*</span></label>
+      <div className="upload-stack">
+        <div className={`upload-zone ${value ? 'has-file' : ''}`} onClick={() => fileRef.current?.click()}>
+          <input ref={fileRef} type="file" accept={accept} onChange={e => onChange(e.target.files?.[0] || null)} />
+          {value ? (
+            <div className="upload-file-info">
+              <FileIcon />
+              <span className="upload-file-name">{value.name}</span>
+            </div>
+          ) : (
+            <div className="upload-empty">
+              <UploadIcon />
+              <span>اختر من الملفات</span>
+            </div>
+          )}
+        </div>
+        <button type="button" className="upload-camera-btn" onClick={() => cameraRef.current?.click()}>
+          <CameraIcon />
+          <span>تصوير</span>
+        </button>
+      </div>
+      <input ref={cameraRef} type="file" accept="image/*" capture="environment" onChange={e => onChange(e.target.files?.[0] || null)} style={{ display: 'none' }} />
+    </div>
   );
 }
 
@@ -67,7 +113,7 @@ export default function PublicFormPage({ params }: { params: { token: string } }
 
   function validateName(v: string) {
     if (!v) { setNameError(''); return; }
-    if (!/^[A-Za-z\s.\-']+$/.test(v)) setNameError('أحرف إنجليزية فقط');
+    if (!/^[\u0600-\u06FF\sA-Za-z.\-']+$/.test(v)) setNameError('أحرف عربية أو إنجليزية فقط');
     else setNameError('');
   }
 
@@ -300,40 +346,18 @@ export default function PublicFormPage({ params }: { params: { token: string } }
             </div>
 
             <div className="form-row">
-              <div className="field">
-                <label>صورة جواز السفر <span className="req">*</span></label>
-                <div className={`upload-zone ${passportFile ? 'has-file' : ''}`}>
-                  <input type="file" accept="image/*,application/pdf" onChange={e => setPassportFile(e.target.files?.[0] || null)} />
-                  {passportFile ? (
-                    <div className="upload-file-info">
-                      <FileIcon />
-                      <span className="upload-file-name">{passportFile.name}</span>
-                    </div>
-                  ) : (
-                    <div className="upload-empty">
-                      <UploadIcon />
-                      <span>اضغط لرفع الصورة</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="field">
-                <label>صورة الهوية الوطنية <span className="req">*</span></label>
-                <div className={`upload-zone ${nationalIdFile ? 'has-file' : ''}`}>
-                  <input type="file" accept="image/*,application/pdf" onChange={e => setNationalIdFile(e.target.files?.[0] || null)} />
-                  {nationalIdFile ? (
-                    <div className="upload-file-info">
-                      <FileIcon />
-                      <span className="upload-file-name">{nationalIdFile.name}</span>
-                    </div>
-                  ) : (
-                    <div className="upload-empty">
-                      <UploadIcon />
-                      <span>اضغط لرفع الصورة</span>
-                    </div>
-                  )}
-                </div>
-              </div>
+              <UploadField
+                label="صورة جواز السفر"
+                value={passportFile}
+                onChange={setPassportFile}
+                accept="image/*,application/pdf"
+              />
+              <UploadField
+                label="صورة الهوية الوطنية"
+                value={nationalIdFile}
+                onChange={setNationalIdFile}
+                accept="image/*,application/pdf"
+              />
             </div>
           </div>
 

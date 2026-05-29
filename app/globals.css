@@ -1763,7 +1763,6 @@ select.input:focus {
   border: 1px solid var(--nauss-line-strong);
   box-shadow: var(--shadow-xl);
   padding: 18px;
-  direction: ltr;
   opacity: 0;
   transform: translateY(-6px) scale(0.97);
   transition: opacity 0.2s var(--ease-out), transform 0.25s var(--transition-spring);
@@ -2710,8 +2709,15 @@ select.input:focus,
   background: linear-gradient(90deg, transparent, var(--nauss-line), transparent);
 }
 
+.upload-stack {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
 .upload-zone {
   position: relative;
+  flex: 1;
   min-height: 148px;
   display: grid;
   place-items: center;
@@ -2722,13 +2728,11 @@ select.input:focus,
   color: var(--nauss-muted);
   overflow: hidden;
   transition: background 170ms var(--ease-out), border-color 170ms var(--ease-out), transform 170ms var(--ease-out);
+  cursor: pointer;
 }
 
 .upload-zone input[type='file'] {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
+  display: none;
 }
 
 .upload-zone:hover {
@@ -2763,6 +2767,35 @@ select.input:focus,
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.upload-camera-btn {
+  min-width: 76px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 10px;
+  border: 1.5px solid oklch(40% 0.085 184 / 0.20);
+  border-radius: 22px;
+  background: oklch(40% 0.085 184 / 0.04);
+  color: var(--nauss-green-dark);
+  transition: background 170ms var(--ease-out), border-color 170ms var(--ease-out), transform 170ms var(--ease-out);
+}
+
+.upload-camera-btn span {
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.upload-camera-btn:hover {
+  background: oklch(40% 0.085 184 / 0.08);
+  border-color: oklch(40% 0.085 184 / 0.38);
+}
+
+.upload-camera-btn:active {
+  transform: scale(0.96);
 }
 
 .submit-btn { min-height: 54px; }
@@ -2854,6 +2887,16 @@ select.input:focus,
   .form-body { padding: 26px 20px; }
   .form-row { grid-template-columns: 1fr; }
   .upload-file-name { max-width: 24ch; }
+  .public-page { padding: 16px 10px 32px; }
+  .public-card { border-radius: 20px; }
+  .form-header { padding: 26px 18px 22px; }
+  .form-logo { width: 150px; }
+  .form-header h2 { font-size: 1.4rem; }
+  .form-body { padding: 22px 18px 26px; gap: 20px; }
+  .section-step h3 { font-size: 0.98rem; }
+  .upload-stack { flex-direction: column; }
+  .upload-camera-btn { min-width: auto; flex-direction: row; min-height: 48px; }
+  .upload-zone { min-height: 120px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
