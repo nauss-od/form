@@ -39,12 +39,6 @@ export async function GET(request: Request, { params }: { params: { courseId: st
   const participants = course.submissions.map((s, i) => ({
     index: i + 1,
     fullNamePassport: s.fullNamePassport,
-    passportNumber: s.passportNumber,
-    passportExpiry: formatDate(s.passportExpiry),
-    nationalId: s.nationalId,
-    mobile: s.mobile,
-    birthDate: formatDate(s.birthDate),
-    iban: s.iban,
     id: s.id,
   }));
 

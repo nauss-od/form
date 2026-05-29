@@ -2,6 +2,7 @@ import React from 'react';
 import {
   Document, Page, View, Text, Image, Font, StyleSheet, Link, renderToBuffer,
 } from '@react-pdf/renderer';
+import fs from 'fs';
 import path from 'path';
 
 const TEAL = '#016564';
@@ -11,14 +12,16 @@ const WHITE = '#ffffff';
 const LINE = '#c9d7d7';
 const MUTED = '#667777';
 
+const fontData = fs.readFileSync(path.join(process.cwd(), 'public/fonts/Cairo-Variable.ttf'));
+const fontBase64 = fontData.toString('base64');
+
 Font.register({
   family: 'Cairo',
-  fonts: [
-    { src: path.join(process.cwd(), 'public/fonts/Cairo-Variable.ttf'), fontWeight: 400 },
-    { src: path.join(process.cwd(), 'public/fonts/Cairo-Variable.ttf'), fontWeight: 700 },
-    { src: path.join(process.cwd(), 'public/fonts/Cairo-Variable.ttf'), fontWeight: 900 },
-  ],
+  src: `data:font/ttf;base64,${fontBase64}`,
 });
+
+const logoData = fs.readFileSync(path.join(process.cwd(), 'public/images/nauss-logo-gold.png'));
+const logoSrc = `data:image/png;base64,${logoData.toString('base64')}`;
 
 const styles = StyleSheet.create({
   page: {
@@ -27,100 +30,97 @@ const styles = StyleSheet.create({
     direction: 'rtl',
   },
   header: {
-    padding: 20,
-    marginBottom: 20,
-    borderRadius: 16,
+    padding: 16,
+    marginBottom: 18,
+    borderRadius: 14,
     backgroundColor: TEAL,
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 16,
     color: WHITE,
     fontWeight: 700,
-    marginTop: 10,
+    marginTop: 8,
   },
   headerSub: {
-    fontSize: 11,
+    fontSize: 10,
     color: GOLD,
     marginTop: 2,
   },
   sectionTitle: {
-    fontSize: 13,
+    fontSize: 12,
     color: TEAL_DARK,
     fontWeight: 700,
-    marginBottom: 8,
-    borderBottom: `1.5px solid ${GOLD}`,
-    paddingBottom: 3,
+    marginBottom: 6,
+    borderBottom: `1px solid ${GOLD}`,
+    paddingBottom: 2,
   },
   infoRow: {
     flexDirection: 'row',
-    marginBottom: 4,
+    marginBottom: 3,
   },
   infoBlock: {
     flex: 1,
-    padding: '4 6',
+    padding: '3 5',
   },
   infoLabel: {
-    fontSize: 8,
+    fontSize: 7,
     color: MUTED,
     marginBottom: 1,
   },
   infoValue: {
+    fontSize: 9,
+    color: TEAL_DARK,
+    fontWeight: 700,
+  },
+  insuranceBlock: {
+    padding: 10,
+    borderRadius: 10,
+    backgroundColor: '#f4f8f8',
+    borderWidth: 1,
+    borderColor: LINE,
+    borderStyle: 'solid',
+    marginBottom: 14,
+  },
+  insuranceTitle: {
     fontSize: 10,
     color: TEAL_DARK,
     fontWeight: 700,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: LINE,
-    marginVertical: 12,
-  },
-  insuranceBlock: {
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: '#f4f8f8',
-    marginBottom: 16,
-  },
-  insuranceTitle: {
-    fontSize: 11,
-    color: TEAL_DARK,
-    fontWeight: 700,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   insuranceRow: {
     flexDirection: 'row',
-    marginBottom: 2,
+    marginBottom: 1,
   },
   insuranceLabel: {
-    fontSize: 9,
+    fontSize: 8,
     color: MUTED,
-    width: 140,
+    width: 130,
   },
   insuranceValue: {
-    fontSize: 9,
+    fontSize: 8,
     color: TEAL_DARK,
     fontWeight: 700,
   },
   insuranceNote: {
-    fontSize: 8,
+    fontSize: 7,
     color: MUTED,
-    marginTop: 4,
-    fontStyle: 'italic',
+    marginTop: 3,
   },
   table: {
     width: '100%',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   tableHeaderRow: {
     flexDirection: 'row',
     backgroundColor: TEAL,
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 10,
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
   },
   tableHeaderCell: {
-    padding: '7 5',
+    padding: '6 4',
     color: WHITE,
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: 700,
     textAlign: 'center',
   },
@@ -140,8 +140,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tableCell: {
-    padding: '7 5',
-    fontSize: 8,
+    padding: '6 4',
+    fontSize: 7,
     color: TEAL_DARK,
     textAlign: 'center',
   },
@@ -152,11 +152,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   footer: {
-    marginTop: 24,
+    marginTop: 20,
     borderTopWidth: 1,
     borderTopColor: LINE,
     borderTopStyle: 'solid',
-    paddingTop: 10,
+    paddingTop: 8,
     alignItems: 'center',
   },
   footerText: {
@@ -173,12 +173,6 @@ const styles = StyleSheet.create({
 interface Participant {
   index: number;
   fullNamePassport: string;
-  passportNumber: string;
-  passportExpiry: string;
-  nationalId: string;
-  mobile: string;
-  birthDate: string;
-  iban: string;
   id: string;
 }
 
@@ -206,7 +200,7 @@ function formatReportDate(date: Date): string {
 }
 
 function ParticipantsTable({ participants, baseUrl }: { participants: Participant[]; baseUrl: string }) {
-  const colWidths = ['10%', '50%', '40%'];
+  const colWidths = ['10%', '55%', '35%'];
   const headers = ['م', 'اسم المشارك', 'رابط معلومات المشارك'];
 
   return (
@@ -246,8 +240,8 @@ export async function generatePdfBuffer(
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
           <Image
-            src={path.join(process.cwd(), 'public/images/nauss-logo-gold.png')}
-            style={{ width: 100 }}
+            src={logoSrc}
+            style={{ width: 80 }}
           />
           <Text style={styles.headerTitle}>جامعة نايف العربية للعلوم الأمنية</Text>
           <Text style={styles.headerSub}>كلية التدريب — منصة تأمين المشاركين</Text>
@@ -268,7 +262,7 @@ export async function generatePdfBuffer(
             <Text style={styles.infoValue}>{formatDate(course.startDate)}</Text>
           </View>
         </View>
-        <View style={[styles.infoRow, { marginBottom: 4 }]}>
+        <View style={[styles.infoRow, { marginBottom: 3 }]}>
           <View style={styles.infoBlock}>
             <Text style={styles.infoLabel}>تاريخ النهاية</Text>
             <Text style={styles.infoValue}>{formatDate(course.endDate)}</Text>
