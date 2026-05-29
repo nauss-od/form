@@ -53,8 +53,8 @@ export default function InsuranceReviewPage({ params }: { params: { courseId: st
             </div>
           </div>
           <div style={{ display: 'flex', gap: 24, fontSize: '0.78rem', color: '#c9d7d7' }}>
-            <span>بداية: {new Date(course.startDate).toLocaleDateString('ar-SA')}</span>
-            <span>نهاية: {new Date(course.endDate).toLocaleDateString('ar-SA')}</span>
+            <span>بداية: {course.startDate ? new Date(course.startDate).toLocaleDateString('ar-SA') : '—'}</span>
+            <span>نهاية: {course.endDate ? new Date(course.endDate).toLocaleDateString('ar-SA') : '—'}</span>
             <span>المشاركون: {participants.length}</span>
           </div>
         </div>
@@ -134,7 +134,7 @@ function ParticipantPreview({ participant }: { participant: any }) {
         <div>
           <h2 style={{ margin: 0, fontSize: '1rem', color: '#014948' }}>{participant.fullNamePassport}</h2>
           <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#667777' }}>
-            جواز: {participant.passportNumber} | {new Date(participant.passportExpiry).toLocaleDateString('ar-SA')}
+            جواز: {participant.passportNumber} | {participant.passportExpiry ? new Date(participant.passportExpiry).toLocaleDateString('ar-SA') : '—'}
           </p>
         </div>
       </div>
@@ -173,7 +173,7 @@ function ParticipantPreview({ participant }: { participant: any }) {
       <div style={{ padding: '16px 20px', borderTop: '1px solid #dce5e5', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 24px' }}>
         {[
           { label: 'رقم الجوال', value: participant.mobile },
-          { label: 'تاريخ الميلاد', value: new Date(participant.birthDate).toLocaleDateString('ar-SA') },
+          { label: 'تاريخ الميلاد', value: participant.birthDate ? new Date(participant.birthDate).toLocaleDateString('ar-SA') : '—' },
           { label: 'رقم الهوية', value: participant.nationalId },
           { label: 'رقم الآيبان', value: participant.iban },
         ].map((f: any) => (

@@ -20,56 +20,57 @@ function wrapBase64(s: string): string {
 }
 
 export async function GET(request: Request, { params }: { params: { courseId: string } }) {
-  const session = getCurrentSession();
-  if (!session) return NextResponse.json({ message: 'غير مصرح' }, { status: 401 });
+  try {
+    const session = getCurrentSession();
+    if (!session) return NextResponse.json({ message: 'غير مصرح' }, { status: 401 });
 
-  const course = await prisma.course.findUnique({
-    where: { id: params.courseId },
-    include: {
-      submissions: { orderBy: { createdAt: 'asc' } },
-      createdBy: true,
-    },
-  });
-  if (!course) return NextResponse.json({ message: 'الدورة غير موجودة' }, { status: 404 });
-  if (session.role !== 'MANAGER' && course.createdByUserId !== session.userId) {
-    return NextResponse.json({ message: 'غير مصرح' }, { status: 401 });
-  }
+    const course = await prisma.course.findUnique({
+      where: { id: params.courseId },
+      include: {
+        submissions: { orderBy: { createdAt: 'asc' } },
+        createdBy: true,
+      },
+    });
+    if (!course) return NextResponse.json({ message: 'الدورة غير موجودة' }, { status: 404 });
+    if (session.role !== 'MANAGER' && course.createdByUserId !== session.userId) {
+      return NextResponse.json({ message: 'غير مصرح' }, { status: 401 });
+    }
 
-  await logAudit({ userId: session.userId, action: 'EXPORT_EML', entityType: 'Course', entityId: params.courseId });
+    await logAudit({ userId: session.userId, action: 'EXPORT_EML', entityType: 'Course', entityId: params.courseId });
 
-  const baseUrl = new URL(request.url).origin;
+    const baseUrl = new URL(request.url).origin;
 
-  const participants = course.submissions.map((s, i) => ({
-    index: i + 1,
-    fullNamePassport: s.fullNamePassport,
-    id: s.id,
-  }));
+    const participants = course.submissions.map((s, i) => ({
+      index: i + 1,
+      fullNamePassport: s.fullNamePassport,
+      id: s.id,
+    }));
 
-  const pdfBuffer = await generatePdfBuffer(
-    {
-      activityName: course.activityName,
-      venue: course.venue,
-      startDate: course.startDate,
-      endDate: course.endDate,
-      createdByName: course.createdBy?.name || '—',
-    },
-    participants,
-    baseUrl,
-  );
+    const pdfBuffer = await generatePdfBuffer(
+      {
+        activityName: course.activityName,
+        venue: course.venue,
+        startDate: course.startDate,
+        endDate: course.endDate,
+        createdByName: course.createdBy?.name || '—',
+      },
+      participants,
+      baseUrl,
+    );
 
-  const pdfBase64 = pdfBuffer.toString('base64');
+    const pdfBase64 = pdfBuffer.toString('base64');
 
-  const insuranceStart = course.startDate ? addDays(course.startDate, -1) : null;
-  const insuranceEnd = course.endDate ? addDays(course.endDate, 3) : null;
+    const insuranceStart = course.startDate ? addDays(course.startDate, -1) : null;
+    const insuranceEnd = course.endDate ? addDays(course.endDate, 3) : null;
 
-  const fromName = course.createdBy?.name || 'موظف التدريب';
-  const fromEmail = course.createdBy?.email || 'training@nauss.edu.sa';
-  const subject = `طلب إصدار تأمين طبي — ${course.activityName || 'دورة خارجية'}`;
-  const dateStr = new Date().toUTCString();
-  const boundary = `----=_NAUSS_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-  const msgId = `<nauss-${Date.now()}-${Math.random().toString(36).slice(2, 14)}@nauss.edu.sa>`;
+    const fromName = (course.createdBy?.name || 'موظف التدريب').replace(/[<>()\[\]\\,;:\"\n\r]/g, '').trim();
+    const fromEmail = course.createdBy?.email || 'training@nauss.edu.sa';
+    const subject = `طلب إصدار تأمين طبي — ${course.activityName || 'دورة خارجية'}`;
+    const dateStr = new Date().toUTCString();
+    const boundary = `----=_NAUSS_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+    const msgId = `<nauss-${Date.now()}-${Math.random().toString(36).slice(2, 14)}@nauss.edu.sa>`;
 
-  const bodyText = `السلام عليكم ورحمة الله وبركاته،
+    const bodyText = `السلام عليكم ورحمة الله وبركاته،
 
 أتمنى أن تكونوا بأفضل حال،
 
@@ -97,44 +98,50 @@ ${course.createdBy?.name || 'موظف التدريب'}
 إدارة عمليات التدريب — وكالة التدريب
 جامعة نايف العربية للعلوم الأمنية`;
 
-  const safeName = (course.activityName || 'course').replace(/[<>:"/\\|?*]/g, '').trim() || 'course';
-  const pdfFilename = `${safeName}-insurance.pdf`;
+    const safeName = (course.activityName || 'course').replace(/[<>:"/\\|?*\n\r]/g, ' ').trim().replace(/\s+/g, ' ') || 'course';
+    const pdfFilename = `${safeName}-insurance.pdf`;
 
-  const eml = [
-    'MIME-Version: 1.0',
-    `Content-Type: multipart/mixed; boundary="${boundary}"`,
-    `To: HR@nauss.edu.sa, AAbouelatta@nauss.edu.sa`,
-    `CC: OD@nauss.edu.sa`,
-    `From: ${fromName} <${fromEmail}>`,
-    `Subject: =?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`,
-    `Date: ${dateStr}`,
-    `Message-ID: ${msgId}`,
-    'X-Mailer: NAUSS Training Platform v1.0',
-    'X-Priority: Normal (3)',
-    'X-MSMail-Priority: Normal',
-    'Importance: Normal',
-    '',
-    `--${boundary}`,
-    'Content-Type: text/plain; charset="utf-8"',
-    'Content-Transfer-Encoding: base64',
-    '',
-    wrapBase64(Buffer.from(bodyText, 'utf-8').toString('base64')),
-    '',
-    `--${boundary}`,
-    `Content-Type: application/pdf; name="${pdfFilename}"`,
-    'Content-Transfer-Encoding: base64',
-    `Content-Disposition: attachment; filename="${pdfFilename}"`,
-    '',
-    wrapBase64(pdfBase64),
-    '',
-    `--${boundary}--`,
-    '',
-  ].join('\r\n');
+    const eml = [
+      'MIME-Version: 1.0',
+      `Content-Type: multipart/mixed; boundary="${boundary}"`,
+      `To: HR@nauss.edu.sa, AAbouelatta@nauss.edu.sa`,
+      `CC: OD@nauss.edu.sa`,
+      `From: ${fromName} <${fromEmail}>`,
+      `Subject: =?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`,
+      `Date: ${dateStr}`,
+      `Message-ID: ${msgId}`,
+      'X-Mailer: NAUSS Training Platform v1.0',
+      'X-Priority: Normal (3)',
+      'X-MSMail-Priority: Normal',
+      'Importance: Normal',
+      '',
+      `--${boundary}`,
+      'Content-Type: text/plain; charset="utf-8"',
+      'Content-Transfer-Encoding: base64',
+      '',
+      wrapBase64(Buffer.from(bodyText, 'utf-8').toString('base64')),
+      '',
+      `--${boundary}`,
+      `Content-Type: application/pdf; name="${pdfFilename}"`,
+      'Content-Transfer-Encoding: base64',
+      `Content-Disposition: attachment; filename="${pdfFilename}"`,
+      '',
+      wrapBase64(pdfBase64),
+      '',
+      `--${boundary}--`,
+      '',
+    ].join('\r\n');
 
-  return new NextResponse(eml, {
-    headers: {
-      'Content-Type': 'message/rfc822',
-      'Content-Disposition': `attachment; filename="${safeName}-insurance-request.eml"`,
-    },
-  });
+    const emlFilename = `${safeName}-insurance-request.eml`;
+
+    return new NextResponse(eml, {
+      headers: {
+        'Content-Type': 'message/rfc822',
+        'Content-Disposition': `attachment; filename="${emlFilename.replace(/[^\x20-\x7E]/g, '')}"`,
+      },
+    });
+  } catch (err) {
+    console.error('EML export error:', err);
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
 }

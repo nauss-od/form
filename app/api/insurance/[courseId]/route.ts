@@ -21,6 +21,9 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
   if (!course) {
     return NextResponse.json({ message: 'الدورة غير موجودة' }, { status: 404 });
   }
+  if (session.role !== 'MANAGER' && course.createdByUserId !== session.userId) {
+    return NextResponse.json({ message: 'غير مصرح' }, { status: 401 });
+  }
 
   const participants = course.submissions.map(s => ({
     id: s.id,
