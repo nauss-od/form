@@ -246,58 +246,88 @@ function ExpandedPreview({ participant }: { participant: any }) {
   const nationalIdFile = participant.files?.find((f: any) => f.fileType === 'NATIONAL_ID');
 
   return (
-    <div style={{ padding: '16px 20px 20px', background: '#f8fbfb' }}>
-      {/* Info at top */}
+    <div style={{ padding: '20px 24px 24px', background: '#f7fbfb' }}>
+      {/* Participant name banner */}
       <div style={{
-        background: '#ffffff', borderRadius: 12, border: '1px solid #dce5e5',
-        padding: '14px 18px', marginBottom: 14,
-        display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px 20px',
+        background: 'linear-gradient(135deg, #016564 0%, #014948 100%)',
+        borderRadius: 14, padding: '14px 20px', marginBottom: 20,
+        display: 'flex', alignItems: 'center', gap: 12,
+      }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: '50%',
+          background: 'rgba(255,255,255,0.15)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: '#d0b284', fontWeight: 800, fontSize: '0.9rem',
+        }}>
+          {participant.fullNamePassport?.charAt(0) || '?'}
+        </div>
+        <div style={{ color: '#fff' }}>
+          <div style={{ fontSize: '0.95rem', fontWeight: 700 }}>{participant.fullNamePassport}</div>
+          <div style={{ fontSize: '0.72rem', color: '#bcd5d5' }}>بيانات المشارك وتفاصيل التأمين</div>
+        </div>
+      </div>
+
+      {/* Info grid */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20,
       }}>
         {[
           { label: 'رقم الجوال', value: participant.mobile, ltr: true },
           { label: 'تاريخ الميلاد', value: participant.birthDate ? new Date(participant.birthDate).toLocaleDateString('ar-SA') : '—' },
+          { label: 'رقم الجواز', value: participant.passportNumber, ltr: true },
+          { label: 'انتهاء الجواز', value: participant.passportExpiry ? new Date(participant.passportExpiry).toLocaleDateString('ar-SA') : '—' },
           { label: 'رقم الهوية', value: participant.nationalId, ltr: true },
           { label: 'رقم الآيبان', value: participant.iban, ltr: true },
-        ].map((f: any) => (
-          <div key={f.label}>
-            <div style={{ fontSize: '0.68rem', color: '#667777', fontWeight: 600, marginBottom: 2 }}>{f.label}</div>
-            <div style={{ fontSize: '0.85rem', color: '#014948', fontWeight: 600, direction: f.ltr ? 'ltr' : undefined, textAlign: f.ltr ? 'left' : 'right' }}>
-              {f.value || '—'}
+        ].map(field => (
+          <div key={field.label} style={{
+            background: '#fff', borderRadius: 12, border: '1px solid #e8efef',
+            padding: '12px 16px',
+          }}>
+            <div style={{ fontSize: '0.68rem', color: '#667777', fontWeight: 600, marginBottom: 4 }}>
+              {field.label}
+            </div>
+            <div style={{
+              fontSize: '0.85rem', color: '#014948', fontWeight: 700,
+              direction: field.ltr ? 'ltr' : undefined, textAlign: field.ltr ? 'left' : 'right',
+            }}>
+              {field.value || '—'}
             </div>
           </div>
         ))}
       </div>
 
-      {/* Images below */}
+      {/* Images */}
       {passportFile || nationalIdFile ? (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
           {passportFile && (
-            <div style={{ background: '#ffffff', borderRadius: 12, border: '1px solid #dce5e5', overflow: 'hidden' }}>
-              <div style={{ padding: '8px 14px', background: '#eef6f6', fontSize: '0.72rem', fontWeight: 700, color: '#014948', borderBottom: '1px solid #dce5e5' }}>
+            <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e8efef', overflow: 'hidden' }}>
+              <div style={{ padding: '10px 16px', background: '#eef6f6', fontSize: '0.73rem', fontWeight: 700, color: '#014948', borderBottom: '1px solid #e8efef', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#016564" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
                 صورة جواز السفر
               </div>
-              <div style={{ padding: 10, display: 'flex', justifyContent: 'center' }}>
+              <div style={{ padding: 12, display: 'flex', justifyContent: 'center', background: '#fafcfc' }}>
                 <img src={`/api/files/${passportFile.id}`} alt=""
-                  style={{ maxWidth: '100%', maxHeight: 280, borderRadius: 8, objectFit: 'contain' }}
+                  style={{ maxWidth: '100%', maxHeight: 300, borderRadius: 10, objectFit: 'contain', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}
                 />
               </div>
             </div>
           )}
           {nationalIdFile && (
-            <div style={{ background: '#ffffff', borderRadius: 12, border: '1px solid #dce5e5', overflow: 'hidden' }}>
-              <div style={{ padding: '8px 14px', background: '#f8f5ee', fontSize: '0.72rem', fontWeight: 700, color: '#8a7440', borderBottom: '1px solid #dce5e5' }}>
+            <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e8efef', overflow: 'hidden' }}>
+              <div style={{ padding: '10px 16px', background: '#f8f5ee', fontSize: '0.73rem', fontWeight: 700, color: '#8a7440', borderBottom: '1px solid #e8efef', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8a7440" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
                 صورة الهوية الوطنية
               </div>
-              <div style={{ padding: 10, display: 'flex', justifyContent: 'center' }}>
+              <div style={{ padding: 12, display: 'flex', justifyContent: 'center', background: '#fafcfc' }}>
                 <img src={`/api/files/${nationalIdFile.id}`} alt=""
-                  style={{ maxWidth: '100%', maxHeight: 280, borderRadius: 8, objectFit: 'contain' }}
+                  style={{ maxWidth: '100%', maxHeight: 300, borderRadius: 10, objectFit: 'contain', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}
                 />
               </div>
             </div>
           )}
         </div>
       ) : (
-        <div style={{ textAlign: 'center', padding: 24, color: '#94a3b8', fontSize: '0.82rem', background: '#ffffff', borderRadius: 12, border: '1px solid #dce5e5' }}>
+        <div style={{ textAlign: 'center', padding: 28, color: '#94a8a8', background: '#fff', borderRadius: 14, border: '1px solid #e8efef', fontSize: '0.82rem' }}>
           لا توجد ملفات مرفوعة لهذا المشارك
         </div>
       )}
