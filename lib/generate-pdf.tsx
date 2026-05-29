@@ -7,7 +7,6 @@ import path from 'path';
 const TEAL = '#016564';
 const TEAL_DARK = '#014948';
 const GOLD = '#d0b284';
-const GOLD_DARK = '#b8975c';
 const WHITE = '#ffffff';
 const LINE = '#c9d7d7';
 const MUTED = '#667777';
@@ -23,76 +22,103 @@ Font.register({
 
 const styles = StyleSheet.create({
   page: {
-    padding: 40,
+    padding: 36,
     fontFamily: 'Cairo',
     direction: 'rtl',
-    position: 'relative',
-  },
-  background: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    opacity: 0.04,
   },
   header: {
-    padding: 24,
-    marginBottom: 28,
-    borderRadius: 20,
+    padding: 20,
+    marginBottom: 20,
+    borderRadius: 16,
     backgroundColor: TEAL,
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 18,
     color: WHITE,
     fontWeight: 700,
-    marginTop: 12,
+    marginTop: 10,
   },
   headerSub: {
-    fontSize: 12,
+    fontSize: 11,
     color: GOLD,
-    marginTop: 4,
+    marginTop: 2,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 13,
     color: TEAL_DARK,
     fontWeight: 700,
-    marginBottom: 12,
-    borderBottom: `2px solid ${GOLD}`,
-    paddingBottom: 4,
+    marginBottom: 8,
+    borderBottom: `1.5px solid ${GOLD}`,
+    paddingBottom: 3,
   },
-  infoGrid: {
+  infoRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 24,
+    marginBottom: 4,
   },
-  infoItem: {
-    width: '33%',
-    padding: 8,
+  infoBlock: {
+    flex: 1,
+    padding: '4 6',
   },
   infoLabel: {
-    fontSize: 9,
+    fontSize: 8,
     color: MUTED,
-    marginBottom: 2,
+    marginBottom: 1,
   },
   infoValue: {
+    fontSize: 10,
+    color: TEAL_DARK,
+    fontWeight: 700,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: LINE,
+    marginVertical: 12,
+  },
+  insuranceBlock: {
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: '#f4f8f8',
+    marginBottom: 16,
+  },
+  insuranceTitle: {
     fontSize: 11,
     color: TEAL_DARK,
     fontWeight: 700,
+    marginBottom: 6,
+  },
+  insuranceRow: {
+    flexDirection: 'row',
+    marginBottom: 2,
+  },
+  insuranceLabel: {
+    fontSize: 9,
+    color: MUTED,
+    width: 140,
+  },
+  insuranceValue: {
+    fontSize: 9,
+    color: TEAL_DARK,
+    fontWeight: 700,
+  },
+  insuranceNote: {
+    fontSize: 8,
+    color: MUTED,
+    marginTop: 4,
+    fontStyle: 'italic',
   },
   table: {
     width: '100%',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   tableHeaderRow: {
     flexDirection: 'row',
     backgroundColor: TEAL,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
   },
   tableHeaderCell: {
-    padding: '8 6',
+    padding: '7 5',
     color: WHITE,
     fontSize: 9,
     fontWeight: 700,
@@ -103,6 +129,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: LINE,
     borderBottomStyle: 'solid',
+    alignItems: 'center',
   },
   tableRowAlt: {
     flexDirection: 'row',
@@ -110,62 +137,35 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: LINE,
     borderBottomStyle: 'solid',
+    alignItems: 'center',
   },
   tableCell: {
-    padding: '8 6',
-    fontSize: 9,
+    padding: '7 5',
+    fontSize: 8,
     color: TEAL_DARK,
     textAlign: 'center',
   },
-  link: {
+  tableLink: {
     color: '#0563C1',
     textDecoration: 'underline',
-    fontSize: 8,
-  },
-  insuranceBox: {
-    marginTop: 20,
-    padding: 16,
-    borderRadius: 14,
-    backgroundColor: '#f4f8f8',
-    borderWidth: 1,
-    borderColor: LINE,
-    borderStyle: 'solid',
-  },
-  insuranceTitle: {
-    fontSize: 12,
-    color: TEAL_DARK,
-    fontWeight: 700,
-    marginBottom: 8,
-  },
-  insuranceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  insuranceLabel: {
-    fontSize: 10,
-    color: MUTED,
-  },
-  insuranceValue: {
-    fontSize: 10,
-    color: TEAL_DARK,
-    fontWeight: 700,
+    fontSize: 7,
+    textAlign: 'center',
   },
   footer: {
-    marginTop: 32,
+    marginTop: 24,
     borderTopWidth: 1,
     borderTopColor: LINE,
     borderTopStyle: 'solid',
-    paddingTop: 12,
+    paddingTop: 10,
     alignItems: 'center',
   },
   footerText: {
-    fontSize: 8,
+    fontSize: 7,
     color: MUTED,
-    marginBottom: 2,
+    marginBottom: 1,
   },
   creditText: {
-    fontSize: 7,
+    fontSize: 6,
     color: '#99aaaa',
   },
 });
@@ -206,8 +206,8 @@ function formatReportDate(date: Date): string {
 }
 
 function ParticipantsTable({ participants, baseUrl }: { participants: Participant[]; baseUrl: string }) {
-  const colWidths = ['6%', '24%', '12%', '12%', '12%', '12%', '12%', '10%'];
-  const headers = ['م', 'الاسم', 'رقم الجواز', 'انتهاء الجواز', 'رقم الهوية', 'الجوال', 'تاريخ الميلاد', 'الرابط'];
+  const colWidths = ['10%', '50%', '40%'];
+  const headers = ['م', 'اسم المشارك', 'رابط معلومات المشارك'];
 
   return (
     <View style={styles.table}>
@@ -222,13 +222,8 @@ function ParticipantsTable({ participants, baseUrl }: { participants: Participan
         <View key={p.id} style={idx % 2 === 0 ? styles.tableRow : styles.tableRowAlt}>
           <Text style={[styles.tableCell, { width: colWidths[0] }]}>{p.index}</Text>
           <Text style={[styles.tableCell, { width: colWidths[1] }]}>{p.fullNamePassport}</Text>
-          <Text style={[styles.tableCell, { width: colWidths[2] }]}>{p.passportNumber}</Text>
-          <Text style={[styles.tableCell, { width: colWidths[3] }]}>{p.passportExpiry}</Text>
-          <Text style={[styles.tableCell, { width: colWidths[4] }]}>{p.nationalId}</Text>
-          <Text style={[styles.tableCell, { width: colWidths[5] }]}>{p.mobile}</Text>
-          <Text style={[styles.tableCell, { width: colWidths[6] }]}>{p.birthDate}</Text>
-          <View style={[styles.tableCell, { width: colWidths[7] }]}>
-            <Link src={`${baseUrl}/participant/${p.id}`} style={styles.link}>
+          <View style={[styles.tableCell, { width: colWidths[2] }]}>
+            <Link src={`${baseUrl}/participant/${p.id}`} style={styles.tableLink}>
               <Text>لمعلومات المشارك كاملة</Text>
             </Link>
           </View>
@@ -252,48 +247,57 @@ export async function generatePdfBuffer(
         <View style={styles.header}>
           <Image
             src={path.join(process.cwd(), 'public/images/nauss-logo-gold.png')}
-            style={{ width: 120 }}
+            style={{ width: 100 }}
           />
           <Text style={styles.headerTitle}>جامعة نايف العربية للعلوم الأمنية</Text>
           <Text style={styles.headerSub}>كلية التدريب — منصة تأمين المشاركين</Text>
         </View>
 
         <Text style={styles.sectionTitle}>بيانات الدورة</Text>
-        <View style={styles.infoGrid}>
-          {[
-            { label: 'النشاط', value: course.activityName || '—' },
-            { label: 'المكان', value: course.venue || '—' },
-            { label: 'تاريخ البداية', value: formatDate(course.startDate) },
-            { label: 'تاريخ النهاية', value: formatDate(course.endDate) },
-            { label: 'عدد المشاركين', value: String(participants.length) },
-            { label: 'إعداد', value: course.createdByName },
-          ].map(item => (
-            <View key={item.label} style={styles.infoItem}>
-              <Text style={styles.infoLabel}>{item.label}</Text>
-              <Text style={styles.infoValue}>{item.value}</Text>
-            </View>
-          ))}
+        <View style={styles.infoRow}>
+          <View style={styles.infoBlock}>
+            <Text style={styles.infoLabel}>النشاط</Text>
+            <Text style={styles.infoValue}>{course.activityName || '—'}</Text>
+          </View>
+          <View style={styles.infoBlock}>
+            <Text style={styles.infoLabel}>المكان</Text>
+            <Text style={styles.infoValue}>{course.venue || '—'}</Text>
+          </View>
+          <View style={styles.infoBlock}>
+            <Text style={styles.infoLabel}>تاريخ البداية</Text>
+            <Text style={styles.infoValue}>{formatDate(course.startDate)}</Text>
+          </View>
+        </View>
+        <View style={[styles.infoRow, { marginBottom: 4 }]}>
+          <View style={styles.infoBlock}>
+            <Text style={styles.infoLabel}>تاريخ النهاية</Text>
+            <Text style={styles.infoValue}>{formatDate(course.endDate)}</Text>
+          </View>
+          <View style={styles.infoBlock}>
+            <Text style={styles.infoLabel}>إعداد</Text>
+            <Text style={styles.infoValue}>{course.createdByName}</Text>
+          </View>
+          <View style={styles.infoBlock}>
+            <Text style={styles.infoLabel}>عدد المشاركين</Text>
+            <Text style={styles.infoValue}>{String(participants.length)}</Text>
+          </View>
+        </View>
+
+        <View style={styles.insuranceBlock}>
+          <Text style={styles.insuranceTitle}>تواريخ التأمين الطبي المقترحة</Text>
+          <View style={styles.insuranceRow}>
+            <Text style={styles.insuranceLabel}>تاريخ بداية التأمين:</Text>
+            <Text style={styles.insuranceValue}>{insuranceStart ? formatDate(insuranceStart) : '—'}</Text>
+          </View>
+          <View style={styles.insuranceRow}>
+            <Text style={styles.insuranceLabel}>تاريخ نهاية التأمين:</Text>
+            <Text style={styles.insuranceValue}>{insuranceEnd ? formatDate(insuranceEnd) : '—'}</Text>
+          </View>
+          <Text style={styles.insuranceNote}>بداية التأمين قبل الدورة بيوم، ونهايته بعد الدورة بثلاثة أيام</Text>
         </View>
 
         <Text style={styles.sectionTitle}>قائمة المشاركين</Text>
         <ParticipantsTable participants={participants} baseUrl={baseUrl} />
-
-          <View style={styles.insuranceBox}>
-          <Text style={styles.insuranceTitle}>بيانات التأمين الطبي المقترحة</Text>
-          <View style={styles.insuranceRow}>
-            <Text style={styles.insuranceLabel}>تاريخ بداية التأمين:</Text>
-            <Text style={styles.insuranceValue}>{insuranceStart ? formatReportDate(insuranceStart) : '—'}</Text>
-          </View>
-          <View style={styles.insuranceRow}>
-            <Text style={styles.insuranceLabel}>تاريخ نهاية التأمين:</Text>
-            <Text style={styles.insuranceValue}>{insuranceEnd ? formatReportDate(insuranceEnd) : '—'}</Text>
-          </View>
-          <View style={[styles.insuranceRow, { marginTop: 6, borderTopWidth: 1, borderTopColor: LINE, borderTopStyle: 'solid', paddingTop: 6 }]}>
-            <Text style={{ fontSize: 9, color: MUTED, flex: 1 }}>
-              * بداية التأمين قبل الدورة بيوم، ونهايته بعد الدورة بثلاثة أيام.
-            </Text>
-          </View>
-        </View>
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>
