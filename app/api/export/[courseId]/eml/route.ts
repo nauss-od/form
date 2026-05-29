@@ -65,9 +65,13 @@ export async function GET(request: Request, { params }: { params: { courseId: st
   const insuranceStart = course.startDate ? addDays(course.startDate, -1) : null;
   const insuranceEnd = course.endDate ? addDays(course.endDate, 3) : null;
 
+  const fromName = course.createdBy?.name || 'موظف التدريب';
+  const fromEmail = course.createdBy?.email || 'training@nauss.edu.sa';
   const to = 'HR@nauss.edu.sa, AAbouelatta@nauss.edu.sa';
   const cc = 'OD@nauss.edu.sa';
   const subject = `طلب إصدار تأمين طبي — ${course.activityName || 'دورة خارجية'}`;
+  const dateStr = new Date().toUTCString();
+  const msgId = `<nauss-${Date.now()}-${Math.random().toString(36).slice(2, 10)}@nauss.edu.sa>`;
 
   const body = `السلام عليكم ورحمة الله وبركاته،
 
@@ -107,30 +111,37 @@ ${course.createdBy?.name || 'موظف التدريب'}
   const boundary = 'nauss-email-boundary-2026';
   const pdfFilename = `${(course.activityName || 'course').replace(/[<>:"/\\|?*]/g, '')}-insurance.pdf`;
 
+  function wrapBase64(s: string): string {
+    return s.match(/.{1,76}/g)?.join('\r\n') || s;
+  }
+
   const eml = [
     'MIME-Version: 1.0',
-    `Content-Type: multipart/mixed; boundary="${boundary}"`,
     `To: ${to}`,
     `CC: ${cc}`,
+    `From: ${fromName} <${fromEmail}>`,
     `Subject: =?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`,
+    `Date: ${dateStr}`,
+    `Message-ID: ${msgId}`,
     'X-Mailer: NAUSS Forms Platform v1.0',
-    'X-Priority: Normal',
+    'Content-Type: multipart/mixed; boundary="' + boundary + '"',
     '',
-    `--${boundary}`,
+    '--' + boundary,
     'Content-Type: text/plain; charset="UTF-8"',
     'Content-Transfer-Encoding: base64',
     '',
-    Buffer.from(body).toString('base64'),
+    wrapBase64(Buffer.from(body).toString('base64')),
     '',
-    `--${boundary}`,
+    '--' + boundary,
     'Content-Type: application/pdf',
     'Content-Transfer-Encoding: base64',
-    `Content-Disposition: attachment; filename="${pdfFilename}"`,
+    'Content-Disposition: attachment; filename="' + pdfFilename + '"',
     '',
-    pdfBase64.match(/.{1,76}/g)?.join('\n') || pdfBase64,
+    wrapBase64(pdfBase64),
     '',
-    `--${boundary}--`,
-  ].join('\n');
+    '--' + boundary + '--',
+    '',
+  ].join('\r\n');
 
   const safeName = (course.activityName || 'course').replace(/[<>:"/\\|?*]/g, '');
 
