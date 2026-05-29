@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import AppShell from '@/components/AppShell';
 import Link from 'next/link';
 import { formatDate } from '@/lib/utils';
@@ -61,11 +61,101 @@ function LinkRow({ label, url, icon }: { label: string; url: string; icon: React
   );
 }
 
-function CourseCard({ c }: { c: Course }) {
+function MenuDots() {
+  return <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><circle cx="10" cy="4" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="10" cy="16" r="1.5"/></svg>;
+}
+
+function ConfirmDialog({ message, onConfirm, onCancel }: { message: string; onConfirm: () => void; onCancel: () => void }) {
+  return (
+    <div className="scanner-overlay" onClick={onCancel}>
+      <div className="confirm-modal" onClick={e => e.stopPropagation()}>
+        <p>{message}</p>
+        <div className="confirm-actions">
+          <button className="secondary-btn" onClick={onCancel}>إلغاء</button>
+          <button className="primary-btn" style={{ background: 'var(--danger)', boxShadow: 'none' }} onClick={onConfirm}>تأكيد الحذف</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EditModal({ course, onClose, onSaved }: { course: Course; onClose: () => void; onSaved: () => void }) {
+  const [activityName, setActivityName] = useState(course.activityName || '');
+  const [venue, setVenue] = useState(course.venue || '');
+  const [startDate, setStartDate] = useState(course.startDate ? course.startDate.split('T')[0] : '');
+  const [endDate, setEndDate] = useState(course.endDate ? course.endDate.split('T')[0] : '');
+  const [participantCount, setParticipantCount] = useState(course.participantCount?.toString() || '');
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/courses/${course.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ activityName, venue, startDate: startDate || null, endDate: endDate || null, participantCount: participantCount ? Number(participantCount) : null }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      onSaved();
+      onClose();
+    } catch { alert('فشل الحفظ'); }
+    finally { setSaving(false); }
+  }
+
+  return (
+    <div className="scanner-overlay" onClick={onClose}>
+      <div className="edit-modal" onClick={e => e.stopPropagation()}>
+        <h3>تعديل الدورة</h3>
+        <div className="edit-modal-fields">
+          <div className="field"><label>اسم النشاط</label><input className="input" value={activityName} onChange={e => setActivityName(e.target.value)} /></div>
+          <div className="field"><label>مقر الانعقاد</label><input className="input" value={venue} onChange={e => setVenue(e.target.value)} /></div>
+          <div className="edit-row">
+            <div className="field"><label>تاريخ البداية</label><input className="input" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} /></div>
+            <div className="field"><label>تاريخ النهاية</label><input className="input" type="date" value={endDate} onChange={e => setEndDate(e.target.value)} /></div>
+          </div>
+          <div className="field"><label>عدد المشاركين</label><input className="input" type="number" min="0" value={participantCount} onChange={e => setParticipantCount(e.target.value)} /></div>
+        </div>
+        <div className="confirm-actions">
+          <button className="secondary-btn" onClick={onClose}>إلغاء</button>
+          <button className="primary-btn" disabled={saving} onClick={handleSave}>{saving ? 'جاري الحفظ...' : 'حفظ التعديلات'}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CourseCard({ c, onDeleted, onEdited }: { c: Course; onDeleted: (id: string) => void; onEdited: (id: string) => void }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const pct = coursePct(c);
   const target = c.participantCount || c._count.submissions;
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    }
+    if (menuOpen) document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [menuOpen]);
+
+  async function handleDelete() {
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/courses/${c.id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error();
+      onDeleted(c.id);
+    } catch { alert('فشل الحذف'); }
+    finally { setDeleting(false); setShowDelete(false); }
+  }
+
   return (
     <div className="course-card">
+      {showDelete && <ConfirmDialog message={`هل أنت متأكد من حذف "${c.activityName || 'الدورة'}"؟`} onConfirm={handleDelete} onCancel={() => setShowDelete(false)} />}
+      {showEdit && <EditModal course={c} onClose={() => setShowEdit(false)} onSaved={() => onEdited(c.id)} />}
       <div className="course-card-top">
         <div>
           <span className={`status-chip ${c.status === 'PUBLISHED' ? 'is-open' : ''}`} style={{ fontSize: '0.72rem', minHeight: 28, padding: '0 10px' }}>
@@ -77,9 +167,20 @@ function CourseCard({ c }: { c: Course }) {
             <span><IconCal /> {formatDate(c.startDate)}</span>
           </div>
         </div>
-        <div className="course-card-figure">
-          <div className="big-stat">{c._count.submissions}</div>
-          <div className="big-stat-label">/ {target}</div>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+          <div className="course-card-figure">
+            <div className="big-stat">{c._count.submissions}</div>
+            <div className="big-stat-label">/ {target}</div>
+          </div>
+          <div ref={menuRef} style={{ position: 'relative' }}>
+            <button className="card-menu-btn" onClick={() => setMenuOpen(!menuOpen)}><MenuDots /></button>
+            {menuOpen && (
+              <div className="card-menu-dropdown">
+                <button onClick={() => { setShowEdit(true); setMenuOpen(false); }}>تعديل</button>
+                <button className="danger" onClick={() => { setShowDelete(true); setMenuOpen(false); }}>حذف</button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
       <div className="progress-section" style={{ padding: '2px 0' }}>
@@ -120,6 +221,14 @@ export default function CoursesPage() {
       .catch(() => {});
   }, []);
 
+  function removeCourse(id: string) {
+    setCourses(prev => prev.filter(c => c.id !== id));
+  }
+
+  function refreshCourse(id: string) {
+    fetch('/api/courses').then(r => r.json()).then(d => setCourses(d.courses || [])).catch(() => {});
+  }
+
   return (
     <AppShell title="الدورات" role={role}>
       {loading ? <div className="loading-wrap"><div className="loading-spinner" /><p>جاري التحميل...</p></div> : courses.length === 0 ? (
@@ -135,7 +244,7 @@ export default function CoursesPage() {
       ) : (
         <div className="course-grid">
           {courses.map(c => (
-            <CourseCard key={c.id} c={c} />
+            <CourseCard key={c.id} c={c} onDeleted={removeCourse} onEdited={refreshCourse} />
           ))}
         </div>
       )}

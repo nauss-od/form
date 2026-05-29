@@ -1726,6 +1726,7 @@ select.input:focus {
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   direction: ltr;
   text-align: center;
+  font-variant-numeric: lining-nums tabular-nums;
 }
 
 .dp-input:focus {
@@ -1798,7 +1799,7 @@ select.input:focus {
 .dp-title:hover { background: var(--nauss-soft); }
 
 .dp-month-name { font-size: 0.95rem; font-weight: 600; color: var(--nauss-ink); }
-.dp-year-name { font-size: 0.8rem; font-weight: 400; color: var(--nauss-muted); }
+.dp-year-name { font-size: 0.8rem; font-weight: 400; color: var(--nauss-muted); font-variant-numeric: lining-nums; }
 
 .dp-weekdays {
   display: grid;
@@ -1834,6 +1835,7 @@ select.input:focus {
   font-weight: 600;
   cursor: pointer;
   transition: background var(--transition-fast), color var(--transition-fast);
+  font-variant-numeric: lining-nums tabular-nums;
 }
 
 .dp-day:hover { background: var(--nauss-soft); }
@@ -1933,7 +1935,107 @@ select.input:focus {
   font-size: 0.82rem;
 }
 
-/* Premium UI pass */
+/* ────────────── Course Card Menu ────────────── */
+.card-menu-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: var(--nauss-muted);
+  transition: background 150ms var(--ease-out), color 150ms var(--ease-out);
+}
+
+.card-menu-btn:hover {
+  background: var(--nauss-soft);
+  color: var(--nauss-ink);
+}
+
+.card-menu-dropdown {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 4px);
+  z-index: 20;
+  min-width: 120px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--nauss-line);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.card-menu-dropdown button {
+  display: flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--nauss-ink);
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 150ms var(--ease-out);
+}
+
+.card-menu-dropdown button:hover { background: var(--nauss-soft); }
+.card-menu-dropdown button.danger { color: var(--danger); }
+.card-menu-dropdown button.danger:hover { background: var(--danger-soft); }
+
+/* ────────────── Confirm & Edit Modals ────────────── */
+.confirm-modal,
+.edit-modal {
+  width: min(420px, calc(100vw - 36px));
+  padding: 28px;
+  border-radius: 26px;
+  background: var(--surface);
+  border: 1px solid oklch(100% 0 0 / 0.72);
+  box-shadow: 0 38px 120px oklch(10% 0.035 185 / 0.36);
+}
+
+.confirm-modal p {
+  margin: 0 0 20px;
+  font-size: 1rem;
+  line-height: 1.8;
+  font-weight: 700;
+  color: var(--nauss-ink);
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.confirm-actions .secondary-btn,
+.confirm-actions .primary-btn {
+  flex: 1;
+  min-height: 46px;
+}
+
+.edit-modal h3 {
+  margin: 0 0 16px;
+  font-size: 1.2rem;
+  font-weight: 900;
+}
+
+.edit-modal-fields {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.edit-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* ────────────── Premium UI pass ────────────── */
 :root {
   --nauss-green: oklch(40% 0.085 184);
   --nauss-green-dark: oklch(31% 0.07 184);
@@ -2732,7 +2834,10 @@ select.input:focus,
 }
 
 .upload-zone input[type='file'] {
-  display: none;
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
 }
 
 .upload-zone:hover {
@@ -2744,6 +2849,11 @@ select.input:focus,
   border-style: solid;
   background: oklch(49% 0.11 158 / 0.07);
   border-color: oklch(49% 0.11 158 / 0.18);
+}
+
+.upload-zone.upload-error {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px var(--danger-soft);
 }
 
 .upload-empty,

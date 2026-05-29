@@ -39,21 +39,20 @@ function SuccessIcon() {
   );
 }
 
-function UploadField({ label, value, onChange, accept }: {
+function UploadField({ label, value, onChange, hasError }: {
   label: string;
   value: File | null;
   onChange: (f: File | null) => void;
-  accept: string;
+  hasError?: boolean;
 }) {
-  const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
 
   return (
     <div className="field">
       <label>{label} <span className="req">*</span></label>
       <div className="upload-stack">
-        <div className={`upload-zone ${value ? 'has-file' : ''}`} onClick={() => fileRef.current?.click()}>
-          <input ref={fileRef} type="file" accept={accept} onChange={e => onChange(e.target.files?.[0] || null)} />
+        <div className={`upload-zone ${value ? 'has-file' : ''} ${hasError ? 'upload-error' : ''}`}>
+          <input type="file" accept="image/*,application/pdf" onChange={e => onChange(e.target.files?.[0] || null)} />
           {value ? (
             <div className="upload-file-info">
               <FileIcon />
@@ -62,7 +61,7 @@ function UploadField({ label, value, onChange, accept }: {
           ) : (
             <div className="upload-empty">
               <UploadIcon />
-              <span>اختر من الملفات</span>
+              <span>اضغط لاختيار ملف</span>
             </div>
           )}
         </div>
@@ -104,7 +103,9 @@ export default function PublicFormPage({ params }: { params: { token: string } }
   const [ibanError, setIbanError] = useState('');
 
   const [passportFile, setPassportFile] = useState<File | null>(null);
+  const [passportFileError, setPassportFileError] = useState('');
   const [nationalIdFile, setNationalIdFile] = useState<File | null>(null);
+  const [nationalIdFileError, setNationalIdFileError] = useState('');
 
   const today = new Date().toISOString().split('T')[0];
   const maxBirth = new Date();
@@ -159,17 +160,17 @@ export default function PublicFormPage({ params }: { params: { token: string } }
     let hasError = false;
     if (!name) { setNameError('مطلوب'); hasError = true; }
     if (!passport) { setPassportError('مطلوب'); hasError = true; }
-    if (!/\d/.test(passport)) { setPassportError('يحتوي على أرقام'); hasError = true; }
-    if (!/^[A-Z]{1,3}\d{1,6}$/.test(passport)) { setPassportError('صيغة غير صحيحة'); hasError = true; }
+    else if (!/\d/.test(passport)) { setPassportError('يحتوي على أرقام'); hasError = true; }
+    else if (!/^[A-Z]{1,3}\d{1,6}$/.test(passport)) { setPassportError('صيغة غير صحيحة (حروف ثم أرقام)'); hasError = true; }
     if (!expiry) { setExpiryError('مطلوب'); hasError = true; }
-    if (expiry && expiry < today) { setExpiryError('لا يمكن أن يكون في الماضي'); hasError = true; }
+    else if (expiry < today) { setExpiryError('لا يمكن أن يكون في الماضي'); hasError = true; }
     if (nationalId.length !== 10) { setNationalIdError('يجب 10 أرقام'); hasError = true; }
     if (mobileSuffix.length !== 9) { setMobileError('يجب 9 أرقام'); hasError = true; }
     if (!birthDate) { setBirthDateError('مطلوب'); hasError = true; }
-    if (birthDate && birthDate > maxBirthStr) { setBirthDateError('يجب أن تكون قبل 15 سنة من اليوم'); hasError = true; }
+    else if (birthDate > maxBirthStr) { setBirthDateError('يجب أن لا يقل العمر عن ١٥ سنة'); hasError = true; }
     if (iban.length !== 24 || !/^SA\d{22}$/.test(iban)) { setIbanError('غير صحيح'); hasError = true; }
-    if (!passportFile) { hasError = true; }
-    if (!nationalIdFile) { hasError = true; }
+    if (!passportFile) { setPassportFileError('مطلوب'); hasError = true; }
+    if (!nationalIdFile) { setNationalIdFileError('مطلوب'); hasError = true; }
 
     if (hasError) { setError('يرجى تصحيح الأخطاء أعلاه'); return; }
 
@@ -349,16 +350,22 @@ export default function PublicFormPage({ params }: { params: { token: string } }
               <UploadField
                 label="صورة جواز السفر"
                 value={passportFile}
-                onChange={setPassportFile}
-                accept="image/*,application/pdf"
+                onChange={f => { setPassportFile(f); setPassportFileError(''); }}
+                hasError={!!passportFileError}
               />
               <UploadField
                 label="صورة الهوية الوطنية"
                 value={nationalIdFile}
-                onChange={setNationalIdFile}
-                accept="image/*,application/pdf"
+                onChange={f => { setNationalIdFile(f); setNationalIdFileError(''); }}
+                hasError={!!nationalIdFileError}
               />
             </div>
+            {(passportFileError || nationalIdFileError) && (
+              <div style={{ display: 'flex', gap: 14, fontSize: '0.82rem', color: 'var(--danger)', fontWeight: 800 }}>
+                {passportFileError && <span>{passportFileError}</span>}
+                {nationalIdFileError && <span>{nationalIdFileError}</span>}
+              </div>
+            )}
           </div>
 
           {error ? <div className="form-error-bar">{error}</div> : null}
