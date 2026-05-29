@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest, { params }: { params: { token: string } }) {
-  const course = await prisma.course.findUnique({ where: { publicToken: params.token } });
-  if (!course) return NextResponse.json({ message: 'الرابط غير صالح أو منتهي' }, { status: 404 });
-  if (course.endDate && new Date() > course.endDate)
-    return NextResponse.json({ message: 'انتهت صلاحية النموذج — لم يعد متاحًا لتعبئة البيانات' }, { status: 403 });
+  try {
+    const course = await prisma.course.findUnique({ where: { publicToken: params.token } });
+    if (!course) return NextResponse.json({ message: 'الرابط غير صالح أو منتهي' }, { status: 404 });
+    if (course.endDate && new Date() > course.endDate)
+      return NextResponse.json({ message: 'انتهت صلاحية النموذج — لم يعد متاحًا لتعبئة البيانات' }, { status: 403 });
 
-  const formData = await request.formData();
+    const formData = await request.formData();
 
   const fullNamePassport = String(formData.get('fullNamePassport') || '').trim();
   const passportNumber = String(formData.get('passportNumber') || '').trim();
@@ -116,4 +117,8 @@ export async function POST(request: NextRequest, { params }: { params: { token: 
   }
 
   return NextResponse.json({ success: true, message: 'تم إرسال بياناتك بنجاح' });
+  } catch (err) {
+    console.error('Public submission error:', err);
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
 }

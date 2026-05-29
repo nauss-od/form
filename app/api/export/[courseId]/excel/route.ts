@@ -6,25 +6,26 @@ import { logAudit } from '@/lib/audit';
 import ExcelJS from 'exceljs';
 
 export async function GET(_request: Request, { params }: { params: { courseId: string } }) {
-  const session = getCurrentSession();
-  if (!session) return NextResponse.json({ message: 'غير مصرح' }, { status: 401 });
+  try {
+    const session = getCurrentSession();
+    if (!session) return NextResponse.json({ message: 'غير مصرح' }, { status: 401 });
 
-  const course = await prisma.course.findUnique({
-    where: { id: params.courseId },
-    include: {
-      submissions: { include: { files: true }, orderBy: { createdAt: 'asc' } },
-      createdBy: true,
-    },
-  });
-  if (!course) return NextResponse.json({ message: 'الدورة غير موجودة' }, { status: 404 });
+    const course = await prisma.course.findUnique({
+      where: { id: params.courseId },
+      include: {
+        submissions: { include: { files: true }, orderBy: { createdAt: 'asc' } },
+        createdBy: true,
+      },
+    });
+    if (!course) return NextResponse.json({ message: 'الدورة غير موجودة' }, { status: 404 });
 
-  if (session.role !== 'MANAGER' && course.createdByUserId !== session.userId) {
-    return NextResponse.json({ message: 'غير مصرح' }, { status: 401 });
-  }
+    if (session.role !== 'MANAGER' && course.createdByUserId !== session.userId) {
+      return NextResponse.json({ message: 'غير مصرح' }, { status: 401 });
+    }
 
-  await logAudit({ userId: session.userId, action: 'EXPORT_EXCEL', entityType: 'Course', entityId: params.courseId });
+    await logAudit({ userId: session.userId, action: 'EXPORT_EXCEL', entityType: 'Course', entityId: params.courseId });
 
-  const wb = new ExcelJS.Workbook();
+    const wb = new ExcelJS.Workbook();
   wb.creator = 'منصة تأمين المشاركين';
   wb.created = new Date();
 
@@ -107,4 +108,8 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
       'Content-Disposition': `attachment; filename="${(course.activityName || 'course').replace(/[^a-zA-Z0-9\-_ ]/g, '')}-participants.xlsx"`,
     },
   });
+  } catch (err) {
+    console.error('Excel export error:', err);
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
 }
