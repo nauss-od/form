@@ -335,6 +335,23 @@ const tdS: React.CSSProperties = {
   userSelect: 'text', WebkitUserSelect: 'text',
 };
 
+function CopyBtn({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  useEffect(() => { if (!copied) return; const t = setTimeout(() => setCopied(false), 1200); return () => clearTimeout(t); }, [copied]);
+  return (
+    <button onClick={e => { e.stopPropagation(); navigator.clipboard.writeText(text).then(() => setCopied(true)); }}
+      style={{ background: copied ? '#dff0ee' : 'transparent', border: 'none', cursor: 'pointer', padding: '3px 5px', borderRadius: 6, display: 'inline-flex', alignItems: 'center', gap: 3, color: copied ? '#0a7d5c' : '#c2d0d0', fontSize: '0.62rem', fontWeight: 700, transition: 'all 0.15s' }}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        {copied
+          ? <polyline points="20 6 9 17 4 12" />
+          : <><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></>
+        }
+      </svg>
+      {copied ? 'تم' : ''}
+    </button>
+  );
+}
+
 function ExpandedContent({ participant }: { participant: Participant }) {
   const passportFile = participant.files?.find(f => f.fileType === 'PASSPORT');
   const nationalIdFile = participant.files?.find(f => f.fileType === 'NATIONAL_ID');
@@ -350,20 +367,22 @@ function ExpandedContent({ participant }: { participant: Participant }) {
 
   return (
     <div style={{ padding: '14px 24px 18px', background: '#f7fbfb' }}>
-      {/* All fields in a clean copyable layout */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 12 }}>
         {allFields.map(f => (
           <div key={f.label} style={{
             background: '#fff', borderRadius: 10, border: '1px solid #e2ebeb',
             padding: '8px 12px',
           }}>
-            <div style={{ fontSize: '0.62rem', color: '#889f9f', fontWeight: 600, marginBottom: 2, userSelect: 'text' }}>{f.label}</div>
-            <div style={{
-              fontSize: '0.82rem', color: '#014948', fontWeight: 700, userSelect: 'text',
-              direction: f.ltr ? 'ltr' : undefined, textAlign: f.ltr ? 'left' : 'right',
-              overflowWrap: 'break-word',
-            }}>
-              {f.value || '—'}
+            <div style={{ fontSize: '0.62rem', color: '#889f9f', fontWeight: 600, marginBottom: 3, userSelect: 'text' }}>{f.label}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div style={{
+                flex: 1, fontSize: '0.82rem', color: '#014948', fontWeight: 700, userSelect: 'text',
+                direction: f.ltr ? 'ltr' : undefined, textAlign: f.ltr ? 'left' : 'right',
+                overflowWrap: 'break-word',
+              }}>
+                {f.value || '—'}
+              </div>
+              <CopyBtn text={f.value || ''} />
             </div>
           </div>
         ))}
