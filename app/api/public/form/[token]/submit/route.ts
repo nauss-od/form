@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { logAudit } from '@/lib/audit';
 
 export async function POST(request: NextRequest, { params }: { params: { token: string } }) {
   try {
@@ -115,6 +116,13 @@ export async function POST(request: NextRequest, { params }: { params: { token: 
       data: { fileUrl: `/api/files/${file.id}` }
     });
   }
+
+  logAudit({
+    action: 'SUBMIT_FORM',
+    entityType: 'Course',
+    entityId: course.id,
+    meta: { fullName: fullNamePassport, passportNumber },
+  });
 
   return NextResponse.json({ success: true, message: 'تم إرسال بياناتك بنجاح' });
   } catch (err) {

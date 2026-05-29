@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
 type Role = 'MANAGER' | 'EMPLOYEE' | string;
 
@@ -70,6 +70,17 @@ export default function AppShell({ title, role = 'EMPLOYEE', forceManager = fals
     const saved = typeof window !== 'undefined' ? window.localStorage.getItem('nauss-active-role') : null;
     if (saved === 'EMPLOYEE' || saved === 'MANAGER') setActiveRole(saved);
   }, [isManagerAccount, forceManager]);
+
+  const tracked = useRef(false);
+  useEffect(() => {
+    if (tracked.current) return;
+    tracked.current = true;
+    fetch('/api/analytics/pageview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pathname }),
+    }).catch(() => {});
+  }, [pathname]);
 
   function handleRoleSwitch(nextRole: 'MANAGER' | 'EMPLOYEE') {
     setActiveRole(nextRole);

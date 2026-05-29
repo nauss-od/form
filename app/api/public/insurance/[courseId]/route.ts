@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { logAudit } from '@/lib/audit';
 
 export async function GET(_request: Request, { params }: { params: { courseId: string } }) {
   const course = await prisma.course.findUnique({
@@ -30,6 +31,13 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
     iban: s.iban,
     files: s.files,
   }));
+
+  logAudit({
+    action: 'VIEW_INSURANCE',
+    entityType: 'Course',
+    entityId: course.id,
+    meta: { participantCount: participants.length },
+  });
 
   return NextResponse.json({
     course: {

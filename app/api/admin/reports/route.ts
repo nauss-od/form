@@ -2,6 +2,32 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+async function countAudit(action: string): Promise<number> {
+  try {
+    return await prisma.auditLog.count({ where: { action } });
+  } catch { return 0; }
+}
+
+async function countAuditSince(action: string, since: Date): Promise<number> {
+  try {
+    return await prisma.auditLog.count({ where: { action, createdAt: { gte: since } } });
+  } catch { return 0; }
+}
+
+async function auditGroupByUser(action: string): Promise<{ userId: string; count: number }[]> {
+  try {
+    const logs = await prisma.auditLog.groupBy({
+      by: ['userId'],
+      where: { action, userId: { not: null } },
+      _count: { userId: true },
+      orderBy: { _count: { userId: 'desc' } },
+    });
+    return logs
+      .filter(l => l.userId)
+      .map(l => ({ userId: l.userId!, count: l._count.userId }));
+  } catch { return []; }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const session = getCurrentSession();
@@ -22,8 +48,26 @@ export async function GET(request: NextRequest) {
     if (to) dateFilter.lte = new Date(to);
     const createdAtFilter = from || to ? { createdAt: dateFilter } : {};
 
-    const whereClause = { ...employeeFilter, ...statusFilter, ...createdAtFilter };
+    // ── Audit Log Counts ──
+    const [
+      exportPdfCount, exportEmlCount, exportExcelCount,
+      loginCount, insuranceViewCount, submitFormCount, pageViewCount,
+      pdfLogins, pdfExports
+    ] = await Promise.all([
+      countAudit('EXPORT_PDF'),
+      countAudit('EXPORT_EML'),
+      countAudit('EXPORT_EXCEL'),
+      countAudit('LOGIN'),
+      countAudit('VIEW_INSURANCE'),
+      countAudit('SUBMIT_FORM'),
+      countAudit('PAGE_VIEW'),
+      auditGroupByUser('LOGIN'),
+      auditGroupByUser('EXPORT_PDF'),
+    ]);
 
+    const totalExports = exportPdfCount + exportEmlCount + exportExcelCount;
+
+    // ── Employees ──
     const employees = await prisma.user.findMany({
       where: { role: 'EMPLOYEE', isActive: true },
       select: {
@@ -31,6 +75,9 @@ export async function GET(request: NextRequest) {
         _count: { select: { courses: true } }
       }
     });
+
+    const loginMap = new Map(pdfLogins.map(l => [l.userId, l.count]));
+    const exportMap = new Map(pdfExports.map(e => [e.userId, e.count]));
 
     const enriched = await Promise.all(employees.map(async (emp) => {
       const courses = await prisma.course.findMany({
@@ -51,6 +98,8 @@ export async function GET(request: NextRequest) {
         totalCourses: emp._count.courses,
         totalSubmissions,
         activeCourses,
+        logins: loginMap.get(emp.id) || 0,
+        exports: exportMap.get(emp.id) || 0,
         createdAt: emp.createdAt.toISOString(),
         lastLoginAt: emp.lastLoginAt?.toISOString() || null,
         courses: courses.map(c => ({
@@ -66,6 +115,12 @@ export async function GET(request: NextRequest) {
       };
     }));
 
+    // Top employees
+    const sortedBySubs = [...enriched].sort((a, b) => b.totalSubmissions - a.totalSubmissions).slice(0, 5);
+    const sortedByLogins = [...enriched].sort((a, b) => (loginMap.get(b.id) || 0) - (loginMap.get(a.id) || 0)).slice(0, 5);
+    const sortedByExports = [...enriched].sort((a, b) => (exportMap.get(b.id) || 0) - (exportMap.get(a.id) || 0)).slice(0, 5);
+
+    // ── All Courses ──
     const allCourses = await prisma.course.findMany({
       where: { ...statusFilter, ...createdAtFilter },
       select: {
@@ -88,6 +143,9 @@ export async function GET(request: NextRequest) {
     const totalActive = allCourses.filter(c => c.status === 'PUBLISHED').length;
     const totalClosed = allCourses.filter(c => c.status === 'CLOSED').length;
     const activeRate = totalCourses > 0 ? Math.round((totalActive / totalCourses) * 100) : 0;
+    const coursesWithSubmissions = allCourses.filter(c => c._count.submissions > 0).length;
+    const coursesWithoutSubmissions = allCourses.filter(c => c._count.submissions === 0).length;
+    const avgSubmissionsPerCourse = totalCourses > 0 ? (totalSubmissions / totalCourses).toFixed(1) : '0';
 
     // ── Trend: submissions by month (last 12 months) ──
     const twelveMonthsAgo = new Date();
@@ -114,6 +172,33 @@ export async function GET(request: NextRequest) {
     }
     const trend = Object.entries(trendMap).map(([month, counts]) => ({ month, ...counts }));
 
+    // ── Export trend (last 12 months) ──
+    const exportTrendMap: Record<string, { pdf: number; eml: number; excel: number; total: number }> = {};
+    for (let i = 0; i < 12; i++) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - (11 - i));
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      exportTrendMap[key] = { pdf: 0, eml: 0, excel: 0, total: 0 };
+    }
+    const rawExportLogs = await prisma.auditLog.findMany({
+      where: {
+        action: { in: ['EXPORT_PDF', 'EXPORT_EML', 'EXPORT_EXCEL'] },
+        createdAt: { gte: twelveMonthsAgo },
+      },
+      select: { action: true, createdAt: true },
+      orderBy: { createdAt: 'asc' },
+    });
+    for (const l of rawExportLogs) {
+      const key = `${l.createdAt.getFullYear()}-${String(l.createdAt.getMonth() + 1).padStart(2, '0')}`;
+      if (exportTrendMap[key]) {
+        exportTrendMap[key].total++;
+        if (l.action === 'EXPORT_PDF') exportTrendMap[key].pdf++;
+        else if (l.action === 'EXPORT_EML') exportTrendMap[key].eml++;
+        else if (l.action === 'EXPORT_EXCEL') exportTrendMap[key].excel++;
+      }
+    }
+    const exportTrend = Object.entries(exportTrendMap).map(([month, counts]) => ({ month, ...counts }));
+
     return NextResponse.json({
       enriched,
       allCourses: allCourses.map(c => ({
@@ -126,8 +211,21 @@ export async function GET(request: NextRequest) {
         createdAt: c.createdAt.toISOString()
       })),
       allEmployees,
-      kpis: { totalEmployees, totalCourses, totalSubmissions, totalActive, totalClosed, activeRate },
+      kpis: {
+        totalEmployees, totalCourses, totalSubmissions,
+        totalActive, totalClosed, activeRate,
+        coursesWithSubmissions, coursesWithoutSubmissions,
+        avgSubmissionsPerCourse,
+        exportPdfCount, exportEmlCount, exportExcelCount, totalExports,
+        loginCount, insuranceViewCount, submitFormCount, pageViewCount,
+      },
       trend,
+      exportTrend,
+      topEmployees: {
+        bySubmissions: sortedBySubs.map(e => ({ id: e.id, name: e.name, count: e.totalSubmissions })),
+        byLogins: sortedByLogins.map(e => ({ id: e.id, name: e.name, count: loginMap.get(e.id) || 0 })),
+        byExports: sortedByExports.map(e => ({ id: e.id, name: e.name, count: exportMap.get(e.id) || 0 })),
+      },
     });
   } catch (err) {
     console.error('Reports error:', err);
