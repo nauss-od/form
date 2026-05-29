@@ -89,6 +89,31 @@ export async function GET(request: NextRequest) {
     const totalClosed = allCourses.filter(c => c.status === 'CLOSED').length;
     const activeRate = totalCourses > 0 ? Math.round((totalActive / totalCourses) * 100) : 0;
 
+    // ── Trend: submissions by month (last 12 months) ──
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+    const rawSubmissions = await prisma.submission.findMany({
+      where: { createdAt: { gte: twelveMonthsAgo } },
+      select: { createdAt: true, course: { select: { status: true } } },
+      orderBy: { createdAt: 'asc' },
+    });
+    const trendMap: Record<string, { total: number; published: number; closed: number }> = {};
+    for (let i = 0; i < 12; i++) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - (11 - i));
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      trendMap[key] = { total: 0, published: 0, closed: 0 };
+    }
+    for (const s of rawSubmissions) {
+      const key = `${s.createdAt.getFullYear()}-${String(s.createdAt.getMonth() + 1).padStart(2, '0')}`;
+      if (trendMap[key]) {
+        trendMap[key].total++;
+        if (s.course.status === 'PUBLISHED') trendMap[key].published++;
+        else trendMap[key].closed++;
+      }
+    }
+    const trend = Object.entries(trendMap).map(([month, counts]) => ({ month, ...counts }));
+
     return NextResponse.json({
       enriched,
       allCourses: allCourses.map(c => ({
@@ -101,7 +126,8 @@ export async function GET(request: NextRequest) {
         createdAt: c.createdAt.toISOString()
       })),
       allEmployees,
-      kpis: { totalEmployees, totalCourses, totalSubmissions, totalActive, totalClosed, activeRate }
+      kpis: { totalEmployees, totalCourses, totalSubmissions, totalActive, totalClosed, activeRate },
+      trend,
     });
   } catch (err) {
     console.error('Reports error:', err);
