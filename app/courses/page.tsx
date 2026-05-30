@@ -153,17 +153,17 @@ function CourseCard({ c, onDeleted, onEdited }: { c: Course; onDeleted: (id: str
             <span><IconCal /> {formatDate(c.startDate)}</span>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', width: '100%' }}>
           <div className="course-card-figure">
             <div className="big-stat">{c._count.submissions}</div>
             <div className="big-stat-label">/ {target}</div>
           </div>
-              <div style={{ display: 'flex', gap: 4 }}>
-            <button className="ghost-btn" style={{ minHeight: 30, minWidth: 36, padding: '0 6px', fontSize: '0.72rem' }} onClick={() => setShowEdit(true)} title="تعديل">
-              <svg viewBox="0 0 20 20" fill="none" width="14" height="14"><path d="M13.5 3.5l3 3L7 16H4v-3l9.5-9.5z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"/></svg>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button className="secondary-btn" style={{ minHeight: 34, padding: '0 10px', fontSize: '0.78rem', fontWeight: 800 }} onClick={() => setShowEdit(true)}>
+              تعديل
             </button>
-            <button className="ghost-btn" style={{ minHeight: 30, minWidth: 36, padding: '0 6px', fontSize: '0.72rem', color: 'var(--danger)' }} onClick={() => setShowDelete(true)} title="حذف">
-              <svg viewBox="0 0 20 20" fill="none" width="14" height="14"><path d="M3 5h14M8 5V3a1 1 0 011-1h2a1 1 0 011 1v2M16 5v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            <button className="secondary-btn" style={{ minHeight: 34, padding: '0 10px', fontSize: '0.78rem', fontWeight: 800, background: 'rgba(191,61,48,0.08)', color: 'var(--danger)', borderColor: 'rgba(191,61,48,0.12)' }} onClick={() => setShowDelete(true)}>
+              حذف
             </button>
           </div>
         </div>
