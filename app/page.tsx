@@ -119,6 +119,24 @@ function EditModal({ course, onClose, onSaved }: { course: Course; onClose: () =
   );
 }
 
+function mailtoHref(c: Course): string {
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const subject = encodeURIComponent(`طلب إصدار تأمين طبي — ${c.activityName || 'دورة خارجية'}`);
+  const body = encodeURIComponent(
+    `السلام عليكم ورحمة الله وبركاته،\n\n` +
+    `نرفق لكم بيانات المشاركين في الدورة التدريبية أدناه، ونأمل منكم التكرم بإصدار التأمين الطبي لهم.\n\n` +
+    `بيانات الدورة:\n` +
+    `- اسم النشاط: ${c.activityName || '—'}\n` +
+    `- مقر الانعقاد: ${c.venue || '—'}\n` +
+    `- تاريخ البداية: ${formatDate(c.startDate)}\n` +
+    `- تاريخ النهاية: ${formatDate(c.endDate)}\n` +
+    `- عدد المشاركين: ${c._count.submissions}\n\n` +
+    `رابط التأمين: ${origin}/public/insurance/${c.id}\n\n` +
+    `وتفضلوا بقبول فائق الاحترام`
+  );
+  return `mailto:?subject=${subject}&body=${body}`;
+}
+
 function CourseCard({ c, onDeleted, onEdited }: { c: Course; onDeleted: (id: string) => void; onEdited: (id: string) => void }) {
   const [showDelete, setShowDelete] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
@@ -174,7 +192,7 @@ function CourseCard({ c, onDeleted, onEdited }: { c: Course; onDeleted: (id: str
             حذف
           </button>
           <a href={`/api/export/${c.id}/pdf`} className="ghost-btn" style={{ minHeight: 26, padding: '0 6px', fontSize: '0.6rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }} title="تصدير PDF"><IconPDF /> PDF</a>
-          <a href={`/api/export/${c.id}/eml`} className="ghost-btn" style={{ minHeight: 26, padding: '0 6px', fontSize: '0.6rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }} title="تصدير EML"><IconEML /> EML</a>
+          <a href={mailtoHref(c)} className="ghost-btn" style={{ minHeight: 26, padding: '0 6px', fontSize: '0.6rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }} title="ارسال بالبريد"><IconEML /> بريد</a>
         </div>
         <Link href={`/courses/${c.id}`} className="secondary-btn" style={{ minHeight: 26, padding: '0 10px', fontSize: '0.65rem', fontWeight: 700, flexShrink: 0 }}>عرض</Link>
       </div>

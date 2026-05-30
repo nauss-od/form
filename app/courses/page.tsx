@@ -46,21 +46,6 @@ function CopyLink({ url }: { url: string }) {
   );
 }
 
-function LinkRow({ label, url, icon }: { label: string; url: string; icon: React.ReactNode }) {
-  return (
-    <div style={{ background: '#f7fafa', borderRadius: 10, border: '1px solid #e4ebeb', padding: '6px 10px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginBottom: 2 }}>
-        {icon}
-        <span style={{ fontSize: '0.58rem', fontWeight: 700, color: '#667777' }}>{label}</span>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-        <span style={{ flex: 1, fontSize: '0.66rem', color: '#014948', direction: 'ltr', textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{url}</span>
-        <CopyLink url={url} />
-      </div>
-    </div>
-  );
-}
-
 function ConfirmDialog({ message, onConfirm, onCancel }: { message: string; onConfirm: () => void; onCancel: () => void }) {
   return (
     <div className="scanner-overlay" onClick={onCancel}>
@@ -121,6 +106,24 @@ function EditModal({ course, onClose, onSaved }: { course: Course; onClose: () =
   );
 }
 
+function mailtoHref(c: Course): string {
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const subject = encodeURIComponent(`طلب إصدار تأمين طبي — ${c.activityName || 'دورة خارجية'}`);
+  const body = encodeURIComponent(
+    `السلام عليكم ورحمة الله وبركاته،\n\n` +
+    `نرفق لكم بيانات المشاركين في الدورة التدريبية أدناه، ونأمل منكم التكرم بإصدار التأمين الطبي لهم.\n\n` +
+    `بيانات الدورة:\n` +
+    `- اسم النشاط: ${c.activityName || '—'}\n` +
+    `- مقر الانعقاد: ${c.venue || '—'}\n` +
+    `- تاريخ البداية: ${formatDate(c.startDate)}\n` +
+    `- تاريخ النهاية: ${formatDate(c.endDate)}\n` +
+    `- عدد المشاركين: ${c._count.submissions}\n\n` +
+    `رابط التأمين: ${origin}/public/insurance/${c.id}\n\n` +
+    `وتفضلوا بقبول فائق الاحترام`
+  );
+  return `mailto:?subject=${subject}&body=${body}`;
+}
+
 function CourseCard({ c, onDeleted, onEdited }: { c: Course; onDeleted: (id: string) => void; onEdited: (id: string) => void }) {
   const [showDelete, setShowDelete] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
@@ -139,50 +142,68 @@ function CourseCard({ c, onDeleted, onEdited }: { c: Course; onDeleted: (id: str
   }
 
   return (
-    <div className="course-card">
+    <div className="course-card" style={{ padding: '12px 16px', gap: 8, borderRadius: 16 }}>
       {showDelete && <ConfirmDialog message={`هل أنت متأكد من حذف "${c.activityName || 'الدورة'}"؟`} onConfirm={handleDelete} onCancel={() => setShowDelete(false)} />}
       {showEdit && <EditModal course={c} onClose={() => setShowEdit(false)} onSaved={() => onEdited(c.id)} />}
-      <div className="course-card-top">
-        <div>
-          <span className={`status-chip ${c.status === 'PUBLISHED' ? 'is-open' : ''}`} style={{ fontSize: '0.72rem', minHeight: 28, padding: '0 10px' }}>
-            {c.status === 'PUBLISHED' ? 'نشط' : 'مغلق'}
-          </span>
-          <strong className="course-card-title">{c.activityName || 'دورة تدريبية'}</strong>
-          <div className="course-card-meta">
+      <div className="course-card-top" style={{ gap: 8 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <span className={`status-chip ${c.status === 'PUBLISHED' ? 'is-open' : ''}`} style={{ minHeight: 22, fontSize: '0.62rem', padding: '0 8px' }}>
+              {c.status === 'PUBLISHED' ? 'نشط' : 'مغلق'}
+            </span>
+            <strong style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--nauss-ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>{c.activityName || 'دورة تدريبية'}</strong>
+            <div className="course-card-figure" style={{ flexShrink: 0 }}>
+              <span style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--nauss-green-dark)' }}>{c._count.submissions}</span>
+              <span style={{ fontSize: '0.65rem', color: 'var(--nauss-muted)' }}>&nbsp;/ {target}</span>
+            </div>
+          </div>
+          <div className="course-card-meta" style={{ fontSize: '0.68rem', marginTop: 1, gap: 6 }}>
             <span><IconLoc /> {c.venue || '—'}</span>
             <span><IconCal /> {formatDate(c.startDate)}</span>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', width: '100%' }}>
-          <div className="course-card-figure">
-            <div className="big-stat">{c._count.submissions}</div>
-            <div className="big-stat-label">/ {target}</div>
-          </div>
-          <div style={{ display: 'flex', gap: 6 }}>
-            <button className="secondary-btn" style={{ minHeight: 34, padding: '0 10px', fontSize: '0.78rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 5 }} onClick={() => setShowEdit(true)}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              تعديل
-            </button>
-            <button className="secondary-btn" style={{ minHeight: 34, padding: '0 10px', fontSize: '0.78rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(191,61,48,0.08)', color: 'var(--danger)', borderColor: 'rgba(191,61,48,0.12)' }} onClick={() => setShowDelete(true)}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-              حذف
-            </button>
-          </div>
-        </div>
       </div>
-      <div className="progress-section" style={{ padding: '2px 0' }}>
-        <div className="progress-bar" style={{ margin: 0 }}>
+      <div className="progress-section" style={{ padding: 0 }}>
+        <div className="progress-bar" style={{ margin: 0, height: 3 }}>
           <div className="progress-fill" style={{ width: `${pct}%` }} />
         </div>
       </div>
-      <div style={{ padding: '0 16px 4px', display: 'flex', flexDirection: 'column', gap: 5 }}>
-        <LinkRow label="رابط النموذج" url={courseUrl(c)} icon={<IconForm />} />
-        <LinkRow label="رابط التأمين" url={insuranceUrl(c)} icon={<IconShield />} />
+      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
+          <button className="secondary-btn" style={{ minHeight: 26, padding: '0 6px', fontSize: '0.62rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 3 }} onClick={() => setShowEdit(true)}>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            تعديل
+          </button>
+          <button className="secondary-btn" style={{ minHeight: 26, padding: '0 6px', fontSize: '0.62rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 3, background: 'rgba(191,61,48,0.08)', color: 'var(--danger)', borderColor: 'rgba(191,61,48,0.12)' }} onClick={() => setShowDelete(true)}>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+            حذف
+          </button>
+          <a href={`/api/export/${c.id}/pdf`} className="ghost-btn" style={{ minHeight: 26, padding: '0 6px', fontSize: '0.6rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }} title="تصدير PDF"><IconPDF /> PDF</a>
+          <a href={mailtoHref(c)} className="ghost-btn" style={{ minHeight: 26, padding: '0 6px', fontSize: '0.6rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }} title="ارسال بالبريد"><IconEML /> بريد</a>
+        </div>
+        <Link href={`/courses/${c.id}`} className="secondary-btn" style={{ minHeight: 26, padding: '0 10px', fontSize: '0.65rem', fontWeight: 700, flexShrink: 0 }}>عرض</Link>
       </div>
-      <div className="course-card-actions">
-        <Link href={`/courses/${c.id}`} className="secondary-btn" style={{ minHeight: 38, fontSize: '0.82rem' }}>عرض</Link>
-        <a href={`/api/export/${c.id}/pdf`} className="ghost-btn" style={{ minHeight: 38, fontSize: '0.82rem' }} title="تصدير PDF"><IconPDF /></a>
-        <a href={`/api/export/${c.id}/eml`} className="ghost-btn" style={{ minHeight: 38, fontSize: '0.82rem' }} title="تصدير EML"><IconEML /></a>
+      <div style={{ display: 'flex', gap: 4 }}>
+        <div style={{ flex: 1, background: '#f7fafa', borderRadius: 6, border: '1px solid #e4ebeb', padding: '4px 6px', minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 2, marginBottom: 1 }}>
+            <IconForm />
+            <span style={{ fontSize: '0.5rem', fontWeight: 700, color: '#667777' }}>النموذج</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            <span style={{ flex: 1, fontSize: '0.52rem', color: '#014948', direction: 'ltr', textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{courseUrl(c)}</span>
+            <CopyLink url={courseUrl(c)} />
+          </div>
+        </div>
+        <div style={{ flex: 1, background: '#f7fafa', borderRadius: 6, border: '1px solid #e4ebeb', padding: '4px 6px', minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 2, marginBottom: 1 }}>
+            <IconShield />
+            <span style={{ fontSize: '0.5rem', fontWeight: 700, color: '#667777' }}>التأمين</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            <span style={{ flex: 1, fontSize: '0.52rem', color: '#014948', direction: 'ltr', textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{insuranceUrl(c)}</span>
+            <CopyLink url={insuranceUrl(c)} />
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -248,7 +269,7 @@ export default function CoursesPage() {
               <span style={{ fontSize: '0.82rem', color: 'var(--nauss-muted)', fontWeight: 600 }}>دورات نشطة</span>
             </div>
           </div>
-          <div className="course-grid">
+          <div className="course-grid" style={{ gridTemplateColumns: '1fr', gap: 12 }}>
             {courses.map(c => (
               <CourseCard key={c.id} c={c} onDeleted={removeCourse} onEdited={refreshCourse} />
             ))}

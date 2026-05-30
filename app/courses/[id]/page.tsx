@@ -94,7 +94,18 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
                 <button className="secondary-btn" onClick={() => { navigator.clipboard.writeText(publicUrl); alert('تم نسخ الرابط'); }}>رابط النموذج</button>
                 <button className="secondary-btn" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/public/insurance/${course.id}`); alert('تم نسخ رابط التأمين'); }}>رابط التأمين</button>
                 <a href={`/api/export/${course.id}/pdf`} className="secondary-btn">تصدير PDF</a>
-                <a href={`/api/export/${course.id}/eml`} className="secondary-btn">ارسال بالبريد</a>
+                <a href={`mailto:?subject=${encodeURIComponent('طلب إصدار تأمين طبي — ' + (course.activityName || 'دورة خارجية'))}&body=${encodeURIComponent(
+                  'السلام عليكم ورحمة الله وبركاته،\n\n' +
+                  'نرفق لكم بيانات المشاركين في الدورة التدريبية أدناه، ونأمل منكم التكرم بإصدار التأمين الطبي لهم.\n\n' +
+                  'بيانات الدورة:\n' +
+                  `- اسم النشاط: ${course.activityName || '—'}\n` +
+                  `- مقر الانعقاد: ${course.venue || '—'}\n` +
+                  `- تاريخ البداية: ${formatDate(course.startDate)}\n` +
+                  `- تاريخ النهاية: ${formatDate(course.endDate)}\n` +
+                  `- عدد المشاركين: ${course.submissions.length}\n\n` +
+                  `رابط التأمين: ${typeof window !== 'undefined' ? window.location.origin : ''}/public/insurance/${course.id}\n\n` +
+                  'وتفضلوا بقبول فائق الاحترام'
+                )}`} className="secondary-btn">ارسال بالبريد</a>
                 <a href={`/insurance/${course.id}`} className="secondary-btn">مراجعة التأمين</a>
               </div>
             </>
