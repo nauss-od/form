@@ -1,7 +1,15 @@
 'use client';
 
-import { FormEvent, useRef, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import SmartDatePicker from '@/components/SmartDatePicker';
+
+function CheckIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
 
 function UploadIcon() {
   return (
@@ -79,6 +87,9 @@ export default function PublicFormPage({ params }: { params: { token: string } }
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [step, setStep] = useState(1);
+  const [animDir, setAnimDir] = useState<'next' | 'prev'>('next');
+  const [animating, setAnimating] = useState(false);
 
   const [name, setName] = useState('');
   const [nameError, setNameError] = useState('');
@@ -153,8 +164,49 @@ export default function PublicFormPage({ params }: { params: { token: string } }
     else setIbanError('');
   }
 
+  function validateStep(s: number): boolean {
+    let ok = true;
+    if (s === 1) {
+      if (!name) { setNameError('مطلوب'); ok = false; }
+      if (!passport) { setPassportError('مطلوب'); ok = false; }
+      else if (!/\d/.test(passport)) { setPassportError('يحتوي على أرقام'); ok = false; }
+      else if (!/^[A-Z]{1,3}\d{1,6}$/.test(passport)) { setPassportError('صيغة غير صحيحة'); ok = false; }
+      if (!expiry) { setExpiryError('مطلوب'); ok = false; }
+      else if (expiry < today) { setExpiryError('لا يمكن أن يكون في الماضي'); ok = false; }
+      if (nationalId.length !== 10) { setNationalIdError('يجب 10 أرقام'); ok = false; }
+      if (mobileSuffix.length !== 9) { setMobileError('يجب 9 أرقام'); ok = false; }
+    }
+    if (s === 2) {
+      if (!birthDate) { setBirthDateError('مطلوب'); ok = false; }
+      else if (birthDate > maxBirthStr) { setBirthDateError('يجب أن لا يقل العمر عن ١٥ سنة'); ok = false; }
+      if (iban.length !== 24 || !/^SA\d{22}$/.test(iban)) { setIbanError('غير صحيح'); ok = false; }
+    }
+    if (s === 3) {
+      if (!passportFile) { setPassportFileError('مطلوب'); ok = false; }
+      if (!nationalIdFile) { setNationalIdFileError('مطلوب'); ok = false; }
+    }
+    return ok;
+  }
+
+  function goNext() {
+    if (animating) return;
+    if (!validateStep(step)) { setError('يرجى تصحيح الأخطاء أعلاه'); return; }
+    setError('');
+    setAnimDir('next');
+    setAnimating(true);
+    setTimeout(() => { setStep(s => s + 1); setAnimating(false); }, 220);
+  }
+
+  function goBack() {
+    if (animating) return;
+    setAnimDir('prev');
+    setAnimating(true);
+    setTimeout(() => { setStep(s => s - 1); setAnimating(false); }, 220);
+  }
+
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (animating) return;
     setError('');
 
     let hasError = false;
@@ -210,6 +262,8 @@ export default function PublicFormPage({ params }: { params: { token: string } }
     );
   }
 
+  const stepLabels = ['البيانات الشخصية', 'معلومات إضافية', 'المرفقات'];
+
   return (
     <div className="public-page">
       <div className="public-card">
@@ -219,168 +273,188 @@ export default function PublicFormPage({ params }: { params: { token: string } }
           <p>يرجى تعبئة البيانات بدقة حسب جواز السفر — جامعة نايف العربية للعلوم الأمنية</p>
         </div>
 
-        <form onSubmit={handleSubmit} encType="multipart/form-data" className="form-body">
-
-          <div className="form-section">
-            <div className="section-step">
-              <span className="step-num">1</span>
-              <h3>البيانات الشخصية</h3>
-            </div>
-
-            <div className="field">
-              <label>الاسم حسب جواز السفر <span className="req">*</span></label>
-              <input
-                className={`input ${nameError ? 'input-error' : ''} ${name && !nameError ? 'input-valid' : ''}`}
-                value={name}
-                onChange={e => { setName(e.target.value); validateName(e.target.value); }}
-                placeholder="Full name as in passport"
-                dir="ltr"
-              />
-              {nameError && <span className="field-error">{nameError}</span>}
-            </div>
-
-            <div className="form-row">
-              <div className="field">
-                <label>رقم جواز السفر <span className="req">*</span></label>
-                <input
-                  className={`input ltr ${passportError ? 'input-error' : ''} ${passport && !passportError ? 'input-valid' : ''}`}
-                  value={passport}
-                  onChange={e => handlePassportChange(e.target.value)}
-                  placeholder="مثال: AB12345"
-                  dir="ltr"
-                  style={{ letterSpacing: 1 }}
-                />
-                {passportError ? <span className="field-error">{passportError}</span> : <span className="field-hint">{passport.length}/7 — حروف إنجليزية ثم أرقام</span>}
-              </div>
-              <div className="field">
-                <label>تاريخ انتهاء الجواز <span className="req">*</span></label>
-                <SmartDatePicker
-                  value={expiry}
-                  onChange={v => { setExpiry(v); setExpiryError(''); }}
-                  min={today}
-                  placeholder="اختر تاريخ الانتهاء"
-                  quickButtons={[
-                    { label: '+ ٥ سنوات', offsetYears: 5 },
-                    { label: '+ ١٠ سنوات', offsetYears: 10 },
-                  ]}
-                />
-                {expiryError && <span className="field-error">{expiryError}</span>}
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="field">
-                <label>رقم الهوية الوطنية <span className="req">*</span></label>
-                <input
-                  className={`input ltr ${nationalIdError ? 'input-error' : ''} ${nationalId.length === 10 ? 'input-valid' : ''}`}
-                  value={nationalId}
-                  onChange={e => handleNationalId(e.target.value)}
-                  placeholder="١٠ أرقام"
-                  dir="ltr"
-                  inputMode="numeric"
-                  style={{ letterSpacing: 1 }}
-                />
-                {nationalIdError ? <span className="field-error">{nationalIdError}</span> : <span className="field-hint">{nationalId.length}/10 أرقام</span>}
-              </div>
-              <div className="field">
-                <label>رقم الجوال <span className="req">*</span></label>
-                <div className="mobile-wrap">
-                  <div className="mobile-prefix">{mobilePrefix}</div>
-                  <input
-                    className={`input mobile-input ${mobileError ? 'input-error' : ''} ${mobileSuffix.length === 9 ? 'input-valid' : ''}`}
-                    value={mobileSuffix}
-                    onChange={e => handleMobileSuffix(e.target.value)}
-                    placeholder="٥٠١٢٣٤٥٦٧"
-                    inputMode="numeric"
-                  />
+        <div className="wizard-top">
+          <div className="wizard-bar">
+            <div className="wizard-bar-fill" style={{ width: `${((step - 1) / 2) * 100}%` }} />
+          </div>
+          <div className="wizard-steps">
+            {[1, 2, 3].map(s => (
+              <div key={s} className={`wizard-step ${s === step ? 'active' : ''} ${s < step ? 'done' : ''}`}>
+                <div className="wizard-dot">
+                  {s < step ? <CheckIcon /> : s}
                 </div>
-                {mobileError ? <span className="field-error">{mobileError}</span> : <span className="field-hint">{mobileSuffix.length}/9 أرقام</span>}
+                <span>{stepLabels[s - 1]}</span>
               </div>
-            </div>
+            ))}
           </div>
+        </div>
 
-          <div className="form-divider" />
+        <form onSubmit={handleSubmit} encType="multipart/form-data" className="form-body" style={{ paddingTop: 0 }}>
 
-          <div className="form-section">
-            <div className="section-step">
-              <span className="step-num">2</span>
-              <h3>معلومات إضافية</h3>
-            </div>
+          <div key={step} className={`step-content ${animating ? (animDir === 'next' ? 'exit-next' : 'exit-prev') : ''}`}>
 
-            <div className="form-row">
-              <div className="field">
-                <label>تاريخ الميلاد <span className="req">*</span></label>
-                <SmartDatePicker
-                  value={birthDate}
-                  onChange={v => { setBirthDate(v); setBirthDateError(''); }}
-                  max={maxBirthStr}
-                  placeholder="اختر تاريخ الميلاد"
-                  quickButtons={[
-                    { label: '٢٥ سنة', offsetYears: -25 },
-                    { label: '٣٠ سنة', offsetYears: -30 },
-                    { label: '٤٠ سنة', offsetYears: -40 },
-                  ]}
-                />
-                {birthDateError ? <span className="field-error">{birthDateError}</span> : <span className="field-hint">يجب أن لا يقل العمر عن ١٥ سنة</span>}
-              </div>
-              <div className="field">
-                <label>رقم الآيبان البنكي <span className="req">*</span></label>
-                <input
-                  className={`input ltr ${ibanError ? 'input-error' : ''} ${iban.length === 24 && /^SA\d{22}$/.test(iban) ? 'input-valid' : ''}`}
-                  value={iban}
-                  onChange={e => handleIban(e.target.value)}
-                  placeholder="SA0380000000608010167519"
-                  dir="ltr"
-                  style={{ letterSpacing: 1 }}
-                />
-                {ibanError ? <span className="field-error">{ibanError}</span> : <span className="field-hint">{iban.length}/24 — SA + 22 رقم</span>}
-              </div>
-            </div>
-          </div>
+            {step === 1 && (
+              <div className="form-section" style={{ gap: 18 }}>
+                <div className="field">
+                  <label>الاسم حسب جواز السفر <span className="req">*</span></label>
+                  <input
+                    className={`input ${nameError ? 'input-error' : ''} ${name && !nameError ? 'input-valid' : ''}`}
+                    value={name}
+                    onChange={e => { setName(e.target.value); validateName(e.target.value); }}
+                    placeholder="Full name as in passport"
+                    dir="ltr"
+                  />
+                  {nameError && <span className="field-error">{nameError}</span>}
+                </div>
 
-          <div className="form-divider" />
+                <div className="form-row">
+                  <div className="field">
+                    <label>رقم جواز السفر <span className="req">*</span></label>
+                    <input
+                      className={`input ltr ${passportError ? 'input-error' : ''} ${passport && !passportError ? 'input-valid' : ''}`}
+                      value={passport}
+                      onChange={e => handlePassportChange(e.target.value)}
+                      placeholder="مثال: AB12345"
+                      dir="ltr"
+                      style={{ letterSpacing: 1 }}
+                    />
+                    {passportError ? <span className="field-error">{passportError}</span> : <span className="field-hint">{passport.length}/7 — حروف إنجليزية ثم أرقام</span>}
+                  </div>
+                  <div className="field">
+                    <label>تاريخ انتهاء الجواز <span className="req">*</span></label>
+                    <SmartDatePicker
+                      value={expiry}
+                      onChange={v => { setExpiry(v); setExpiryError(''); }}
+                      min={today}
+                      placeholder="اختر تاريخ الانتهاء"
+                      quickButtons={[
+                        { label: '+ ٥ سنوات', offsetYears: 5 },
+                        { label: '+ ١٠ سنوات', offsetYears: 10 },
+                      ]}
+                    />
+                    {expiryError && <span className="field-error">{expiryError}</span>}
+                  </div>
+                </div>
 
-          <div className="form-section">
-            <div className="section-step">
-              <span className="step-num">3</span>
-              <h3>المرفقات</h3>
-            </div>
-
-            <div className="form-row">
-              <UploadField
-                label="صورة جواز السفر"
-                value={passportFile}
-                onChange={f => { setPassportFile(f); setPassportFileError(''); }}
-                hasError={!!passportFileError}
-              />
-              <UploadField
-                label="صورة الهوية الوطنية"
-                value={nationalIdFile}
-                onChange={f => { setNationalIdFile(f); setNationalIdFileError(''); }}
-                hasError={!!nationalIdFileError}
-              />
-            </div>
-            {(passportFileError || nationalIdFileError) && (
-              <div style={{ display: 'flex', gap: 14, fontSize: '0.82rem', color: 'var(--danger)', fontWeight: 800 }}>
-                {passportFileError && <span>{passportFileError}</span>}
-                {nationalIdFileError && <span>{nationalIdFileError}</span>}
+                <div className="form-row">
+                  <div className="field">
+                    <label>رقم الهوية الوطنية <span className="req">*</span></label>
+                    <input
+                      className={`input ltr ${nationalIdError ? 'input-error' : ''} ${nationalId.length === 10 ? 'input-valid' : ''}`}
+                      value={nationalId}
+                      onChange={e => handleNationalId(e.target.value)}
+                      placeholder="١٠ أرقام"
+                      dir="ltr"
+                      inputMode="numeric"
+                      style={{ letterSpacing: 1 }}
+                    />
+                    {nationalIdError ? <span className="field-error">{nationalIdError}</span> : <span className="field-hint">{nationalId.length}/10 أرقام</span>}
+                  </div>
+                  <div className="field">
+                    <label>رقم الجوال <span className="req">*</span></label>
+                    <div className="mobile-wrap">
+                      <div className="mobile-prefix">{mobilePrefix}</div>
+                      <input
+                        className={`input mobile-input ${mobileError ? 'input-error' : ''} ${mobileSuffix.length === 9 ? 'input-valid' : ''}`}
+                        value={mobileSuffix}
+                        onChange={e => handleMobileSuffix(e.target.value)}
+                        placeholder="٥٠١٢٣٤٥٦٧"
+                        inputMode="numeric"
+                      />
+                    </div>
+                    {mobileError ? <span className="field-error">{mobileError}</span> : <span className="field-hint">{mobileSuffix.length}/9 أرقام</span>}
+                  </div>
+                </div>
               </div>
             )}
+
+            {step === 2 && (
+              <div className="form-section" style={{ gap: 18 }}>
+                <div className="form-row">
+                  <div className="field">
+                    <label>تاريخ الميلاد <span className="req">*</span></label>
+                    <SmartDatePicker
+                      value={birthDate}
+                      onChange={v => { setBirthDate(v); setBirthDateError(''); }}
+                      max={maxBirthStr}
+                      placeholder="اختر تاريخ الميلاد"
+                      quickButtons={[
+                        { label: '٢٥ سنة', offsetYears: -25 },
+                        { label: '٣٠ سنة', offsetYears: -30 },
+                        { label: '٤٠ سنة', offsetYears: -40 },
+                      ]}
+                    />
+                    {birthDateError ? <span className="field-error">{birthDateError}</span> : <span className="field-hint">يجب أن لا يقل العمر عن ١٥ سنة</span>}
+                  </div>
+                  <div className="field">
+                    <label>رقم الآيبان البنكي <span className="req">*</span></label>
+                    <input
+                      className={`input ltr ${ibanError ? 'input-error' : ''} ${iban.length === 24 && /^SA\d{22}$/.test(iban) ? 'input-valid' : ''}`}
+                      value={iban}
+                      onChange={e => handleIban(e.target.value)}
+                      placeholder="SA0380000000608010167519"
+                      dir="ltr"
+                      style={{ letterSpacing: 1 }}
+                    />
+                    {ibanError ? <span className="field-error">{ibanError}</span> : <span className="field-hint">{iban.length}/24 — SA + 22 رقم</span>}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div className="form-section" style={{ gap: 18 }}>
+                <div className="form-row">
+                  <UploadField
+                    label="صورة جواز السفر"
+                    value={passportFile}
+                    onChange={f => { setPassportFile(f); setPassportFileError(''); }}
+                    hasError={!!passportFileError}
+                  />
+                  <UploadField
+                    label="صورة الهوية الوطنية"
+                    value={nationalIdFile}
+                    onChange={f => { setNationalIdFile(f); setNationalIdFileError(''); }}
+                    hasError={!!nationalIdFileError}
+                  />
+                </div>
+                {(passportFileError || nationalIdFileError) && (
+                  <div style={{ display: 'flex', gap: 14, fontSize: '0.82rem', color: 'var(--danger)', fontWeight: 800 }}>
+                    {passportFileError && <span>{passportFileError}</span>}
+                    {nationalIdFileError && <span>{nationalIdFileError}</span>}
+                  </div>
+                )}
+              </div>
+            )}
+
           </div>
 
           {error ? <div className="form-error-bar">{error}</div> : null}
 
-          <button className="btn btn-primary submit-btn" type="submit" disabled={loading}>
-            {loading ? (
-              <span className="btn-loading">
-                <svg className="spinner" viewBox="0 0 24 24" fill="none" width="20" height="20">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" opacity="0.25"/>
-                  <path d="M12 2a10 10 0 019.95 9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
-                </svg>
-                جاري الإرسال...
-              </span>
-            ) : 'إرسال البيانات'}
-          </button>
+          <div className="wizard-nav">
+            {step > 1 ? (
+              <button type="button" className="secondary-btn" onClick={goBack}>
+                السابق
+              </button>
+            ) : <div />}
+            {step < 3 ? (
+              <button type="button" className="primary-btn" onClick={goNext}>
+                التالي
+              </button>
+            ) : (
+              <button className="primary-btn" type="submit" disabled={loading} style={{ width: 'auto' }}>
+                {loading ? (
+                  <span className="btn-loading">
+                    <svg className="spinner" viewBox="0 0 24 24" fill="none" width="20" height="20">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" opacity="0.25"/>
+                      <path d="M12 2a10 10 0 019.95 9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+                    </svg>
+                    جاري الإرسال...
+                  </span>
+                ) : 'إرسال البيانات'}
+              </button>
+            )}
+          </div>
 
           <p className="form-footer-note">
             جميع البيانات مشفرة ومحمية — تستخدم لأغراض التأمين الطبي فقط

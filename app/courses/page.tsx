@@ -195,7 +195,6 @@ export default function CoursesPage() {
     fetch('/api/courses')
       .then(r => { if (!r.ok) throw new Error(); return r.json(); })
       .then(d => {
-        const roleFromApi = d.courses?.[0]?.createdBy ? 'MANAGER' : 'EMPLOYEE';
         setCourses(d.courses || []);
       })
       .catch(() => { window.location.href = '/login'; })
@@ -210,9 +209,12 @@ export default function CoursesPage() {
     setCourses(prev => prev.filter(c => c.id !== id));
   }
 
-  function refreshCourse(id: string) {
+  function refreshCourse() {
     fetch('/api/courses').then(r => r.json()).then(d => setCourses(d.courses || [])).catch(() => {});
   }
+
+  const totalSubmissions = courses.reduce((a, c) => a + c._count.submissions, 0);
+  const activeCourses = courses.filter(c => c.status === 'PUBLISHED').length;
 
   return (
     <AppShell title="الدورات" role={role}>
@@ -227,11 +229,29 @@ export default function CoursesPage() {
           </div>
         </div>
       ) : (
-        <div className="course-grid">
-          {courses.map(c => (
-            <CourseCard key={c.id} c={c} onDeleted={removeCourse} onEdited={refreshCourse} />
-          ))}
-        </div>
+        <>
+          <div className="section-card" style={{ padding: '18px 22px', display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+              <span style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--nauss-green-dark)' }}>{courses.length}</span>
+              <span style={{ fontSize: '0.82rem', color: 'var(--nauss-muted)', fontWeight: 600 }}>إجمالي الدورات</span>
+            </div>
+            <div style={{ width: 1, height: 28, background: 'var(--nauss-line)' }} />
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+              <span style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--nauss-green-dark)' }}>{totalSubmissions}</span>
+              <span style={{ fontSize: '0.82rem', color: 'var(--nauss-muted)', fontWeight: 600 }}>إجمالي المسجلين</span>
+            </div>
+            <div style={{ width: 1, height: 28, background: 'var(--nauss-line)' }} />
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+              <span style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--nauss-green-dark)' }}>{activeCourses}</span>
+              <span style={{ fontSize: '0.82rem', color: 'var(--nauss-muted)', fontWeight: 600 }}>دورات نشطة</span>
+            </div>
+          </div>
+          <div className="course-grid">
+            {courses.map(c => (
+              <CourseCard key={c.id} c={c} onDeleted={removeCourse} onEdited={refreshCourse} />
+            ))}
+          </div>
+        </>
       )}
     </AppShell>
   );
