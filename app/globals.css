@@ -1518,6 +1518,31 @@ select.input:focus {
 
 .course-actions { margin-top: 14px; }
 
+.course-hero .course-actions .secondary-btn {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+.course-hero .course-actions .secondary-btn:hover {
+  background: rgba(255, 255, 255, 0.20);
+}
+.course-hero .course-actions .link-preview {
+  background: rgba(0, 0, 0, 0.25);
+  border-color: rgba(255, 255, 255, 0.10);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.78rem;
+  padding: 8px 14px;
+}
+.course-hero .course-meta span svg,
+.course-hero .course-actions .secondary-btn svg {
+  filter: brightness(0) invert(1);
+  opacity: 0.85;
+}
+.course-hero .status-chip.is-open {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
 /* ────────────── Progress Bars ────────────── */
 .progress-bar-lg {
   height: 6px;

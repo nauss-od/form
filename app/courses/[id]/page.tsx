@@ -95,7 +95,7 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
                 <button className="secondary-btn" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/public/insurance/${course.id}`); alert('تم نسخ رابط التأمين'); }}>رابط التأمين</button>
                 <a href={`/api/export/${course.id}/pdf`} className="secondary-btn"><IconPDF /></a>
                 <a href={`/api/export/${course.id}/eml`} className="secondary-btn"><IconEML /></a>
-                <a href={`/insurance/${course.id}`} className="secondary-btn" style={{ background: '#016564', color: '#fff' }}>مراجعة التأمين</a>
+                <a href={`/insurance/${course.id}`} className="secondary-btn">مراجعة التأمين</a>
               </div>
             </>
           ) : null}

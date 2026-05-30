@@ -74,11 +74,87 @@ function LinkRow({ label, url, icon }: { label: string; url: string; icon: React
   );
 }
 
-function CourseCard({ c }: { c: Course }) {
+function ConfirmDialog({ message, onConfirm, onCancel }: { message: string; onConfirm: () => void; onCancel: () => void }) {
+  return (
+    <div className="scanner-overlay" onClick={onCancel}>
+      <div className="confirm-modal" onClick={e => e.stopPropagation()}>
+        <p>{message}</p>
+        <div className="confirm-actions">
+          <button className="secondary-btn" onClick={onCancel}>إلغاء</button>
+          <button className="primary-btn" style={{ background: 'var(--danger)', boxShadow: 'none' }} onClick={onConfirm}>تأكيد الحذف</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EditModal({ course, onClose, onSaved }: { course: Course; onClose: () => void; onSaved: () => void }) {
+  const [activityName, setActivityName] = useState(course.activityName || '');
+  const [venue, setVenue] = useState(course.venue || '');
+  const [startDate, setStartDate] = useState(course.startDate ? course.startDate.split('T')[0] : '');
+  const [endDate, setEndDate] = useState(course.endDate ? course.endDate.split('T')[0] : '');
+  const [participantCount, setParticipantCount] = useState(course.participantCount?.toString() || '');
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/courses/${course.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ activityName, venue, startDate: startDate || null, endDate: endDate || null, participantCount: participantCount ? Number(participantCount) : null }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      onSaved();
+      onClose();
+    } catch { alert('فشل الحفظ'); }
+    finally { setSaving(false); }
+  }
+
+  return (
+    <div className="scanner-overlay" onClick={onClose}>
+      <div className="edit-modal" onClick={e => e.stopPropagation()}>
+        <h3>تعديل الدورة</h3>
+        <div className="edit-modal-fields">
+          <div className="field"><label>اسم النشاط</label><input className="input" value={activityName} onChange={e => setActivityName(e.target.value)} /></div>
+          <div className="field"><label>مقر الانعقاد</label><input className="input" value={venue} onChange={e => setVenue(e.target.value)} /></div>
+          <div className="edit-row">
+            <div className="field"><label>تاريخ البداية</label><input className="input" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} /></div>
+            <div className="field"><label>تاريخ النهاية</label><input className="input" type="date" value={endDate} onChange={e => setEndDate(e.target.value)} /></div>
+          </div>
+          <div className="field"><label>عدد المشاركين</label><input className="input" type="number" min="0" value={participantCount} onChange={e => setParticipantCount(e.target.value)} /></div>
+        </div>
+        <div className="confirm-actions">
+          <button className="secondary-btn" onClick={onClose}>إلغاء</button>
+          <button className="primary-btn" disabled={saving} onClick={handleSave}>{saving ? 'جاري الحفظ...' : 'حفظ التعديلات'}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CourseCard({ c, onDeleted, onEdited }: { c: Course; onDeleted: (id: string) => void; onEdited: (id: string) => void }) {
+  const [showDelete, setShowDelete] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const pct = coursePct(c);
   const target = c.participantCount || c._count.submissions;
+
+  async function handleDelete() {
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/courses/${c.id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error();
+      onDeleted(c.id);
+    } catch { alert('فشل الحذف'); }
+    finally { setDeleting(false); setShowDelete(false); }
+  }
+
   return (
     <div className="course-card">
+      {showDelete && <ConfirmDialog message={`هل أنت متأكد من حذف "${c.activityName || 'الدورة'}"؟`} onConfirm={handleDelete} onCancel={() => setShowDelete(false)} />}
+      {showEdit && <EditModal course={c} onClose={() => setShowEdit(false)} onSaved={() => onEdited(c.id)} />}
       <div className="course-card-top">
         <div>
           <span className={`status-chip ${c.status === 'PUBLISHED' ? 'is-open' : ''}`}>
@@ -90,13 +166,25 @@ function CourseCard({ c }: { c: Course }) {
             <span><IconCal /> {formatDate(c.startDate)}</span>
           </div>
         </div>
-        <div className="course-card-figure">
-          <div className="big-stat">{c._count.submissions}</div>
-          <div className="big-stat-label">/ {target}</div>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', width: '100%' }}>
+          <div className="course-card-figure">
+            <div className="big-stat">{c._count.submissions}</div>
+            <div className="big-stat-label">/ {target}</div>
+          </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button className="secondary-btn" style={{ minHeight: 34, padding: '0 10px', fontSize: '0.78rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 5 }} onClick={() => setShowEdit(true)}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              تعديل
+            </button>
+            <button className="secondary-btn" style={{ minHeight: 34, padding: '0 10px', fontSize: '0.78rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(191,61,48,0.08)', color: 'var(--danger)', borderColor: 'rgba(191,61,48,0.12)' }} onClick={() => setShowDelete(true)}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+              حذف
+            </button>
+          </div>
         </div>
       </div>
-      <div className="progress-section">
-        <div className="progress-bar">
+      <div className="progress-section" style={{ padding: '2px 0' }}>
+        <div className="progress-bar" style={{ margin: 0 }}>
           <div className="progress-fill" style={{ width: `${pct}%` }} />
         </div>
       </div>
@@ -105,9 +193,9 @@ function CourseCard({ c }: { c: Course }) {
         <LinkRow label="رابط التأمين" url={insuranceUrl(c)} icon={<IconShield />} />
       </div>
       <div className="course-card-actions">
-        <Link href={`/courses/${c.id}`} className="secondary-btn">عرض</Link>
-        <a href={`/api/export/${c.id}/pdf`} className="ghost-btn" title="تصدير PDF"><IconPDF /></a>
-        <a href={`/api/export/${c.id}/eml`} className="ghost-btn" title="تصدير EML"><IconEML /></a>
+        <Link href={`/courses/${c.id}`} className="secondary-btn" style={{ minHeight: 38, fontSize: '0.82rem' }}>عرض</Link>
+        <a href={`/api/export/${c.id}/pdf`} className="ghost-btn" style={{ minHeight: 38, fontSize: '0.82rem' }} title="تصدير PDF"><IconPDF /></a>
+        <a href={`/api/export/${c.id}/eml`} className="ghost-btn" style={{ minHeight: 38, fontSize: '0.82rem' }} title="تصدير EML"><IconEML /></a>
       </div>
     </div>
   );
@@ -144,6 +232,17 @@ export default function DashboardPage() {
   const showManagerView = isManager && managerMode === true;
   const appRole = isManager ? 'MANAGER' : 'EMPLOYEE';
 
+  function removeCourse(id: string) {
+    setData(prev => prev ? { ...prev, recentCourses: prev.recentCourses.filter(c => c.id !== id) } : prev);
+  }
+
+  function refreshCourse() {
+    fetch('/api/courses?stats=true')
+      .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+      .then(d => { setData(d); syncRole(d.userRole); })
+      .catch(() => {});
+  }
+
   if (showManagerView) {
     const emp = data.employees || [];
     return (
@@ -177,9 +276,9 @@ export default function DashboardPage() {
               <p>لا توجد دورات بعد</p>
             </div>
           ) : (
-            <div className="course-grid">
+            <div className="course-grid" style={{ marginTop: 0 }}>
               {data.recentCourses.map(c => (
-                <CourseCard key={c.id} c={c} />
+                <CourseCard key={c.id} c={c} onDeleted={removeCourse} onEdited={refreshCourse} />
               ))}
             </div>
           )}
@@ -217,7 +316,7 @@ export default function DashboardPage() {
         ) : (
           <div className="course-grid">
             {data.recentCourses.map(c => (
-              <CourseCard key={c.id} c={c} />
+              <CourseCard key={c.id} c={c} onDeleted={removeCourse} onEdited={refreshCourse} />
             ))}
           </div>
         )}
