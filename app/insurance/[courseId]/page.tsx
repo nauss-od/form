@@ -77,11 +77,11 @@ export default function InsuranceReviewPage({ params }: { params: { courseId: st
             display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: '0.78rem', color: '#bcd0d0',
             borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 12,
           }}>
-            <span>بداية الدورة: {course.startDate ? new Date(course.startDate).toLocaleDateString('ar-SA') : '—'}</span>
-            <span>نهاية الدورة: {course.endDate ? new Date(course.endDate).toLocaleDateString('ar-SA') : '—'}</span>
+            <span>بداية الدورة: {course.startDate ? new Date(course.startDate).toLocaleDateString('en-GB') : '—'}</span>
+            <span>نهاية الدورة: {course.endDate ? new Date(course.endDate).toLocaleDateString('en-GB') : '—'}</span>
             <span>عدد المشاركين: {participants.length}</span>
-            {insuranceStart && <span>بداية التأمين: {insuranceStart.toLocaleDateString('ar-SA')}</span>}
-            {insuranceEnd && <span>نهاية التأمين: {insuranceEnd.toLocaleDateString('ar-SA')}</span>}
+            {insuranceStart && <span>بداية التأمين: {insuranceStart.toLocaleDateString('en-GB')}</span>}
+            {insuranceEnd && <span>نهاية التأمين: {insuranceEnd.toLocaleDateString('en-GB')}</span>}
           </div>
         </div>
 
@@ -129,7 +129,7 @@ export default function InsuranceReviewPage({ params }: { params: { courseId: st
                       <td style={tdStyle}>{i + 1}</td>
                       <td style={{ ...tdStyle, fontWeight: 600, color: '#014948', textAlign: 'right' }}>{p.fullNamePassport}</td>
                       <td style={{ ...tdStyle, userSelect: 'text' }} dir="ltr">{p.passportNumber}</td>
-                      <td style={{ ...tdStyle, userSelect: 'text' }}>{p.passportExpiry ? new Date(p.passportExpiry).toLocaleDateString('ar-SA') : '—'}</td>
+                      <td style={{ ...tdStyle, userSelect: 'text' }}>{p.passportExpiry ? new Date(p.passportExpiry).toLocaleDateString('en-GB') : '—'}</td>
                       <td style={{ ...tdStyle, userSelect: 'text' }} dir="ltr">{p.nationalId}</td>
                       <td style={tdStyle}>
                         <FileBadge files={p.files} />
@@ -269,10 +269,10 @@ function ExpandedPreview({ participant }: { participant: any }) {
   const allFields = [
     { label: 'اسم المشارك', value: participant.fullNamePassport, ltr: false },
     { label: 'رقم الجواز', value: participant.passportNumber, ltr: true },
-    { label: 'انتهاء الجواز', value: participant.passportExpiry ? new Date(participant.passportExpiry).toLocaleDateString('ar-SA') : '—', ltr: false },
+    { label: 'انتهاء الجواز', value: participant.passportExpiry ? new Date(participant.passportExpiry).toLocaleDateString('en-GB') : '—', ltr: false },
     { label: 'رقم الهوية', value: participant.nationalId, ltr: true },
     { label: 'رقم الجوال', value: participant.mobile, ltr: true },
-    { label: 'تاريخ الميلاد', value: participant.birthDate ? new Date(participant.birthDate).toLocaleDateString('ar-SA') : '—', ltr: false },
+    { label: 'تاريخ الميلاد', value: participant.birthDate ? new Date(participant.birthDate).toLocaleDateString('en-GB') : '—', ltr: false },
     { label: 'رقم الآيبان', value: participant.iban, ltr: true },
   ];
 

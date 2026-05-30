@@ -51,7 +51,7 @@ export default function EmployeesPage() {
                     <td><span className={`metric-chip ${isActive ? 'badge-primary' : ''}`} style={!isActive ? {background:'#f1f5f9',color:'#94a3b8'} : undefined}>{isActive ? 'نشط' : 'غير نشط'}</span></td>
                     <td>{e._count.courses}</td>
                     <td>{e.submissionCount}</td>
-                    <td>{e.lastLoginAt ? new Date(e.lastLoginAt).toLocaleDateString('ar-SA') : '—'}</td>
+                    <td>{e.lastLoginAt ? new Date(e.lastLoginAt).toLocaleDateString('en-GB') : '—'}</td>
                   </tr>
                 );
               })}

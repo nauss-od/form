@@ -147,11 +147,11 @@ export default function PublicInsurancePage({ params }: { params: { courseId: st
   }
 
   const infoCards = [
-    { icon: <IconCalendar3D />, label: 'بداية الدورة', value: course.startDate ? new Date(course.startDate).toLocaleDateString('ar-SA') : '—' },
-    { icon: <IconCalendar3D />, label: 'نهاية الدورة', value: course.endDate ? new Date(course.endDate).toLocaleDateString('ar-SA') : '—' },
+    { icon: <IconCalendar3D />, label: 'بداية الدورة', value: course.startDate ? new Date(course.startDate).toLocaleDateString('en-GB') : '—' },
+    { icon: <IconCalendar3D />, label: 'نهاية الدورة', value: course.endDate ? new Date(course.endDate).toLocaleDateString('en-GB') : '—' },
     { icon: <IconUsers3D />, label: 'المشاركون', value: String(participants.length) },
-    { icon: <IconShield3D />, label: 'بداية التأمين', value: insuranceStart ? insuranceStart.toLocaleDateString('ar-SA') : '—' },
-    { icon: <IconShield3D />, label: 'نهاية التأمين', value: insuranceEnd ? insuranceEnd.toLocaleDateString('ar-SA') : '—' },
+    { icon: <IconShield3D />, label: 'بداية التأمين', value: insuranceStart ? insuranceStart.toLocaleDateString('en-GB') : '—' },
+    { icon: <IconShield3D />, label: 'نهاية التأمين', value: insuranceEnd ? insuranceEnd.toLocaleDateString('en-GB') : '—' },
   ];
 
   return (
@@ -254,7 +254,7 @@ export default function PublicInsurancePage({ params }: { params: { courseId: st
                       <td style={tdS}>{i + 1}</td>
                       <td style={{ ...tdS, fontWeight: 600, color: '#014948', textAlign: 'right' }}>{p.fullNamePassport}</td>
                       <td style={{ ...tdS, userSelect: 'text' }} dir="ltr">{p.passportNumber}</td>
-                      <td style={{ ...tdS, userSelect: 'text' }}>{p.passportExpiry ? new Date(p.passportExpiry).toLocaleDateString('ar-SA') : '—'}</td>
+                      <td style={{ ...tdS, userSelect: 'text' }}>{p.passportExpiry ? new Date(p.passportExpiry).toLocaleDateString('en-GB') : '—'}</td>
                       <td style={{ ...tdS, userSelect: 'text' }} dir="ltr">{p.nationalId}</td>
                       <td style={tdS}>
                         {p.files?.length > 0 ? (
@@ -358,10 +358,10 @@ function ExpandedContent({ participant }: { participant: Participant }) {
   const allFields = [
     { label: 'اسم المشارك', value: participant.fullNamePassport, ltr: false },
     { label: 'رقم الجواز', value: participant.passportNumber, ltr: true },
-    { label: 'انتهاء الجواز', value: participant.passportExpiry ? new Date(participant.passportExpiry).toLocaleDateString('ar-SA') : '—', ltr: false },
+    { label: 'انتهاء الجواز', value: participant.passportExpiry ? new Date(participant.passportExpiry).toLocaleDateString('en-GB') : '—', ltr: false },
     { label: 'رقم الهوية', value: participant.nationalId, ltr: true },
     { label: 'رقم الجوال', value: participant.mobile, ltr: true },
-    { label: 'تاريخ الميلاد', value: participant.birthDate ? new Date(participant.birthDate).toLocaleDateString('ar-SA') : '—', ltr: false },
+    { label: 'تاريخ الميلاد', value: participant.birthDate ? new Date(participant.birthDate).toLocaleDateString('en-GB') : '—', ltr: false },
     { label: 'رقم الآيبان', value: participant.iban, ltr: true },
   ];
 

@@ -12,7 +12,7 @@ function addDays(date: Date, days: number): Date {
 }
 
 function fmt(date: Date): string {
-  return date.toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' });
+  return date.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
 function wrapBase64(s: string): string {

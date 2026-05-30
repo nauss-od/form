@@ -43,7 +43,7 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
     { label: 'تاريخ النهاية', value: formatDate(course.endDate) },
     { label: 'عدد المشاركين', value: String(course.submissions.length) },
     { label: 'إعداد', value: course.createdBy?.name || '—' },
-    { label: 'تاريخ التصدير', value: new Date().toLocaleDateString('ar-SA') },
+    { label: 'تاريخ التصدير', value: new Date().toLocaleDateString('en-GB') },
   ];
 
   infoRows.forEach(r => infoSheet.addRow(r));

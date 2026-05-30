@@ -47,10 +47,10 @@ export default async function ParticipantPage({ params }: { params: { id: string
                   {[
                     { label: 'الاسم الكامل', value: submission.fullNamePassport },
                     { label: 'رقم الجواز', value: submission.passportNumber },
-                    { label: 'انتهاء الجواز', value: submission.passportExpiry.toLocaleDateString('ar-SA') },
+                    { label: 'انتهاء الجواز', value: submission.passportExpiry.toLocaleDateString('en-GB') },
                     { label: 'رقم الهوية', value: submission.nationalId },
                     { label: 'الجوال', value: submission.mobile },
-                    { label: 'تاريخ الميلاد', value: submission.birthDate.toLocaleDateString('ar-SA') },
+                    { label: 'تاريخ الميلاد', value: submission.birthDate.toLocaleDateString('en-GB') },
                     { label: 'IBAN', value: submission.iban, dir: 'ltr' as const },
                   ].map(f => (
                     <div key={f.label} className="field">
