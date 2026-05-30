@@ -91,8 +91,8 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
             <>
               <div className="link-preview" dir="ltr">{publicUrl}</div>
               <div className="section-actions" style={{ marginTop: 8 }}>
-                <button className="secondary-btn" onClick={() => { navigator.clipboard.writeText(publicUrl); alert('تم نسخ الرابط'); }}>رابط النموذج</button>
-                <button className="secondary-btn" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/public/insurance/${course.id}`); alert('تم نسخ رابط التأمين'); }}>رابط التأمين</button>
+                <button className="secondary-btn" onClick={() => { navigator.clipboard.writeText(publicUrl); alert('تم نسخ الرابط'); }}>نسخ رابط المشاركين</button>
+                <button className="secondary-btn" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/public/insurance/${course.id}`); alert('تم نسخ رابط التأمين'); }}>نسخ رابط التأمين</button>
                 <a href={`/api/export/${course.id}/pdf`} className="secondary-btn">تصدير PDF</a>
                 <a href={`mailto:?subject=${encodeURIComponent('طلب إصدار تأمين طبي — ' + (course.activityName || 'دورة خارجية'))}&body=${encodeURIComponent(
                   'السلام عليكم ورحمة الله وبركاته،\n\n' +

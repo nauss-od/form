@@ -199,8 +199,8 @@ function CourseCard({ c, onDeleted, onEdited }: { c: Course; onDeleted: (id: str
       <div style={{ display: 'flex', gap: 4 }}>
         <div style={{ flex: 1, background: '#f7fafa', borderRadius: 6, border: '1px solid #e4ebeb', padding: '4px 6px', minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 2, marginBottom: 1 }}>
-            <IconForm />
-            <span style={{ fontSize: '0.5rem', fontWeight: 700, color: '#667777' }}>النموذج</span>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#667777" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <span style={{ fontSize: '0.5rem', fontWeight: 700, color: '#667777' }}>للمشاركين</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
             <span style={{ flex: 1, fontSize: '0.52rem', color: '#014948', direction: 'ltr', textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{courseUrl(c)}</span>
@@ -209,8 +209,8 @@ function CourseCard({ c, onDeleted, onEdited }: { c: Course; onDeleted: (id: str
         </div>
         <div style={{ flex: 1, background: '#f7fafa', borderRadius: 6, border: '1px solid #e4ebeb', padding: '4px 6px', minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 2, marginBottom: 1 }}>
-            <IconShield />
-            <span style={{ fontSize: '0.5rem', fontWeight: 700, color: '#667777' }}>التأمين</span>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#667777" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span style={{ fontSize: '0.5rem', fontWeight: 700, color: '#667777' }}>لإدارة التأمين</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
             <span style={{ flex: 1, fontSize: '0.52rem', color: '#014948', direction: 'ltr', textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{insuranceUrl(c)}</span>
