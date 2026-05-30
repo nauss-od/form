@@ -29,6 +29,7 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [publicUrl, setPublicUrl] = useState('');
+  const [deletingParticipant, setDeletingParticipant] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`/api/courses/${params.id}`)
@@ -41,6 +42,17 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
   useEffect(() => {
     if (course) setPublicUrl(`${window.location.origin}/public/form/${course.publicToken}`);
   }, [course]);
+
+  async function deleteParticipant(submissionId: string) {
+    if (!confirm('هل أنت متأكد من حذف هذا المشارك؟')) return;
+    setDeletingParticipant(submissionId);
+    try {
+      const res = await fetch(`/api/participant/${submissionId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error();
+      setCourse(prev => prev ? { ...prev, submissions: prev.submissions.filter(s => s.id !== submissionId) } : prev);
+    } catch { alert('فشل حذف المشارك'); }
+    finally { setDeletingParticipant(null); }
+  }
 
   if (loading) return <AppShell title="تفاصيل الدورة"><div className="loading-wrap"><div className="loading-spinner" /><p>جاري التحميل...</p></div></AppShell>;
   if (!course || !course.submissions) return <AppShell title="خطأ"><div className="empty-state"><p>الدورة غير موجودة</p></div></AppShell>;
@@ -121,12 +133,19 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
                     <td dir="ltr">{s.mobile}</td>
                     <td>{formatDate(s.birthDate)}</td>
                     <td style={{ fontSize: 11, direction: 'ltr' }}>{s.iban}</td>
-                    <td style={{ display: 'flex', gap: 4 }}>
+                    <td style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                       {s.files?.map(f => (
                         <a key={f.id} href={`/api/files/${f.id}`} target="_blank" className="file-link" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           {f.fileType === 'PASSPORT' ? <><IconPassport /> جواز</> : <><IconID /> هوية</>}
                         </a>
                       ))}
+                      <button onClick={() => deleteParticipant(s.id)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', marginRight: 'auto', color: '#bf3d30', opacity: 0.5, transition: 'opacity 0.15s' }}
+                        onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+                        onMouseLeave={e => e.currentTarget.style.opacity = '0.5'}
+                        title="حذف المشارك">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                      </button>
                     </td>
                   </tr>
                 ))}

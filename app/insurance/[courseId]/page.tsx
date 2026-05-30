@@ -34,6 +34,16 @@ export default function InsuranceReviewPage({ params }: { params: { courseId: st
     if (idx < participants.length - 1) setExpandedId(participants[idx + 1].id);
   };
 
+  async function deleteParticipant(id: string) {
+    if (!confirm('هل أنت متأكد من حذف هذا المشارك؟')) return;
+    try {
+      const res = await fetch(`/api/participant/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error();
+      setParticipants(prev => prev.filter(p => p.id !== id));
+      if (expandedId === id) setExpandedId(participants.length > 1 ? participants.find(p => p.id !== id)?.id || null : null);
+    } catch { alert('فشل حذف المشارك'); }
+  }
+
   if (loading) {
     return (
       <AppShell title="مراجعة التأمين">
@@ -146,6 +156,9 @@ export default function InsuranceReviewPage({ params }: { params: { courseId: st
                         <td colSpan={7} style={{ padding: 0, borderBottom: '1px solid #eef3f3' }}>
                           <div key={p.id} style={{ animation: 'slideUp 0.2s ease' }}>
                             <ExpandedPreview participant={p} />
+                            <div style={{ padding: '0 20px 14px', background: '#f7fbfb', display: 'flex', justifyContent: 'flex-end' }}>
+                              <DeleteParticipantBtn participantId={p.id} onDelete={id => setParticipants(prev => prev.filter(x => x.id !== id))} />
+                            </div>
                           </div>
                         </td>
                       </tr>
@@ -333,5 +346,34 @@ function ExpandedPreview({ participant }: { participant: any }) {
         </div>
       )}
     </div>
+  );
+}
+
+function DeleteParticipantBtn({ participantId, onDelete }: { participantId: string; onDelete: (id: string) => void }) {
+  const [deleting, setDeleting] = useState(false);
+  return (
+    <button
+      onClick={async () => {
+        if (!confirm('هل أنت متأكد من حذف هذا المشارك؟')) return;
+        setDeleting(true);
+        try {
+          const res = await fetch(`/api/participant/${participantId}`, { method: 'DELETE' });
+          if (!res.ok) throw new Error();
+          onDelete(participantId);
+        } catch { alert('فشل الحذف'); }
+        finally { setDeleting(false); }
+      }}
+      disabled={deleting}
+      style={{
+        background: 'rgba(191,61,48,0.06)', border: '1px solid rgba(191,61,48,0.1)', borderRadius: 8,
+        padding: '5px 10px', cursor: 'pointer', color: '#bf3d30', fontSize: '0.7rem', fontWeight: 600,
+        display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap',
+      }}
+    >
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+      </svg>
+      {deleting ? '...' : 'حذف'}
+    </button>
   );
 }
