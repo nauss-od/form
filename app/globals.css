@@ -2675,6 +2675,7 @@ select.input:focus,
   position: relative;
   overflow: hidden;
   padding: 38px 34px 34px;
+  text-align: center;
   color: oklch(98% 0.004 185);
   background:
     radial-gradient(circle at 16% 18%, oklch(76% 0.065 82 / 0.18), transparent 16rem),
@@ -2693,7 +2694,7 @@ select.input:focus,
 
 .form-logo {
   width: 178px;
-  margin-bottom: 22px;
+  margin: 0 auto 22px;
   filter: drop-shadow(0 14px 28px oklch(10% 0.025 185 / 0.16));
 }
 

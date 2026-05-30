@@ -2,6 +2,7 @@
 
 import { FormEvent, useRef, useState } from 'react';
 import SmartDatePicker from '@/components/SmartDatePicker';
+import { compressImage } from '@/lib/compress-image';
 
 function CheckIcon() {
   return (
@@ -261,8 +262,14 @@ export default function PublicFormPage({ params }: { params: { token: string } }
       const submissionId = data.submissionId;
       if (!submissionId) throw new Error('لم يتم إنشاء السجل');
 
-      if (passportFile) await uploadFile(submissionId, passportFile, 'PASSPORT');
-      if (nationalIdFile) await uploadFile(submissionId, nationalIdFile, 'NATIONAL_ID');
+      if (passportFile) {
+        const compressed = await compressImage(passportFile);
+        await uploadFile(submissionId, compressed, 'PASSPORT');
+      }
+      if (nationalIdFile) {
+        const compressed = await compressImage(nationalIdFile);
+        await uploadFile(submissionId, compressed, 'NATIONAL_ID');
+      }
 
       setSuccess(true);
     } catch (err) {
