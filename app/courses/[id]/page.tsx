@@ -93,8 +93,8 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
               <div className="section-actions" style={{ marginTop: 8 }}>
                 <button className="secondary-btn" onClick={() => { navigator.clipboard.writeText(publicUrl); alert('تم نسخ الرابط'); }}>رابط النموذج</button>
                 <button className="secondary-btn" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/public/insurance/${course.id}`); alert('تم نسخ رابط التأمين'); }}>رابط التأمين</button>
-                <a href={`/api/export/${course.id}/pdf`} className="secondary-btn"><IconPDF /></a>
-                <a href={`/api/export/${course.id}/eml`} className="secondary-btn"><IconEML /></a>
+                <a href={`/api/export/${course.id}/pdf`} className="secondary-btn">تصدير PDF</a>
+                <a href={`/api/export/${course.id}/eml`} className="secondary-btn">ارسال بالبريد</a>
                 <a href={`/insurance/${course.id}`} className="secondary-btn">مراجعة التأمين</a>
               </div>
             </>

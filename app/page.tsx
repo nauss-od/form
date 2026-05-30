@@ -59,21 +59,6 @@ function CopyLink({ url }: { url: string }) {
   );
 }
 
-function LinkRow({ label, url, icon }: { label: string; url: string; icon: React.ReactNode }) {
-  return (
-    <div style={{ background: '#f7fafa', borderRadius: 10, border: '1px solid #e4ebeb', padding: '6px 10px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginBottom: 2 }}>
-        {icon}
-        <span style={{ fontSize: '0.58rem', fontWeight: 700, color: '#667777' }}>{label}</span>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-        <span style={{ flex: 1, fontSize: '0.66rem', color: '#014948', direction: 'ltr', textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{url}</span>
-        <CopyLink url={url} />
-      </div>
-    </div>
-  );
-}
-
 function ConfirmDialog({ message, onConfirm, onCancel }: { message: string; onConfirm: () => void; onCancel: () => void }) {
   return (
     <div className="scanner-overlay" onClick={onCancel}>
@@ -152,50 +137,64 @@ function CourseCard({ c, onDeleted, onEdited }: { c: Course; onDeleted: (id: str
   }
 
   return (
-    <div className="course-card">
+    <div className="course-card" style={{ padding: '16px 20px', gap: 10, borderRadius: 18 }}>
       {showDelete && <ConfirmDialog message={`هل أنت متأكد من حذف "${c.activityName || 'الدورة'}"؟`} onConfirm={handleDelete} onCancel={() => setShowDelete(false)} />}
       {showEdit && <EditModal course={c} onClose={() => setShowEdit(false)} onSaved={() => onEdited(c.id)} />}
-      <div className="course-card-top">
-        <div>
-          <span className={`status-chip ${c.status === 'PUBLISHED' ? 'is-open' : ''}`}>
-            {c.status === 'PUBLISHED' ? 'نشط' : 'مغلق'}
-          </span>
-          <strong className="course-card-title">{c.activityName || 'دورة تدريبية'}</strong>
-          <div className="course-card-meta">
+      <div className="course-card-top" style={{ gap: 10 }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span className={`status-chip ${c.status === 'PUBLISHED' ? 'is-open' : ''}`} style={{ minHeight: 26, fontSize: '0.7rem', padding: '0 10px' }}>
+              {c.status === 'PUBLISHED' ? 'نشط' : 'مغلق'}
+            </span>
+            <div className="course-card-figure" style={{ marginRight: 'auto' }}>
+              <span style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--nauss-green-dark)' }}>{c._count.submissions}</span>
+              <span style={{ fontSize: '0.7rem', color: 'var(--nauss-muted)', marginRight: 2 }}>/ {target}</span>
+            </div>
+          </div>
+          <strong className="course-card-title" style={{ fontSize: '0.92rem', marginTop: 4 }}>{c.activityName || 'دورة تدريبية'}</strong>
+          <div className="course-card-meta" style={{ fontSize: '0.75rem', marginTop: 2, gap: 8 }}>
             <span><IconLoc /> {c.venue || '—'}</span>
             <span><IconCal /> {formatDate(c.startDate)}</span>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', width: '100%' }}>
-          <div className="course-card-figure">
-            <div className="big-stat">{c._count.submissions}</div>
-            <div className="big-stat-label">/ {target}</div>
-          </div>
-          <div style={{ display: 'flex', gap: 6 }}>
-            <button className="secondary-btn" style={{ minHeight: 34, padding: '0 10px', fontSize: '0.78rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 5 }} onClick={() => setShowEdit(true)}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              تعديل
-            </button>
-            <button className="secondary-btn" style={{ minHeight: 34, padding: '0 10px', fontSize: '0.78rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(191,61,48,0.08)', color: 'var(--danger)', borderColor: 'rgba(191,61,48,0.12)' }} onClick={() => setShowDelete(true)}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-              حذف
-            </button>
-          </div>
-        </div>
       </div>
-      <div className="progress-section" style={{ padding: '2px 0' }}>
-        <div className="progress-bar" style={{ margin: 0 }}>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        <button className="secondary-btn" style={{ minHeight: 30, padding: '0 8px', fontSize: '0.7rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }} onClick={() => setShowEdit(true)}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          تعديل
+        </button>
+        <button className="secondary-btn" style={{ minHeight: 30, padding: '0 8px', fontSize: '0.7rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(191,61,48,0.08)', color: 'var(--danger)', borderColor: 'rgba(191,61,48,0.12)' }} onClick={() => setShowDelete(true)}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+          حذف
+        </button>
+        <Link href={`/courses/${c.id}`} className="secondary-btn" style={{ minHeight: 30, padding: '0 10px', fontSize: '0.7rem', fontWeight: 700, marginRight: 'auto' }}>عرض التفاصيل</Link>
+      </div>
+      <div className="progress-section" style={{ padding: 0 }}>
+        <div className="progress-bar" style={{ margin: 0, height: 4 }}>
           <div className="progress-fill" style={{ width: `${pct}%` }} />
         </div>
       </div>
-      <div style={{ padding: '0 16px 4px', display: 'flex', flexDirection: 'column', gap: 5 }}>
-        <LinkRow label="رابط النموذج" url={courseUrl(c)} icon={<IconForm />} />
-        <LinkRow label="رابط التأمين" url={insuranceUrl(c)} icon={<IconShield />} />
-      </div>
-      <div className="course-card-actions">
-        <Link href={`/courses/${c.id}`} className="secondary-btn" style={{ minHeight: 38, fontSize: '0.82rem' }}>عرض</Link>
-        <a href={`/api/export/${c.id}/pdf`} className="ghost-btn" style={{ minHeight: 38, fontSize: '0.82rem' }} title="تصدير PDF"><IconPDF /></a>
-        <a href={`/api/export/${c.id}/eml`} className="ghost-btn" style={{ minHeight: 38, fontSize: '0.82rem' }} title="تصدير EML"><IconEML /></a>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div style={{ background: '#f7fafa', borderRadius: 8, border: '1px solid #e4ebeb', padding: '5px 8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginBottom: 1 }}>
+            <IconForm />
+            <span style={{ fontSize: '0.55rem', fontWeight: 700, color: '#667777' }}>رابط النموذج</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ flex: 1, fontSize: '0.6rem', color: '#014948', direction: 'ltr', textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{courseUrl(c)}</span>
+            <CopyLink url={courseUrl(c)} />
+          </div>
+        </div>
+        <div style={{ background: '#f7fafa', borderRadius: 8, border: '1px solid #e4ebeb', padding: '5px 8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginBottom: 1 }}>
+            <IconShield />
+            <span style={{ fontSize: '0.55rem', fontWeight: 700, color: '#667777' }}>رابط التأمين</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ flex: 1, fontSize: '0.6rem', color: '#014948', direction: 'ltr', textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{insuranceUrl(c)}</span>
+            <CopyLink url={insuranceUrl(c)} />
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -276,7 +275,7 @@ export default function DashboardPage() {
               <p>لا توجد دورات بعد</p>
             </div>
           ) : (
-            <div className="course-grid" style={{ marginTop: 0 }}>
+            <div className="course-grid" style={{ gridTemplateColumns: '1fr', maxWidth: 680, marginInline: 'auto', gap: 14 }}>
               {data.recentCourses.map(c => (
                 <CourseCard key={c.id} c={c} onDeleted={removeCourse} onEdited={refreshCourse} />
               ))}
@@ -314,7 +313,7 @@ export default function DashboardPage() {
             <Link href="/new-course" className="primary-btn" style={{ display: 'inline-flex', width: 'auto', marginTop: 8 }}>إنشاء دورة جديدة</Link>
           </div>
         ) : (
-          <div className="course-grid">
+          <div className="course-grid" style={{ gridTemplateColumns: '1fr', maxWidth: 680, marginInline: 'auto', gap: 14 }}>
             {data.recentCourses.map(c => (
               <CourseCard key={c.id} c={c} onDeleted={removeCourse} onEdited={refreshCourse} />
             ))}
