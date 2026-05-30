@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import { FormEvent, useRef, useState } from 'react';
 import SmartDatePicker from '@/components/SmartDatePicker';
 
 function CheckIcon() {
@@ -204,10 +204,24 @@ export default function PublicFormPage({ params }: { params: { token: string } }
     setTimeout(() => { setStep(s => s - 1); setAnimating(false); }, 220);
   }
 
+  async function uploadFile(submissionId: string, file: File, fileType: string): Promise<void> {
+    const fd = new FormData();
+    fd.append('submissionId', submissionId);
+    fd.append('fileType', fileType);
+    fd.append('file', file);
+    const res = await fetch('/api/public/upload', { method: 'POST', body: fd });
+    if (!res.ok) {
+      let msg = 'فشل رفع الملف';
+      try { const d = await res.json(); msg = d.message || msg; } catch {}
+      throw new Error(msg);
+    }
+  }
+
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (animating) return;
     setError('');
+    setLoading(true);
 
     let hasError = false;
     if (!name) { setNameError('مطلوب'); hasError = true; }
@@ -224,24 +238,32 @@ export default function PublicFormPage({ params }: { params: { token: string } }
     if (!passportFile) { setPassportFileError('مطلوب'); hasError = true; }
     if (!nationalIdFile) { setNationalIdFileError('مطلوب'); hasError = true; }
 
-    if (hasError) { setError('يرجى تصحيح الأخطاء أعلاه'); return; }
+    if (hasError) { setError('يرجى تصحيح الأخطاء أعلاه'); setLoading(false); return; }
 
-    setLoading(true);
     try {
-      const formData = new FormData();
-      formData.append('fullNamePassport', name);
-      formData.append('passportNumber', passport);
-      formData.append('passportExpiry', expiry);
-      formData.append('nationalId', nationalId);
-      formData.append('mobile', mobilePrefix + mobileSuffix);
-      formData.append('birthDate', birthDate);
-      formData.append('iban', iban);
-      if (passportFile) formData.append('passportFile', passportFile);
-      if (nationalIdFile) formData.append('nationalIdFile', nationalIdFile);
-
-      const res = await fetch(`/api/public/form/${params.token}/submit`, { method: 'POST', body: formData });
-      const data = await res.json();
+      const res = await fetch(`/api/public/form/${params.token}/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullNamePassport: name,
+          passportNumber: passport,
+          passportExpiry: expiry,
+          nationalId,
+          mobile: mobilePrefix + mobileSuffix,
+          birthDate,
+          iban,
+        }),
+      });
+      let data: any;
+      try { data = await res.json(); } catch { throw new Error('خطأ في الاتصال بالخادم'); }
       if (!res.ok) throw new Error(data.message || 'حدث خطأ');
+
+      const submissionId = data.submissionId;
+      if (!submissionId) throw new Error('لم يتم إنشاء السجل');
+
+      if (passportFile) await uploadFile(submissionId, passportFile, 'PASSPORT');
+      if (nationalIdFile) await uploadFile(submissionId, nationalIdFile, 'NATIONAL_ID');
+
       setSuccess(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'حدث خطأ');
