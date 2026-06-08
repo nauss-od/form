@@ -24,6 +24,21 @@ export default function InsuranceReviewPage({ params }: { params: { courseId: st
       .catch(() => setLoading(false));
   }, [params.courseId]);
 
+  useEffect(() => {
+    if (!participants.length) return;
+    const ids = participants.flatMap((p: any) => (p.files || []).map((f: any) => f.id));
+    if (!ids.length) return;
+    let i = 0;
+    const next = () => {
+      if (i >= ids.length) return;
+      const img = new Image();
+      img.src = `/api/files/${ids[i]}`;
+      i++;
+      setTimeout(next, 100);
+    };
+    next();
+  }, [participants]);
+
   const goToPrev = () => {
     if (!expandedId || participants.length === 0) return;
     const idx = participants.findIndex(p => p.id === expandedId);
@@ -276,6 +291,43 @@ function CopyBtn({ text }: { text: string }) {
   );
 }
 
+function ImgWithLoader({ src, alt }: { src: string; alt: string }) {
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
+
+  return (
+    <div style={{ position: 'relative', width: '100%', minHeight: 120 }}>
+      {!loaded && !error && (
+        <div style={{
+          position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: '#eef3f3', borderRadius: 8, animation: 'pulse 1.5s ease-in-out infinite',
+        }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#b8cccc" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>
+          </svg>
+        </div>
+      )}
+      {error ? (
+        <div style={{ textAlign: 'center', padding: 20, color: '#94a8a8', fontSize: '0.78rem' }}>
+          تعذّر تحميل الصورة
+        </div>
+      ) : (
+        <img
+          src={src}
+          alt={alt}
+          loading="lazy"
+          onLoad={() => setLoaded(true)}
+          onError={() => setError(true)}
+          style={{
+            maxWidth: '100%', maxHeight: 200, borderRadius: 8, objectFit: 'contain',
+            opacity: loaded ? 1 : 0, transition: 'opacity 0.25s',
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
 function ExpandedPreview({ participant }: { participant: any }) {
   const passportFile = participant.files?.find((f: any) => f.fileType === 'PASSPORT');
   const nationalIdFile = participant.files?.find((f: any) => f.fileType === 'NATIONAL_ID');
@@ -326,9 +378,7 @@ function ExpandedPreview({ participant }: { participant: any }) {
                 <RotateImageBtn fileId={passportFile.id} onRotated={onRotated} />
               </div>
               <div style={{ padding: 8, display: 'flex', justifyContent: 'center', background: '#fafcfc' }}>
-                <img src={`/api/files/${passportFile.id}?t=${ts}`} alt=""
-                  style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8, objectFit: 'contain' }}
-                />
+                <ImgWithLoader src={`/api/files/${passportFile.id}?t=${ts}`} alt="جواز السفر" />
               </div>
             </div>
           )}
@@ -339,9 +389,7 @@ function ExpandedPreview({ participant }: { participant: any }) {
                 <RotateImageBtn fileId={nationalIdFile.id} onRotated={onRotated} />
               </div>
               <div style={{ padding: 8, display: 'flex', justifyContent: 'center', background: '#fafcfc' }}>
-                <img src={`/api/files/${nationalIdFile.id}?t=${ts}`} alt=""
-                  style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8, objectFit: 'contain' }}
-                />
+                <ImgWithLoader src={`/api/files/${nationalIdFile.id}?t=${ts}`} alt="الهوية الوطنية" />
               </div>
             </div>
           )}
