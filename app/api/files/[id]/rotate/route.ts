@@ -16,7 +16,7 @@ export async function PATCH(_request: Request, { params }: { params: { id: strin
       return NextResponse.json({ message: 'يتم دعم الصور فقط' }, { status: 400 });
     }
 
-    const rotated = await sharp(file.fileData).rotate(90).toBuffer();
+    const rotated = await sharp(file.fileData).rotate(-90).toBuffer();
 
     await prisma.submissionFile.update({
       where: { id: params.id },

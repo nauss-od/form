@@ -293,11 +293,30 @@ function CopyBtn({ text }: { text: string }) {
 
 function ImgWithLoader({ src, alt }: { src: string; alt: string }) {
   const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  function retry() {
+    setLoaded(false);
+    setFailed(false);
+  }
+
+  if (failed) {
+    return (
+      <div style={{ textAlign: 'center', padding: 20, color: '#94a8a8' }}>
+        <div style={{ fontSize: '0.75rem', marginBottom: 8 }}>تعذّر التحميل</div>
+        <button type="button" onClick={retry} style={{
+          background: '#e2f0ee', border: 'none', borderRadius: 8, padding: '4px 14px',
+          cursor: 'pointer', color: '#016564', fontSize: '0.7rem', fontWeight: 700,
+        }}>
+          إعادة المحاولة
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div style={{ position: 'relative', width: '100%', minHeight: 120 }}>
-      {!loaded && !error && (
+      {!loaded && (
         <div style={{
           position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
           background: '#eef3f3', borderRadius: 8, animation: 'pulse 1.5s ease-in-out infinite',
@@ -307,23 +326,17 @@ function ImgWithLoader({ src, alt }: { src: string; alt: string }) {
           </svg>
         </div>
       )}
-      {error ? (
-        <div style={{ textAlign: 'center', padding: 20, color: '#94a8a8', fontSize: '0.78rem' }}>
-          تعذّر تحميل الصورة
-        </div>
-      ) : (
-        <img
-          src={src}
-          alt={alt}
-          loading="lazy"
-          onLoad={() => setLoaded(true)}
-          onError={() => setError(true)}
-          style={{
-            maxWidth: '100%', maxHeight: 200, borderRadius: 8, objectFit: 'contain',
-            opacity: loaded ? 1 : 0, transition: 'opacity 0.25s',
-          }}
-        />
-      )}
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        onLoad={() => setLoaded(true)}
+        onError={() => setFailed(true)}
+        style={{
+          maxWidth: '100%', maxHeight: 200, borderRadius: 8, objectFit: 'contain',
+          opacity: loaded ? 1 : 0, transition: 'opacity 0.25s',
+        }}
+      />
     </div>
   );
 }
@@ -331,9 +344,9 @@ function ImgWithLoader({ src, alt }: { src: string; alt: string }) {
 function ExpandedPreview({ participant }: { participant: any }) {
   const passportFile = participant.files?.find((f: any) => f.fileType === 'PASSPORT');
   const nationalIdFile = participant.files?.find((f: any) => f.fileType === 'NATIONAL_ID');
-  const [ts, setTs] = useState(0);
+  const [rotateTs, setRotateTs] = useState(0);
 
-  const onRotated = useCallback(() => setTs(t => t + 1), []);
+  const onRotated = useCallback(() => setRotateTs(t => t + 1), []);
 
   const allFields = [
     { label: 'اسم المشارك', value: participant.fullNamePassport, ltr: false },
@@ -378,7 +391,7 @@ function ExpandedPreview({ participant }: { participant: any }) {
                 <RotateImageBtn fileId={passportFile.id} onRotated={onRotated} />
               </div>
               <div style={{ padding: 8, display: 'flex', justifyContent: 'center', background: '#fafcfc' }}>
-                <ImgWithLoader src={`/api/files/${passportFile.id}?t=${ts}`} alt="جواز السفر" />
+                <ImgWithLoader src={rotateTs ? `/api/files/${passportFile.id}?r=${rotateTs}` : `/api/files/${passportFile.id}`} alt="جواز السفر" />
               </div>
             </div>
           )}
@@ -389,7 +402,7 @@ function ExpandedPreview({ participant }: { participant: any }) {
                 <RotateImageBtn fileId={nationalIdFile.id} onRotated={onRotated} />
               </div>
               <div style={{ padding: 8, display: 'flex', justifyContent: 'center', background: '#fafcfc' }}>
-                <ImgWithLoader src={`/api/files/${nationalIdFile.id}?t=${ts}`} alt="الهوية الوطنية" />
+                <ImgWithLoader src={rotateTs ? `/api/files/${nationalIdFile.id}?r=${rotateTs}` : `/api/files/${nationalIdFile.id}`} alt="الهوية الوطنية" />
               </div>
             </div>
           )}
