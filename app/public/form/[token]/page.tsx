@@ -330,7 +330,7 @@ export default function PublicFormPage({ params }: { params: { token: string } }
                     className={`input ${nameError ? 'input-error' : ''} ${name && !nameError ? 'input-valid' : ''}`}
                     value={name}
                     onChange={e => { setName(e.target.value); validateName(e.target.value); }}
-                    placeholder="Full name as in passport"
+                    placeholder="الاسم الكامل حسب جواز السفر"
                     dir="ltr"
                   />
                   {nameError && <span className="field-error">{nameError}</span>}

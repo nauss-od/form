@@ -1,6 +1,6 @@
 export function compressImage(file: File): Promise<File> {
   if (!file.type.startsWith('image/')) return Promise.resolve(file);
-  const targetSize = 1 * 1024 * 1024;
+  const targetSize = 2 * 1024 * 1024;
   if (file.size < targetSize) return Promise.resolve(file);
   return new Promise((resolve) => {
     const reader = new FileReader();
@@ -10,7 +10,7 @@ export function compressImage(file: File): Promise<File> {
       img.src = e.target?.result as string;
       img.onload = () => {
         let { width, height } = img;
-        const maxDim = 900;
+        const maxDim = 1200;
         if (width > maxDim) {
           height = Math.round((height / width) * maxDim);
           width = maxDim;
@@ -24,7 +24,7 @@ export function compressImage(file: File): Promise<File> {
         function tryCompress(q: number) {
           canvas.toBlob((blob) => {
             if (!blob) { resolve(file); return; }
-            if (blob.size < targetSize || q <= 0.25) {
+            if (blob.size < targetSize || q <= 0.5) {
               const name = file.name.replace(/\.[^.]+$/i, '.jpg');
               resolve(new File([blob], name, { type: 'image/jpeg', lastModified: Date.now() }));
             } else {
@@ -32,7 +32,7 @@ export function compressImage(file: File): Promise<File> {
             }
           }, 'image/jpeg', q);
         }
-        tryCompress(0.7);
+        tryCompress(0.8);
       };
       img.onerror = () => resolve(file);
     };

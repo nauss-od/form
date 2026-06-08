@@ -22,7 +22,30 @@ export default function AuditPage() {
     LOGIN: 'تسجيل دخول', CREATE_COURSE: 'إنشاء دورة', UPDATE_USER: 'تحديث مستخدم',
     DELETE_USER: 'حذف مستخدم', ACTIVATE_USER: 'تفعيل مستخدم', DEACTIVATE_USER: 'إيقاف مستخدم',
     RESET_PASSWORD: 'إعادة تعيين كلمة المرور', EXPORT_PDF: 'تصدير PDF', EXPORT_EML: 'تصدير EML',
+    VIEW_INSURANCE: 'مشاهدة التأمين', SUBMIT_FORM: 'تقديم النموذج', PAGE_VIEW: 'مشاهدة الصفحة',
+    EXPORT_EXCEL: 'تصدير Excel', DELETE_COURSE: 'حذف دورة', UPDATE_COURSE: 'تحديث دورة',
+    DELETE_SUBMISSION: 'حذف تسجيل',
   };
+
+  const entityLabels: Record<string, string> = {
+    Course: 'دورة', User: 'مستخدم', Submission: 'تسجيل', Page: 'صفحة',
+  };
+
+  const metaLabels: Record<string, string> = {
+    activityName: 'اسم النشاط', updated: 'التحديثات', isActive: 'الحالة',
+    name: 'الاسم', email: 'البريد الإلكتروني', role: 'الصلاحية',
+  };
+
+  function formatMeta(meta: Record<string, unknown> | null): string {
+    if (!meta) return '—';
+    return Object.entries(meta)
+      .map(([k, v]) => {
+        const label = metaLabels[k] || k;
+        if (Array.isArray(v)) return `${label}: ${v.join('، ')}`;
+        return `${label}: ${String(v)}`;
+      })
+      .join(' | ');
+  }
 
   function load(p: number) {
     setLoading(true);
@@ -56,8 +79,8 @@ export default function AuditPage() {
                   <td style={{fontSize:'0.82rem',whiteSpace:'nowrap'}}>{new Date(l.createdAt).toLocaleString('ar-SA')}</td>
                   <td>{l.user ? `${l.user.name}` : '—'}</td>
                   <td><span className="metric-chip" style={{fontSize:'0.78rem'}}>{actionLabels[l.action] || l.action}</span></td>
-                  <td style={{fontSize:'0.85rem'}}>{l.entityType} <span style={{fontSize:'0.72rem',color:'#94a3b8',fontFamily:'monospace'}}>{l.entityId.slice(0,12)}</span></td>
-                  <td style={{fontSize:'0.82rem',color:'#64748b',maxWidth:200,overflow:'hidden',textOverflow:'ellipsis'}}>{l.metaJson ? JSON.stringify(l.metaJson) : '—'}</td>
+                  <td style={{fontSize:'0.85rem'}}><span className="metric-chip" style={{fontSize:'0.78rem'}}>{entityLabels[l.entityType] || l.entityType}</span> <span style={{fontSize:'0.72rem',color:'#94a3b8',fontFamily:'monospace'}}>{l.entityId.slice(0,12)}</span></td>
+                  <td style={{fontSize:'0.82rem',color:'#64748b',maxWidth:200,overflow:'hidden',textOverflow:'ellipsis'}}>{formatMeta(l.metaJson)}</td>
                 </tr>
               ))}
             </tbody>

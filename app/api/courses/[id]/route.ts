@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { logAudit } from '@/lib/audit';
-import { cleanupCourseFiles } from '@/lib/cleanup';
-
 function checkAuth(session: Awaited<ReturnType<typeof getCurrentSession>>, course: { createdByUserId: string }) {
   if (!session) return NextResponse.json({ message: 'غير مصرح' }, { status: 401 });
   if (session.role !== 'MANAGER' && course.createdByUserId !== session.userId) {
@@ -15,8 +13,6 @@ function checkAuth(session: Awaited<ReturnType<typeof getCurrentSession>>, cours
 export async function GET(_request: Request, { params }: { params: { id: string } }) {
   const session = getCurrentSession();
   if (!session) return NextResponse.json({ message: 'غير مصرح' }, { status: 401 });
-
-  await cleanupCourseFiles(params.id);
 
   const course = await prisma.course.findUnique({
     where: { id: params.id },
