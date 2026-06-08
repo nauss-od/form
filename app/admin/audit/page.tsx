@@ -24,7 +24,7 @@ export default function AuditPage() {
     RESET_PASSWORD: 'إعادة تعيين كلمة المرور', EXPORT_PDF: 'تصدير PDF', EXPORT_EML: 'تصدير EML',
     VIEW_INSURANCE: 'مشاهدة التأمين', SUBMIT_FORM: 'تقديم النموذج', PAGE_VIEW: 'مشاهدة الصفحة',
     EXPORT_EXCEL: 'تصدير Excel', DELETE_COURSE: 'حذف دورة', UPDATE_COURSE: 'تحديث دورة',
-    DELETE_SUBMISSION: 'حذف تسجيل',
+    DELETE_SUBMISSION: 'حذف تسجيل', CLEANUP_ARCHIVE: 'أرشفة وتنظيف',
   };
 
   const entityLabels: Record<string, string> = {
@@ -34,6 +34,9 @@ export default function AuditPage() {
   const metaLabels: Record<string, string> = {
     activityName: 'اسم النشاط', updated: 'التحديثات', isActive: 'الحالة',
     name: 'الاسم', email: 'البريد الإلكتروني', role: 'الصلاحية',
+    venue: 'المقر', startDate: 'تاريخ البداية', participantCount: 'عدد المستفيدين',
+    submissionCount: 'عدد التسجيلات', fileCount: 'عدد الملفات', deletedAt: 'تاريخ الحذف',
+    submissionId: 'معرف التسجيل',
   };
 
   function formatMeta(meta: Record<string, unknown> | null): string {

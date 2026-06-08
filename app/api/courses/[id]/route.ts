@@ -19,7 +19,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     include: {
       createdBy: { select: { name: true } },
       submissions: {
-        include: { files: true },
+        include: { files: { select: { id: true, fileType: true, fileUrl: true, fileName: true, fileSize: true, mimeType: true, createdAt: true } } },
         orderBy: { createdAt: 'asc' }
       }
     }

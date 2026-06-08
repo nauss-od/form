@@ -13,7 +13,7 @@ export async function GET(request: Request, { params }: { params: { courseId: st
     const course = await prisma.course.findUnique({
       where: { id: params.courseId },
       include: {
-        submissions: { include: { files: true }, orderBy: { createdAt: 'asc' } },
+        submissions: { include: { files: { select: { id: true, fileType: true, fileName: true } } }, orderBy: { createdAt: 'asc' } },
         createdBy: true,
       },
     });
