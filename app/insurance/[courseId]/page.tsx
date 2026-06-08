@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, Fragment } from 'react';
+import React, { useState, useEffect, Fragment, useCallback } from 'react';
 import AppShell from '@/components/AppShell';
+import RotateImageBtn from '@/components/RotateImageBtn';
 
 export default function InsuranceReviewPage({ params }: { params: { courseId: string } }) {
   const [course, setCourse] = useState<any>(null);
@@ -278,6 +279,9 @@ function CopyBtn({ text }: { text: string }) {
 function ExpandedPreview({ participant }: { participant: any }) {
   const passportFile = participant.files?.find((f: any) => f.fileType === 'PASSPORT');
   const nationalIdFile = participant.files?.find((f: any) => f.fileType === 'NATIONAL_ID');
+  const [ts, setTs] = useState(0);
+
+  const onRotated = useCallback(() => setTs(t => t + 1), []);
 
   const allFields = [
     { label: 'اسم المشارك', value: participant.fullNamePassport, ltr: false },
@@ -317,11 +321,12 @@ function ExpandedPreview({ participant }: { participant: any }) {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           {passportFile && (
             <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e4ebeb', overflow: 'hidden' }}>
-              <div style={{ padding: '6px 14px', background: '#eef6f6', fontSize: '0.7rem', fontWeight: 700, color: '#014948', borderBottom: '1px solid #e4ebeb' }}>
-                صورة جواز السفر
+              <div style={{ padding: '6px 14px', background: '#eef6f6', fontSize: '0.7rem', fontWeight: 700, color: '#014948', borderBottom: '1px solid #e4ebeb', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ flex: 1 }}>صورة جواز السفر</span>
+                <RotateImageBtn fileId={passportFile.id} onRotated={onRotated} />
               </div>
               <div style={{ padding: 8, display: 'flex', justifyContent: 'center', background: '#fafcfc' }}>
-                <img src={`/api/files/${passportFile.id}`} alt=""
+                <img src={`/api/files/${passportFile.id}?t=${ts}`} alt=""
                   style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8, objectFit: 'contain' }}
                 />
               </div>
@@ -329,11 +334,12 @@ function ExpandedPreview({ participant }: { participant: any }) {
           )}
           {nationalIdFile && (
             <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e4ebeb', overflow: 'hidden' }}>
-              <div style={{ padding: '6px 14px', background: '#f8f5ee', fontSize: '0.7rem', fontWeight: 700, color: '#8a7440', borderBottom: '1px solid #e4ebeb' }}>
-                صورة الهوية الوطنية
+              <div style={{ padding: '6px 14px', background: '#f8f5ee', fontSize: '0.7rem', fontWeight: 700, color: '#8a7440', borderBottom: '1px solid #e4ebeb', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ flex: 1 }}>صورة الهوية الوطنية</span>
+                <RotateImageBtn fileId={nationalIdFile.id} onRotated={onRotated} />
               </div>
               <div style={{ padding: 8, display: 'flex', justifyContent: 'center', background: '#fafcfc' }}>
-                <img src={`/api/files/${nationalIdFile.id}`} alt=""
+                <img src={`/api/files/${nationalIdFile.id}?t=${ts}`} alt=""
                   style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8, objectFit: 'contain' }}
                 />
               </div>

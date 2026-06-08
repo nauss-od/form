@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, Fragment } from 'react';
+import { useState, useEffect, Fragment, useCallback } from 'react';
+import RotateImageBtn from '@/components/RotateImageBtn';
 
 type Participant = {
   id: string;
@@ -355,6 +356,9 @@ function CopyBtn({ text }: { text: string }) {
 function ExpandedContent({ participant }: { participant: Participant }) {
   const passportFile = participant.files?.find(f => f.fileType === 'PASSPORT');
   const nationalIdFile = participant.files?.find(f => f.fileType === 'NATIONAL_ID');
+  const [ts, setTs] = useState(0);
+  const onRotated = useCallback(() => setTs(t => t + 1), []);
+
   const allFields = [
     { label: 'اسم المشارك', value: participant.fullNamePassport, ltr: false },
     { label: 'رقم الجواز', value: participant.passportNumber, ltr: true },
@@ -395,10 +399,11 @@ function ExpandedContent({ participant }: { participant: Participant }) {
             <div style={{ flex: 1, background: '#fff', borderRadius: 12, border: '1px solid #e4ebeb', overflow: 'hidden' }}>
               <div style={{ padding: '6px 14px', background: '#eef6f6', fontSize: '0.68rem', fontWeight: 700, color: '#014948', borderBottom: '1px solid #e4ebeb', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#016564" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-                جواز السفر
+                <span style={{ flex: 1 }}>جواز السفر</span>
+                <RotateImageBtn fileId={passportFile.id} onRotated={onRotated} />
               </div>
               <div style={{ padding: 6, display: 'flex', justifyContent: 'center', background: '#fafcfc' }}>
-                <img src={`/api/files/${passportFile.id}`} alt="" style={{ maxWidth: '100%', maxHeight: 160, borderRadius: 8, objectFit: 'contain' }} />
+                <img src={`/api/files/${passportFile.id}?t=${ts}`} alt="" style={{ maxWidth: '100%', maxHeight: 160, borderRadius: 8, objectFit: 'contain' }} />
               </div>
             </div>
           )}
@@ -406,10 +411,11 @@ function ExpandedContent({ participant }: { participant: Participant }) {
             <div style={{ flex: 1, background: '#fff', borderRadius: 12, border: '1px solid #e4ebeb', overflow: 'hidden' }}>
               <div style={{ padding: '6px 14px', background: '#f8f5ee', fontSize: '0.68rem', fontWeight: 700, color: '#8a7440', borderBottom: '1px solid #e4ebeb', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8a7440" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-                الهوية الوطنية
+                <span style={{ flex: 1 }}>الهوية الوطنية</span>
+                <RotateImageBtn fileId={nationalIdFile.id} onRotated={onRotated} />
               </div>
               <div style={{ padding: 6, display: 'flex', justifyContent: 'center', background: '#fafcfc' }}>
-                <img src={`/api/files/${nationalIdFile.id}`} alt="" style={{ maxWidth: '100%', maxHeight: 160, borderRadius: 8, objectFit: 'contain' }} />
+                <img src={`/api/files/${nationalIdFile.id}?t=${ts}`} alt="" style={{ maxWidth: '100%', maxHeight: 160, borderRadius: 8, objectFit: 'contain' }} />
               </div>
             </div>
           )}
