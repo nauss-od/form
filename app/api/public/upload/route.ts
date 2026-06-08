@@ -30,9 +30,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'البيانات غير موجودة' }, { status: 404 });
     }
 
-    const MAX_SIZE = 5 * 1024 * 1024;
+    const MAX_SIZE = 15 * 1024 * 1024;
     if (file.size > MAX_SIZE) {
-      return NextResponse.json({ message: 'حجم الملف كبير جداً (الحد الأقصى 5 ميجابايت)' }, { status: 413 });
+      return NextResponse.json({ message: 'حجم الملف كبير جداً (الحد الأقصى 15 ميجابايت)' }, { status: 413 });
     }
 
     const buf = Buffer.from(await file.arrayBuffer());
