@@ -79,7 +79,7 @@ function UserMenu({ forceManager, isManagerAccount, activeRole, onRoleSwitch, on
         onClick={() => setOpen(o => !o)}
         style={{
           display: 'flex', alignItems: 'center', gap: 8, padding: '4px 6px 4px 10px',
-          borderRadius: 99, border: '1.5px solid var(--nauss-line)', background: 'var(--nauss-surface)',
+          borderRadius: 99, border: '1.5px solid var(--nauss-line)', background: '#fff',
           cursor: 'pointer', color: 'var(--nauss-ink)',
         }}
       >
@@ -96,12 +96,12 @@ function UserMenu({ forceManager, isManagerAccount, activeRole, onRoleSwitch, on
       {open && (
         <div style={{
           position: 'absolute', top: 'calc(100% + 8px)', left: 0,
-          minWidth: 220, background: 'var(--nauss-surface)',
+          minWidth: 220, background: '#ffffff',
           border: '1.5px solid var(--nauss-line)', borderRadius: 14,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.12)', zIndex: 200, overflow: 'hidden',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.18)', zIndex: 9999, overflow: 'hidden',
         }}>
           {/* User info header */}
-          <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--nauss-line)', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--nauss-line)', display: 'flex', alignItems: 'center', gap: 10, background: '#fff' }}>
             <div style={{
               width: 40, height: 40, borderRadius: '50%',
               background: 'linear-gradient(135deg, #016564, #014948)',
@@ -136,8 +136,8 @@ function UserMenu({ forceManager, isManagerAccount, activeRole, onRoleSwitch, on
             href="/account"
             onClick={() => setOpen(false)}
             style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', fontSize: '0.78rem', fontWeight: 700, color: 'var(--nauss-ink)', textDecoration: 'none', transition: 'background 0.12s' }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'var(--nauss-bg)')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            onMouseEnter={e => (e.currentTarget.style.background = '#f4f8f8')}
+            onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
           >
             <span style={{ opacity: 0.6 }}><Icon name="user" /></span>
             الملف الشخصي
@@ -146,9 +146,9 @@ function UserMenu({ forceManager, isManagerAccount, activeRole, onRoleSwitch, on
           {/* Logout */}
           <button
             onClick={() => { setOpen(false); onLogout(); }}
-            style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', width: '100%', fontSize: '0.78rem', fontWeight: 700, color: 'var(--danger)', background: 'transparent', border: 'none', cursor: 'pointer', borderTop: '1px solid var(--nauss-line)', transition: 'background 0.12s' }}
+            style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', width: '100%', fontSize: '0.78rem', fontWeight: 700, color: 'var(--danger)', background: '#fff', border: 'none', cursor: 'pointer', borderTop: '1px solid var(--nauss-line)', transition: 'background 0.12s' }}
             onMouseEnter={e => (e.currentTarget.style.background = 'rgba(191,61,48,0.05)')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
           >
             <Icon name="logout" />
             تسجيل الخروج
