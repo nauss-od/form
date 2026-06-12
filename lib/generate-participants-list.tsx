@@ -89,6 +89,7 @@ export interface ParticipantForList {
 export interface StaffForList {
   name: string;
   passportNo: string | null;
+  mobile: string | null;
   jobTitle: string;
 }
 
@@ -178,6 +179,30 @@ export async function generateParticipantsListBuffer(
           </View>
         </View>
 
+        {/* Naif University Nominees — shown BEFORE participants if any */}
+        {staff.length > 0 && (
+          <>
+            <Text style={s.tableTitle}>NAIF UNIVERSITY NOMINEES</Text>
+            <View style={s.table}>
+              <View style={s.tableHead}>
+                {['#', 'Name', 'Pass. No.', 'Mob. No.'].map((h, i) => (
+                  <View key={h} style={[s.tableHeadCell, { width: ['8%', '44%', '24%', '24%'][i] }]}>
+                    <Text>{h}</Text>
+                  </View>
+                ))}
+              </View>
+              {staff.map((m, idx) => (
+                <View key={idx} style={idx % 2 === 0 ? s.tableRow : s.tableRowAlt}>
+                  <Text style={[s.tableCell, { width: '8%' }]}>{idx + 1}</Text>
+                  <Text style={[s.tableCell, { width: '44%', textAlign: 'left' }]}>{m.name}</Text>
+                  <Text style={[s.tableCell, { width: '24%' }]}>{m.passportNo || '—'}</Text>
+                  <Text style={[s.tableCell, { width: '24%' }]}>{m.mobile || '—'}</Text>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
+
         {/* Table title */}
         <Text style={s.tableTitle}>REGISTERED PARTICIPANTS</Text>
 
@@ -199,30 +224,6 @@ export async function generateParticipantsListBuffer(
             </View>
           ))}
         </View>
-
-        {/* NAUSS Staff */}
-        {staff.length > 0 && (
-          <>
-            <Text style={[s.tableTitle, { marginTop: 16 }]}>NAUSS ACCOMPANYING STAFF</Text>
-            <View style={s.table}>
-              <View style={s.tableHead}>
-                {['#', 'Name', 'Passport No.', 'Job Title'].map((h, i) => (
-                  <View key={h} style={[s.tableHeadCell, { width: ['8%', '38%', '24%', '30%'][i] }]}>
-                    <Text>{h}</Text>
-                  </View>
-                ))}
-              </View>
-              {staff.map((m, idx) => (
-                <View key={idx} style={idx % 2 === 0 ? s.tableRow : s.tableRowAlt}>
-                  <Text style={[s.tableCell, { width: '8%' }]}>{idx + 1}</Text>
-                  <Text style={[s.tableCell, { width: '38%', textAlign: 'left' }]}>{m.name}</Text>
-                  <Text style={[s.tableCell, { width: '24%' }]}>{m.passportNo || '—'}</Text>
-                  <Text style={[s.tableCell, { width: '30%', textAlign: 'left' }]}>{m.jobTitle}</Text>
-                </View>
-              ))}
-            </View>
-          </>
-        )}
 
         {/* Footer */}
         <View style={s.footer} fixed>

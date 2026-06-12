@@ -37,6 +37,7 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
     const staff = course.staff.map(m => ({
       name: m.name,
       passportNo: m.passportNo,
+      mobile: m.mobile,
       jobTitle: m.jobTitle,
     }));
 

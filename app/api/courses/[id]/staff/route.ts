@@ -44,6 +44,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   const name = String(body.name || '').trim();
   const passportNo = String(body.passportNo || '').trim().toUpperCase() || null;
+  const mobile = String(body.mobile || '').trim() || null;
   const jobTitle = String(body.jobTitle || '').trim();
 
   if (!name || !/^[A-Za-z\s.\-']+$/.test(name))
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ message: 'الحد الأقصى 20 فرداً من الكادر' }, { status: 400 });
 
   const member = await prisma.courseStaff.create({
-    data: { courseId: params.id, name, passportNo, jobTitle, sortOrder: existing },
+    data: { courseId: params.id, name, passportNo, mobile, jobTitle, sortOrder: existing },
   });
 
   return NextResponse.json({ success: true, member });

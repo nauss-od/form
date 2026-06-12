@@ -13,7 +13,7 @@ interface Course {
   insuranceIssuedAt?: string | null;
 }
 
-interface StaffMember { id: string; name: string; passportNo: string | null; jobTitle: string; }
+interface StaffMember { id: string; name: string; passportNo: string | null; mobile: string | null; jobTitle: string; }
 
 const JOB_TITLES = ['Scientific Supervisor', 'Translator', 'Trainer 1', 'Trainer 2', 'Coordinator'];
 
@@ -28,6 +28,7 @@ function StaffModal({ course, onClose }: { course: Course; onClose: () => void }
   const [loadingStaff, setLoadingStaff] = useState(true);
   const [name, setName] = useState('');
   const [passportNo, setPassportNo] = useState('');
+  const [mobile, setMobile] = useState('');
   const [jobTitle, setJobTitle] = useState(JOB_TITLES[0]);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
@@ -43,12 +44,12 @@ function StaffModal({ course, onClose }: { course: Course; onClose: () => void }
     setSaving(true);
     const res = await fetch(`/api/courses/${course.id}/staff`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: name.trim(), passportNo: passportNo.trim() || null, jobTitle }),
+      body: JSON.stringify({ name: name.trim(), passportNo: passportNo.trim() || null, mobile: mobile.trim() || null, jobTitle }),
     });
     const data = await res.json();
     if (!res.ok) { setMsg(data.message || 'خطأ'); setSaving(false); return; }
     setStaff(prev => [...prev, data.member]);
-    setName(''); setPassportNo('');
+    setName(''); setPassportNo(''); setMobile('');
     setSaving(false);
   }
 
@@ -67,7 +68,7 @@ function StaffModal({ course, onClose }: { course: Course; onClose: () => void }
         <div style={{ padding: '18px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
           <div>
             <div style={{ fontWeight: 700, fontSize: 15, color: '#1b4f6b' }}>{title}</div>
-            <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>إدارة كادر NAUSS المرافق</div>
+            <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>المرشحون من جامعة نايف</div>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: '#94a3b8', lineHeight: 1, flexShrink: 0 }}>×</button>
         </div>
@@ -77,14 +78,18 @@ function StaffModal({ course, onClose }: { course: Course; onClose: () => void }
           <div style={{ background: '#f8fafc', borderRadius: 10, padding: 16, marginBottom: 20, border: '1px solid #e2e8f0' }}>
             <div style={{ fontWeight: 700, fontSize: 13, color: '#1b4f6b', marginBottom: 12 }}>إضافة فرد من الكادر</div>
             <div style={{ display: 'grid', gap: 10 }}>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, color: '#64748b', display: 'block', marginBottom: 4 }}>الاسم (إنجليزي فقط) *</label>
+                <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="JOHN DOE" dir="ltr" style={{ width: '100%' }} />
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <div>
-                  <label style={{ fontSize: 11, fontWeight: 700, color: '#64748b', display: 'block', marginBottom: 4 }}>الاسم (إنجليزي فقط) *</label>
-                  <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="JOHN DOE" dir="ltr" style={{ width: '100%' }} />
-                </div>
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 700, color: '#64748b', display: 'block', marginBottom: 4 }}>رقم الجواز</label>
                   <input className="input" value={passportNo} onChange={e => setPassportNo(e.target.value.toUpperCase())} placeholder="AB123456" dir="ltr" style={{ width: '100%' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: '#64748b', display: 'block', marginBottom: 4 }}>رقم الجوال</label>
+                  <input className="input" value={mobile} onChange={e => setMobile(e.target.value)} placeholder="+966XXXXXXXXX" dir="ltr" style={{ width: '100%' }} />
                 </div>
               </div>
               <div>
@@ -111,7 +116,7 @@ function StaffModal({ course, onClose }: { course: Course; onClose: () => void }
                 <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#f8fafc', borderRadius: 8, padding: '10px 14px', border: '1px solid #e2e8f0' }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 700, fontSize: 13, color: '#1e293b', direction: 'ltr' }}>{m.name}</div>
-                    <div style={{ fontSize: 11, color: '#64748b', direction: 'ltr' }}>{m.jobTitle}{m.passportNo ? ` · ${m.passportNo}` : ''}</div>
+                    <div style={{ fontSize: 11, color: '#64748b', direction: 'ltr' }}>{m.jobTitle}{m.passportNo ? ` · ${m.passportNo}` : ''}{m.mobile ? ` · ${m.mobile}` : ''}</div>
                   </div>
                   <button onClick={() => removeMember(m.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: 20, lineHeight: 1 }}>×</button>
                 </div>
@@ -230,17 +235,11 @@ export default function ParticipantsPage() {
                   </div>
                   {c._count?.submissions != null && <div style={{ color: '#0ea5e9', fontSize: 11, marginTop: 3 }}>{c._count.submissions} مشارك</div>}
                 </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => setSelectedCourse(c)} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#f1f5f9', color: '#475569', padding: '7px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, border: '1px solid #e2e8f0', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    كادر
-                  </button>
-                  <a href={`/api/export/${c.id}/participants-list`} target="_blank" rel="noopener noreferrer"
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#1b4f6b', color: '#fff', padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    PDF
-                  </a>
-                </div>
+                <a href={`/api/export/${c.id}/participants-list`} target="_blank" rel="noopener noreferrer"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#1b4f6b', color: '#fff', padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  تصدير PDF
+                </a>
               </div>
             ))}
           </div>

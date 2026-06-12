@@ -64,6 +64,7 @@ model CourseStaff {
   courseId   String
   name       String
   passportNo String?
+  mobile     String?
   jobTitle   String
   sortOrder  Int      @default(0)
   createdAt  DateTime @default(now())
