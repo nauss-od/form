@@ -211,6 +211,10 @@ export function CourseCard({ c, onDeleted, onEdited }: { c: Course; onDeleted: (
           <div className="course-card-meta" style={{ fontSize: '0.68rem', marginTop: 1, gap: 6 }}>
             <span><IconLoc /> {c.venue || '—'}</span>
             <span><IconCal /> {formatDate(c.startDate)}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: 'var(--nauss-muted)' }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
+              {c.createdBy.name}
+            </span>
           </div>
         </div>
       </div>
