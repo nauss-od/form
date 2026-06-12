@@ -101,15 +101,6 @@ export interface CourseForList {
   createdByName: string;
 }
 
-// Reverse Arabic text for correct RTL display in @react-pdf/renderer
-function fixArabic(text: string): string {
-  if (!text) return text;
-  // Check if text contains Arabic characters
-  if (!/[؀-ۿ]/.test(text)) return text;
-  // Reverse words for RTL display in PDF
-  return text.split(' ').reverse().join(' ');
-}
-
 function fmtDate(d: Date | null): string {
   if (!d) return '—';
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -144,21 +135,26 @@ export async function generateParticipantsListBuffer(
             </Text>
           </View>
           <View style={s.headerRight}>
-            <Image src={logoSrc} style={{ width: 70 }} />
+            <Image src={logoSrc} style={{ width: 100 }} />
           </View>
         </View>
 
         {/* Course info */}
         <View style={s.infoBox}>
           <Text style={s.infoTitle}>TRAINING ACTIVITY DETAILS</Text>
+          {/* Two-column info grid: label on top, value below, all right-aligned */}
           <View style={s.infoGrid}>
-            <View style={s.infoItem}>
+            <View style={[s.infoItem, { width: '100%' }]}>
               <Text style={s.infoLabel}>Activity / Program Title</Text>
-              <Text style={[s.infoValue, { direction: 'rtl' }]}>{fixArabic(course.activityName || '—')}</Text>
+              <Text style={[s.infoValue, { textAlign: 'right' }]}>{course.activityName || '—'}</Text>
             </View>
             <View style={s.infoItem}>
               <Text style={s.infoLabel}>Venue</Text>
-              <Text style={[s.infoValue, { direction: 'rtl' }]}>{fixArabic(course.venue || '—')}</Text>
+              <Text style={[s.infoValue, { textAlign: 'right' }]}>{course.venue || '—'}</Text>
+            </View>
+            <View style={s.infoItem}>
+              <Text style={s.infoLabel}>Total Participants</Text>
+              <Text style={s.infoValue}>{String(participants.length)}</Text>
             </View>
             <View style={s.infoItem}>
               <Text style={s.infoLabel}>Start Date</Text>
@@ -170,11 +166,7 @@ export async function generateParticipantsListBuffer(
             </View>
             <View style={s.infoItem}>
               <Text style={s.infoLabel}>Programme Coordinator</Text>
-              <Text style={[s.infoValue, { direction: 'rtl' }]}>{fixArabic(course.createdByName)}</Text>
-            </View>
-            <View style={s.infoItem}>
-              <Text style={s.infoLabel}>Total Participants</Text>
-              <Text style={s.infoValue}>{String(participants.length)}</Text>
+              <Text style={[s.infoValue, { textAlign: 'right' }]}>{course.createdByName}</Text>
             </View>
           </View>
         </View>

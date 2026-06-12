@@ -181,6 +181,12 @@ export default function ParticipantsPage() {
   const [activeRole, setActiveRole] = useState<'MANAGER' | 'EMPLOYEE'>('MANAGER');
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
 
+  function fetchCourses(ar: 'MANAGER' | 'EMPLOYEE', role: string) {
+    const asEmployee = role === 'MANAGER' && ar === 'EMPLOYEE';
+    const url = `/api/courses?stats=true${asEmployee ? '&asEmployee=true' : ''}`;
+    fetch(url).then(r => r.json()).then(d => setCourses(d.recentCourses ?? [])).catch(() => {});
+  }
+
   useEffect(() => {
     const ar = (localStorage.getItem('nauss-active-role') as 'MANAGER' | 'EMPLOYEE') || 'MANAGER';
     setActiveRole(ar);
@@ -199,6 +205,17 @@ export default function ParticipantsPage() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  // Re-fetch when manager switches role
+  useEffect(() => {
+    const handler = () => {
+      const ar = (localStorage.getItem('nauss-active-role') as 'MANAGER' | 'EMPLOYEE') || 'MANAGER';
+      setActiveRole(ar);
+      if (apiRole) fetchCourses(ar, apiRole);
+    };
+    window.addEventListener('nauss-role-change', handler);
+    return () => window.removeEventListener('nauss-role-change', handler);
+  }, [apiRole]);
 
   const isManagerView = apiRole === 'MANAGER' && activeRole === 'MANAGER';
 
