@@ -335,7 +335,7 @@ function ImgWithLoader({ src, alt }: { src: string; alt: string }) {
         onLoad={() => setLoaded(true)}
         onError={() => setFailed(true)}
         style={{
-          maxWidth: '100%', maxHeight: 200, borderRadius: 8, objectFit: 'contain',
+          width: '100%', maxHeight: 220, borderRadius: 8, objectFit: 'contain', objectPosition: 'right top',
           opacity: loaded ? 1 : 0, transition: 'opacity 0.25s',
         }}
       />
@@ -412,7 +412,7 @@ function ExpandedPreview({ participant }: { participant: any }) {
                 <span style={{ flex: 1 }}>صورة جواز السفر</span>
                 {(!passportFile.mimeType || passportFile.mimeType.startsWith('image/')) && <RotateImageBtn fileId={passportFile.id} onRotated={onRotated} />}
               </div>
-              <div style={{ padding: 8, display: 'flex', justifyContent: 'center', background: '#fafcfc' }}>
+              <div style={{ padding: 8, background: '#fafcfc' }}>
                 <FilePreview file={passportFile} rotateTs={rotateTs} alt="جواز السفر" />
               </div>
             </div>
@@ -423,7 +423,7 @@ function ExpandedPreview({ participant }: { participant: any }) {
                 <span style={{ flex: 1 }}>صورة الهوية الوطنية</span>
                 {(!nationalIdFile.mimeType || nationalIdFile.mimeType.startsWith('image/')) && <RotateImageBtn fileId={nationalIdFile.id} onRotated={onRotated} />}
               </div>
-              <div style={{ padding: 8, display: 'flex', justifyContent: 'center', background: '#fafcfc' }}>
+              <div style={{ padding: 8, background: '#fafcfc' }}>
                 <FilePreview file={nationalIdFile} rotateTs={rotateTs} alt="الهوية الوطنية" />
               </div>
             </div>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import sharp from 'sharp';
 import type { SubmissionFileType } from '@prisma/client';
 
 export async function POST(request: NextRequest) {
@@ -39,16 +40,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'يرجى رفع صورة فقط' }, { status: 400 });
     }
 
-    const buf = Buffer.from(await file.arrayBuffer());
+    const rawBuf = Buffer.from(await file.arrayBuffer());
+    // auto-rotate based on EXIF orientation then output as JPEG
+    const buf = await sharp(rawBuf).rotate().jpeg({ quality: 88 }).toBuffer();
     const record = await prisma.submissionFile.create({
       data: {
         submissionId,
         fileType: fileType as SubmissionFileType,
         fileUrl: '',
-        fileName: file.name,
-        fileSize: file.size,
+        fileName: file.name.replace(/\.[^.]+$/i, '.jpg'),
+        fileSize: buf.length,
         fileData: buf,
-        mimeType: file.type || 'image/jpeg'
+        mimeType: 'image/jpeg',
       }
     });
 

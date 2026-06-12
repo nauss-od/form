@@ -239,10 +239,15 @@ export function CourseCard({ c, onDeleted, onEdited }: { c: Course; onDeleted: (
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                 حذف
               </button>
-              <a href={`/api/export/${c.id}/pdf`} className="ghost-btn" style={{ minHeight: 26, padding: '0 6px', fontSize: '0.6rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }} title="تصدير PDF"><IconPDF /> PDF</a>
+              <a href={`/api/export/${c.id}/pdf`} className="ghost-btn" style={{ minHeight: 26, padding: '0 6px', fontSize: '0.6rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }} title="تصدير PDF تأمين"><IconPDF /> PDF</a>
+              <a href={`/api/export/${c.id}/participants-list`} className="ghost-btn" style={{ minHeight: 26, padding: '0 6px', fontSize: '0.6rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3, color: '#016564' }} title="قائمة المشاركين بالإنجليزية">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                قائمة
+              </a>
               <a href={mailtoHref(c)} className="ghost-btn" style={{ minHeight: 26, padding: '0 6px', fontSize: '0.6rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }} title="ارسال بالبريد"><IconEML /> بريد</a>
-              <button className="ghost-btn" style={{ minHeight: 26, padding: '0 8px', fontSize: '0.6rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 4, color: '#14805a', borderColor: 'rgba(20,128,90,0.18)', background: 'rgba(20,128,90,0.06)' }} onClick={() => setShowIssue(true)} title="تم تصدير التأمين الطبي">
-                <IconCheck /> تصدير التأمين
+              <button className="ghost-btn" style={{ minHeight: 26, padding: '0 8px', fontSize: '0.6rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 4, color: '#5f7777', borderColor: 'rgba(0,0,0,0.08)' }} onClick={() => setShowIssue(true)} title="تصدير التأمين الطبي النهائي">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                تصدير التأمين
               </button>
             </>
           )}

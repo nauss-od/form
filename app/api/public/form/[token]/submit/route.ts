@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { logAudit } from '@/lib/audit';
+import sharp from 'sharp';
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
 
@@ -87,15 +88,18 @@ export async function POST(request: NextRequest, { params }: { params: { token: 
         }
       });
 
+      const passportBuf = await sharp(Buffer.from(await passportFile.arrayBuffer())).rotate().jpeg({ quality: 88 }).toBuffer();
+      const nationalIdBuf = await sharp(Buffer.from(await nationalIdFile.arrayBuffer())).rotate().jpeg({ quality: 88 }).toBuffer();
+
       const passportRecord = await tx.submissionFile.create({
         data: {
           submissionId: created.id,
           fileType: 'PASSPORT',
           fileUrl: '',
-          fileName: passportFile.name,
-          fileSize: passportFile.size,
-          fileData: Buffer.from(await passportFile.arrayBuffer()),
-          mimeType: passportFile.type,
+          fileName: passportFile.name.replace(/\.[^.]+$/i, '.jpg'),
+          fileSize: passportBuf.length,
+          fileData: passportBuf,
+          mimeType: 'image/jpeg',
         },
       });
 
@@ -104,10 +108,10 @@ export async function POST(request: NextRequest, { params }: { params: { token: 
           submissionId: created.id,
           fileType: 'NATIONAL_ID',
           fileUrl: '',
-          fileName: nationalIdFile.name,
-          fileSize: nationalIdFile.size,
-          fileData: Buffer.from(await nationalIdFile.arrayBuffer()),
-          mimeType: nationalIdFile.type,
+          fileName: nationalIdFile.name.replace(/\.[^.]+$/i, '.jpg'),
+          fileSize: nationalIdBuf.length,
+          fileData: nationalIdBuf,
+          mimeType: 'image/jpeg',
         },
       });
 
