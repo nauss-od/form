@@ -10,15 +10,17 @@ export async function GET(request: NextRequest) {
 
   const url = new URL(request.url);
   const stats = url.searchParams.get('stats') === 'true';
+  // Manager can request employee-scoped view (only their own courses)
+  const asEmployee = session.role === 'MANAGER' && url.searchParams.get('asEmployee') === 'true';
 
-  const where = session.role === 'MANAGER' ? {} : { createdByUserId: session.userId };
+  const where = (session.role === 'MANAGER' && !asEmployee) ? {} : { createdByUserId: session.userId };
 
   if (stats) {
     // run all independent queries in parallel
     const [totalCourses, currentSubmissions, recentCoursesRaw, usersRaw] = await Promise.all([
       prisma.course.count({ where }),
       prisma.submission.count({
-        where: { course: { ...(session.role === 'MANAGER' ? {} : { createdByUserId: session.userId }) } }
+        where: { course: { ...((session.role === 'MANAGER' && !asEmployee) ? {} : { createdByUserId: session.userId }) } }
       }),
       prisma.course.findMany({
         where,
@@ -26,7 +28,7 @@ export async function GET(request: NextRequest) {
         orderBy: { createdAt: 'desc' },
         take: 50
       }),
-      session.role === 'MANAGER'
+      (session.role === 'MANAGER' && !asEmployee)
         ? prisma.user.findMany({
             where: { role: 'EMPLOYEE', isActive: true },
             select: { id: true, name: true, email: true, mobile: true, createdAt: true, lastLoginAt: true, _count: { select: { courses: true } } },
@@ -71,7 +73,7 @@ export async function GET(request: NextRequest) {
     const subCountMap = new Map(empSubGroups.map(r => [r.userId, Number(r.cnt)]));
     const employees = usersRaw ? usersRaw.map(u => ({ ...u, submissionCount: subCountMap.get(u.id) ?? 0 })) : null;
 
-    const res = NextResponse.json({ totalCourses, totalSubmissions, completedSubmissions: totalSubmissions, recentCourses, userRole: session.role, employees });
+    const res = NextResponse.json({ totalCourses, totalSubmissions, completedSubmissions: totalSubmissions, recentCourses, userRole: session.role, userId: session.userId, employees });
     res.headers.set('Cache-Control', 'private, max-age=10, stale-while-revalidate=30');
     return res;
   }
