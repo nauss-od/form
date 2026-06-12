@@ -85,7 +85,7 @@ export default function AccountPage() {
           {/* شريط الهوية العلوي */}
           <div style={{
             background: 'linear-gradient(135deg, #034948 0%, #016564 60%, #0a706e 100%)',
-            padding: '28px 32px'
+            padding: '28px 32px',
             display: 'flex', alignItems: 'center', gap: 20,
           }}>
             <div style={{
