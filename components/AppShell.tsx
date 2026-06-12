@@ -106,8 +106,8 @@ function UserMenu({ forceManager, isManagerAccount, activeRole, onRoleSwitch, on
 
       {open && (
         <div style={{
-          position: 'fixed', top: 'auto', right: 12, left: 12,
-          minWidth: 220, maxWidth: 340, marginLeft: 'auto',
+          position: 'absolute', top: 'calc(100% + 8px)', left: 0, right: 'auto',
+          minWidth: 240, maxWidth: 300,
           background: '#ffffff',
           border: '1.5px solid var(--nauss-line)', borderRadius: 16,
           boxShadow: '0 8px 40px rgba(0,0,0,0.18)', zIndex: 9999, overflow: 'hidden',
