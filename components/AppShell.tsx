@@ -78,9 +78,9 @@ function UserMenu({ forceManager, isManagerAccount, activeRole, onRoleSwitch, on
       <button
         onClick={() => setOpen(o => !o)}
         style={{
-          display: 'flex', alignItems: 'center', gap: 8, padding: '4px 6px 4px 10px',
+          display: 'flex', alignItems: 'center', gap: 6, padding: '4px 6px 4px 8px',
           borderRadius: 99, border: '1.5px solid var(--nauss-line)', background: '#fff',
-          cursor: 'pointer', color: 'var(--nauss-ink)',
+          cursor: 'pointer', color: 'var(--nauss-ink)', maxWidth: 'min(200px, 40vw)',
         }}
       >
         <div style={{
@@ -95,10 +95,11 @@ function UserMenu({ forceManager, isManagerAccount, activeRole, onRoleSwitch, on
 
       {open && (
         <div style={{
-          position: 'absolute', top: 'calc(100% + 8px)', left: 0,
-          minWidth: 220, background: '#ffffff',
-          border: '1.5px solid var(--nauss-line)', borderRadius: 14,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.18)', zIndex: 9999, overflow: 'hidden',
+          position: 'fixed', top: 'auto', right: 12, left: 12,
+          minWidth: 220, maxWidth: 340, marginLeft: 'auto',
+          background: '#ffffff',
+          border: '1.5px solid var(--nauss-line)', borderRadius: 16,
+          boxShadow: '0 8px 40px rgba(0,0,0,0.18)', zIndex: 9999, overflow: 'hidden',
         }}>
           {/* User info header */}
           <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--nauss-line)', display: 'flex', alignItems: 'center', gap: 10, background: '#fff' }}>

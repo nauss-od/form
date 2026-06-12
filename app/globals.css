@@ -1906,11 +1906,14 @@ select.input:focus {
   .login-card { padding: 28px 22px; border-radius: var(--radius-xl); }
   .topbar {
     min-height: auto;
-    padding: 14px;
-    flex-direction: column;
-    align-items: flex-start;
+    padding: 10px 14px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
   }
-  .topbar-side { width: 100%; justify-content: space-between; flex-wrap: wrap; }
+  .topbar-side { flex-shrink: 0; }
+  .page-title { font-size: 1.1rem; }
   .page-body { padding: 14px; }
   .hero, .section-card, .form-panel, .auth-card { border-radius: var(--radius-xl); }
   .hero { padding: 22px; }
@@ -3118,7 +3121,8 @@ select.input:focus,
   .login-screen { padding: 0; }
   .login-brand,
   .login-card { padding: 34px 24px; }
-  .topbar { padding: 14px 16px; }
+  .topbar { padding: 10px 14px; flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; }
+  .page-title { font-size: 1.1rem; }
   .page-body { padding: 16px; }
   .section-card,
   .form-panel,
@@ -3161,4 +3165,12 @@ select.input:focus,
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ── account page responsive ── */
+.account-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 540px) {
+  .account-grid-2 { grid-template-columns: 1fr; }
+  .account-hero { padding: 20px 18px !important; }
+  .account-body { padding: 20px 18px !important; }
 }
