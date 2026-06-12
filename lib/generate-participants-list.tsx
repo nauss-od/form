@@ -94,6 +94,15 @@ export interface CourseForList {
   createdByName: string;
 }
 
+// Reverse Arabic text for correct RTL display in @react-pdf/renderer
+function fixArabic(text: string): string {
+  if (!text) return text;
+  // Check if text contains Arabic characters
+  if (!/[؀-ۿ]/.test(text)) return text;
+  // Reverse words for RTL display in PDF
+  return text.split(' ').reverse().join(' ');
+}
+
 function fmtDate(d: Date | null): string {
   if (!d) return '—';
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -120,14 +129,14 @@ export async function generateParticipantsListBuffer(
         {/* Header */}
         <View style={s.header}>
           <View style={s.headerLeft}>
-            <Image src={logoSrc} style={{ width: 70 }} />
-          </View>
-          <View style={s.headerRight}>
             <Text style={s.docTitle}>PARTICIPANTS LIST</Text>
             <Text style={s.docSubtitle}>Official Record — External Training Platform</Text>
             <Text style={[s.uniNameEn, { marginTop: 6, fontSize: 8, color: MUTED }]}>
               Naif Arab University for Security Sciences
             </Text>
+          </View>
+          <View style={s.headerRight}>
+            <Image src={logoSrc} style={{ width: 70 }} />
           </View>
         </View>
 
@@ -137,11 +146,11 @@ export async function generateParticipantsListBuffer(
           <View style={s.infoGrid}>
             <View style={s.infoItem}>
               <Text style={s.infoLabel}>Activity / Program Title</Text>
-              <Text style={s.infoValue}>{course.activityName || '—'}</Text>
+              <Text style={[s.infoValue, { direction: 'rtl' }]}>{fixArabic(course.activityName || '—')}</Text>
             </View>
             <View style={s.infoItem}>
               <Text style={s.infoLabel}>Venue</Text>
-              <Text style={s.infoValue}>{course.venue || '—'}</Text>
+              <Text style={[s.infoValue, { direction: 'rtl' }]}>{fixArabic(course.venue || '—')}</Text>
             </View>
             <View style={s.infoItem}>
               <Text style={s.infoLabel}>Start Date</Text>
@@ -153,7 +162,7 @@ export async function generateParticipantsListBuffer(
             </View>
             <View style={s.infoItem}>
               <Text style={s.infoLabel}>Programme Coordinator</Text>
-              <Text style={s.infoValue}>{course.createdByName}</Text>
+              <Text style={[s.infoValue, { direction: 'rtl' }]}>{fixArabic(course.createdByName)}</Text>
             </View>
             <View style={s.infoItem}>
               <Text style={s.infoLabel}>Total Participants</Text>
@@ -188,7 +197,7 @@ export async function generateParticipantsListBuffer(
         <View style={s.footer} fixed>
           <View>
             <Text style={s.footerBold}>Training Operations Department</Text>
-            <Text style={s.footerLeft}>Training Agency — NAUSS</Text>
+            <Text style={s.footerLeft}>Training Deputyship — NAUSS</Text>
           </View>
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={s.footerLeft}>Issued: {fmtDate(today)}</Text>
