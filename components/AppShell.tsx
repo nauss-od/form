@@ -22,6 +22,7 @@ function Icon({ name }: { name: string }) {
     audit: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 14h6M9 18h6M9 10h6"/></svg>,
     chart: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>,
     plus: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>,
+    participants: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>,
     menu: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>,
     logout: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
     user: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>,
@@ -35,6 +36,7 @@ const managerNav: NavItem[] = [
   { href: '/', label: 'لوحة المعلومات', icon: 'dashboard' },
   { href: '/employees', label: 'الموظفين', icon: 'employees' },
   { href: '/courses', label: 'الدورات', icon: 'courses' },
+  { href: '/participants', label: 'قائمة المشاركين', icon: 'participants' },
   { href: '/admin/users', label: 'إدارة الحسابات', icon: 'settings' },
   { href: '/admin/audit', label: 'سجل التدقيق', icon: 'audit' },
   { href: '/admin/reports', label: 'التقارير', icon: 'chart' },
@@ -44,6 +46,7 @@ const employeeNav: NavItem[] = [
   { href: '/', label: 'لوحة المستخدم', icon: 'dashboard' },
   { href: '/new-course', label: 'إنشاء دورة جديدة', icon: 'plus' },
   { href: '/courses', label: 'الدورات', icon: 'courses' },
+  { href: '/participants', label: 'قائمة المشاركين', icon: 'participants' },
 ];
 
 function initials(name: string) {
