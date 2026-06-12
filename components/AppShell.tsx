@@ -61,8 +61,16 @@ function UserMenu({ forceManager, isManagerAccount, activeRole, onRoleSwitch, on
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const cached = sessionStorage.getItem('nauss-account');
+    if (cached) {
+      try { const u = JSON.parse(cached); setUserName(u.name); setUserEmail(u.email); return; } catch {}
+    }
     fetch('/api/account').then(r => r.json()).then(d => {
-      if (d.user) { setUserName(d.user.name); setUserEmail(d.user.email); }
+      if (d.user) {
+        setUserName(d.user.name);
+        setUserEmail(d.user.email);
+        sessionStorage.setItem('nauss-account', JSON.stringify({ name: d.user.name, email: d.user.email }));
+      }
     }).catch(() => {});
   }, []);
 

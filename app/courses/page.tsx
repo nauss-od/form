@@ -11,17 +11,14 @@ export default function CoursesPage() {
   const [role, setRole] = useState<string>('');
 
   useEffect(() => {
-    fetch('/api/courses')
+    fetch('/api/courses?stats=true')
       .then(r => { if (!r.ok) throw new Error(); return r.json(); })
       .then(d => {
-        setCourses(d.courses || []);
+        setCourses(d.recentCourses || []);
+        setRole(d.userRole || '');
       })
       .catch(() => { window.location.href = '/login'; })
       .finally(() => setLoading(false));
-    fetch('/api/courses?stats=true')
-      .then(r => r.json())
-      .then(d => setRole(d.userRole || ''))
-      .catch(() => {});
   }, []);
 
   function removeCourse(id: string) {
@@ -29,7 +26,7 @@ export default function CoursesPage() {
   }
 
   function refreshCourse() {
-    fetch('/api/courses').then(r => r.json()).then(d => setCourses(d.courses || [])).catch(() => {});
+    fetch('/api/courses?stats=true').then(r => r.json()).then(d => setCourses(d.recentCourses || [])).catch(() => {});
   }
 
   const totalSubmissions = courses.reduce((a, c) => a + (c.insuredCount ?? c._count.submissions), 0);

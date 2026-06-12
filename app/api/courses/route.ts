@@ -14,16 +14,51 @@ export async function GET(request: NextRequest) {
   const where = session.role === 'MANAGER' ? {} : { createdByUserId: session.userId };
 
   if (stats) {
-    const totalCourses = await prisma.course.count({ where });
-    const currentSubmissions = await prisma.submission.count({
-      where: { course: { ...(session.role === 'MANAGER' ? {} : { createdByUserId: session.userId }) } }
-    });
-    const courseIds = await prisma.course.findMany({ where, select: { id: true } });
-    const issuedLogs = courseIds.length ? await prisma.auditLog.findMany({
-      where: { action: 'INSURANCE_ISSUED', entityType: 'Course', entityId: { in: courseIds.map(course => course.id) } },
-      select: { entityId: true, metaJson: true, createdAt: true },
-      orderBy: { createdAt: 'desc' },
-    }) : [];
+    // run all independent queries in parallel
+    const [totalCourses, currentSubmissions, recentCoursesRaw, usersRaw] = await Promise.all([
+      prisma.course.count({ where }),
+      prisma.submission.count({
+        where: { course: { ...(session.role === 'MANAGER' ? {} : { createdByUserId: session.userId }) } }
+      }),
+      prisma.course.findMany({
+        where,
+        include: { _count: { select: { submissions: true } }, createdBy: { select: { name: true } } },
+        orderBy: { createdAt: 'desc' },
+        take: 50
+      }),
+      session.role === 'MANAGER'
+        ? prisma.user.findMany({
+            where: { role: 'EMPLOYEE', isActive: true },
+            select: { id: true, name: true, email: true, mobile: true, createdAt: true, lastLoginAt: true, _count: { select: { courses: true } } },
+            orderBy: { createdAt: 'desc' }
+          })
+        : Promise.resolve(null),
+    ]);
+
+    // attach insurance issued + calc employee submission counts in parallel
+    const courseIdList = recentCoursesRaw.map(c => c.id);
+    const employeeIds = usersRaw ? usersRaw.map(u => u.id) : [];
+
+    const [recentCourses, empSubGroups, issuedLogs] = await Promise.all([
+      attachInsuranceIssued(recentCoursesRaw),
+      employeeIds.length
+        ? prisma.$queryRaw<{ userId: string; cnt: bigint }[]>`
+            SELECT c."createdByUserId" AS "userId", COUNT(s.id)::bigint AS cnt
+            FROM "Submission" s
+            JOIN "Course" c ON c.id = s."courseId"
+            WHERE c."createdByUserId" = ANY(${employeeIds}::text[])
+            GROUP BY c."createdByUserId"
+          `
+        : Promise.resolve([]),
+      courseIdList.length
+        ? prisma.auditLog.findMany({
+            where: { action: 'INSURANCE_ISSUED', entityType: 'Course', entityId: { in: courseIdList } },
+            select: { entityId: true, metaJson: true },
+            orderBy: { createdAt: 'desc' },
+          })
+        : Promise.resolve([]),
+    ]);
+
     const issuedSeen = new Set<string>();
     const issuedSubmissionTotal = issuedLogs.reduce((total, log) => {
       if (issuedSeen.has(log.entityId)) return total;
@@ -32,31 +67,13 @@ export async function GET(request: NextRequest) {
       return total + (typeof meta.insuredCount === 'number' ? meta.insuredCount : 0);
     }, 0);
     const totalSubmissions = currentSubmissions + issuedSubmissionTotal;
-    const recentCoursesRaw = await prisma.course.findMany({
-      where,
-      include: { _count: { select: { submissions: true } }, createdBy: { select: { name: true } } },
-      orderBy: { createdAt: 'desc' },
-      take: 50
-    });
-    const recentCourses = await attachInsuranceIssued(recentCoursesRaw);
 
-    let employees = null;
-    if (session.role === 'MANAGER') {
-      const users = await prisma.user.findMany({
-        where: { role: 'EMPLOYEE', isActive: true },
-        select: {
-          id: true, name: true, email: true, mobile: true, createdAt: true, lastLoginAt: true,
-          _count: { select: { courses: true } }
-        },
-        orderBy: { createdAt: 'desc' }
-      });
-      employees = await Promise.all(users.map(async (u) => {
-        const subCount = await prisma.submission.count({ where: { course: { createdByUserId: u.id } } });
-        return { ...u, submissionCount: subCount };
-      }));
-    }
+    const subCountMap = new Map(empSubGroups.map(r => [r.userId, Number(r.cnt)]));
+    const employees = usersRaw ? usersRaw.map(u => ({ ...u, submissionCount: subCountMap.get(u.id) ?? 0 })) : null;
 
-    return NextResponse.json({ totalCourses, totalSubmissions, completedSubmissions: totalSubmissions, recentCourses, userRole: session.role, employees });
+    const res = NextResponse.json({ totalCourses, totalSubmissions, completedSubmissions: totalSubmissions, recentCourses, userRole: session.role, employees });
+    res.headers.set('Cache-Control', 'private, max-age=10, stale-while-revalidate=30');
+    return res;
   }
 
   const coursesRaw = await prisma.course.findMany({
@@ -65,7 +82,9 @@ export async function GET(request: NextRequest) {
     orderBy: { createdAt: 'desc' }
   });
   const courses = await attachInsuranceIssued(coursesRaw);
-  return NextResponse.json({ courses });
+  const res = NextResponse.json({ courses });
+  res.headers.set('Cache-Control', 'private, max-age=10, stale-while-revalidate=30');
+  return res;
 }
 
 async function attachInsuranceIssued<T extends { id: string }>(courses: T[]) {
