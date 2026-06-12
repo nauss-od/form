@@ -35,6 +35,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'حجم الملف كبير جداً (الحد الأقصى 50 ميجابايت)' }, { status: 413 });
     }
 
+    if (!file.type.startsWith('image/')) {
+      return NextResponse.json({ message: 'يرجى رفع صورة فقط' }, { status: 400 });
+    }
+
     const buf = Buffer.from(await file.arrayBuffer());
     const record = await prisma.submissionFile.create({
       data: {

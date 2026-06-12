@@ -10,6 +10,8 @@ export type Course = {
   participantCount: number | null; publicToken: string;
   status: string; _count: { submissions: number };
   createdBy: { name: string };
+  insuranceIssuedAt?: string | null;
+  insuredCount?: number | null;
 };
 
 function IconLoc() { return <svg viewBox="0 0 26 26" fill="none" width="14" height="14"><defs><linearGradient id="lg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#016564"/><stop offset="100%" stopColor="#014948"/></linearGradient></defs><ellipse cx="13" cy="22" rx="6" ry="2" fill="#014948" opacity="0.08"/><path d="M13 2a8 8 0 0 0-8 8c0 6 8 13 8 13s8-7 8-13a8 8 0 0 0-8-8z" fill="url(#lg1)" opacity="0.1"/><path d="M13 2a8 8 0 0 0-8 8c0 6 8 13 8 13s8-7 8-13a8 8 0 0 0-8-8z" stroke="url(#lg1)" strokeWidth="1.5"/><circle cx="13" cy="10" r="3" fill="url(#lg1)" opacity="0.9"/></svg>; }
@@ -21,7 +23,7 @@ function IconCheck() { return <svg width="13" height="13" viewBox="0 0 24 24" fi
 
 export function coursePct(c: Course): number {
   const target = c.participantCount || 0;
-  const subs = c._count.submissions;
+  const subs = c.insuredCount ?? c._count.submissions;
   return target > 0 ? Math.round((subs / target) * 100) : subs > 0 ? 100 : 0;
 }
 
@@ -68,6 +70,34 @@ export function ConfirmDialog({ message, onConfirm, onCancel }: { message: strin
         <div className="confirm-actions">
           <button className="secondary-btn" onClick={onCancel}>إلغاء</button>
           <button className="primary-btn" style={{ background: 'var(--danger)', boxShadow: 'none' }} onClick={onConfirm}>تأكيد الحذف</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function IssueInsuranceDialog({ courseName, onConfirm, onCancel, issuing }: { courseName: string; onConfirm: () => void; onCancel: () => void; issuing: boolean }) {
+  return (
+    <div className="scanner-overlay" onClick={issuing ? undefined : onCancel}>
+      <div className="confirm-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 460, textAlign: 'right' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+          <div style={{ width: 38, height: 38, borderRadius: 12, display: 'grid', placeItems: 'center', background: 'rgba(191,61,48,0.08)', color: 'var(--danger)' }}>
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+          </div>
+          <div>
+            <h3 style={{ margin: 0, color: 'var(--nauss-ink)', fontSize: '1rem' }}>تأكيد تصدير التأمين الطبي</h3>
+            <p style={{ margin: '3px 0 0', color: 'var(--nauss-muted)', fontSize: '0.72rem' }}>{courseName}</p>
+          </div>
+        </div>
+        <p style={{ lineHeight: 1.9, marginBottom: 12 }}>
+          سيتم حذف بيانات المشاركين والمرفقات وروابط النموذج وإدارة التأمين نهائياً. لن يمكن الرجوع لهذه البيانات أو الوصول لها من أي رابط بعد التأكيد.
+        </p>
+        <div style={{ padding: '10px 12px', borderRadius: 12, background: 'rgba(191,61,48,0.06)', color: 'var(--danger)', fontSize: '0.76rem', fontWeight: 800, marginBottom: 14 }}>
+          هذا الإجراء نهائي ويُبقي بطاقة الدورة فقط مع عدد من تم تصدير التأمين لهم.
+        </div>
+        <div className="confirm-actions">
+          <button className="secondary-btn" disabled={issuing} onClick={onCancel}>إلغاء</button>
+          <button className="primary-btn" disabled={issuing} style={{ background: 'var(--danger)', boxShadow: 'none' }} onClick={onConfirm}>{issuing ? 'جاري التصدير...' : 'تأكيد التصدير والحذف النهائي'}</button>
         </div>
       </div>
     </div>
@@ -123,9 +153,13 @@ export function EditModal({ course, onClose, onSaved }: { course: Course; onClos
 export function CourseCard({ c, onDeleted, onEdited }: { c: Course; onDeleted: (id: string) => void; onEdited: (id: string) => void }) {
   const [showDelete, setShowDelete] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [showIssue, setShowIssue] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [issuing, setIssuing] = useState(false);
+  const isIssued = Boolean(c.insuranceIssuedAt);
   const pct = coursePct(c);
-  const target = c.participantCount || c._count.submissions;
+  const filledCount = c.insuredCount ?? c._count.submissions;
+  const target = c.participantCount || filledCount;
 
   async function handleDelete() {
     setDeleting(true);
@@ -137,19 +171,40 @@ export function CourseCard({ c, onDeleted, onEdited }: { c: Course; onDeleted: (
     finally { setDeleting(false); setShowDelete(false); }
   }
 
+  async function handleIssueInsurance() {
+    setIssuing(true);
+    try {
+      const res = await fetch(`/api/courses/${c.id}/issue-insurance`, { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || 'فشل تصدير التأمين');
+      onEdited(c.id);
+      setShowIssue(false);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'فشل تصدير التأمين');
+    } finally {
+      setIssuing(false);
+    }
+  }
+
   return (
     <div className="course-card" style={{ padding: '12px 16px', gap: 8, borderRadius: 16 }}>
       {showDelete && <ConfirmDialog message={`هل أنت متأكد من حذف "${c.activityName || 'الدورة'}"؟`} onConfirm={handleDelete} onCancel={() => setShowDelete(false)} />}
       {showEdit && <EditModal course={c} onClose={() => setShowEdit(false)} onSaved={() => onEdited(c.id)} />}
+      {showIssue && <IssueInsuranceDialog courseName={c.activityName || 'الدورة'} issuing={issuing} onConfirm={handleIssueInsurance} onCancel={() => setShowIssue(false)} />}
       <div className="course-card-top" style={{ gap: 8 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
             <span className={`status-chip ${c.status === 'PUBLISHED' ? 'is-open' : ''}`} style={{ minHeight: 22, fontSize: '0.62rem', padding: '0 8px' }}>
-              {c.status === 'PUBLISHED' ? 'نشط' : 'مغلق'}
+              {isIssued ? 'تم تصدير التأمين' : c.status === 'PUBLISHED' ? 'نشط' : 'مغلق'}
             </span>
+            {isIssued && (
+              <span style={{ minHeight: 22, display: 'inline-flex', alignItems: 'center', gap: 4, padding: '0 8px', borderRadius: 999, background: 'rgba(20,128,90,0.08)', color: '#14805a', fontSize: '0.62rem', fontWeight: 900, border: '1px solid rgba(20,128,90,0.14)' }}>
+                <IconCheck /> تم تصدير التأمين
+              </span>
+            )}
             <strong style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--nauss-ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>{c.activityName || 'دورة تدريبية'}</strong>
             <div className="course-card-figure" style={{ flexShrink: 0 }}>
-              <span style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--nauss-green-dark)' }}>{c._count.submissions}</span>
+              <span style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--nauss-green-dark)' }}>{filledCount}</span>
               <span style={{ fontSize: '0.65rem', color: 'var(--nauss-muted)' }}>&nbsp;/ {target}</span>
             </div>
           </div>
@@ -166,20 +221,31 @@ export function CourseCard({ c, onDeleted, onEdited }: { c: Course; onDeleted: (
       </div>
       <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
         <div style={{ flex: 1, minWidth: 0, display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
-          <button className="secondary-btn" style={{ minHeight: 26, padding: '0 6px', fontSize: '0.62rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 3 }} onClick={() => setShowEdit(true)}>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            تعديل
-          </button>
-          <button className="secondary-btn" disabled={deleting} style={{ minHeight: 26, padding: '0 6px', fontSize: '0.62rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 3, background: 'rgba(191,61,48,0.08)', color: 'var(--danger)', borderColor: 'rgba(191,61,48,0.12)', opacity: deleting ? 0.5 : 1 }} onClick={() => setShowDelete(true)}>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-            حذف
-          </button>
-          <a href={`/api/export/${c.id}/pdf`} className="ghost-btn" style={{ minHeight: 26, padding: '0 6px', fontSize: '0.6rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }} title="تصدير PDF"><IconPDF /> PDF</a>
-          <a href={mailtoHref(c)} className="ghost-btn" style={{ minHeight: 26, padding: '0 6px', fontSize: '0.6rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }} title="ارسال بالبريد"><IconEML /> بريد</a>
+          {isIssued ? (
+            <div style={{ minHeight: 28, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0 10px', borderRadius: 10, background: 'linear-gradient(135deg, rgba(20,128,90,0.1), rgba(1,101,100,0.08))', color: '#14805a', fontSize: '0.68rem', fontWeight: 900 }}>
+              <IconCheck /> تم تصدير التأمين وحذف البيانات نهائياً
+            </div>
+          ) : (
+            <>
+              <button className="secondary-btn" style={{ minHeight: 26, padding: '0 6px', fontSize: '0.62rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 3 }} onClick={() => setShowEdit(true)}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                تعديل
+              </button>
+              <button className="secondary-btn" disabled={deleting} style={{ minHeight: 26, padding: '0 6px', fontSize: '0.62rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 3, background: 'rgba(191,61,48,0.08)', color: 'var(--danger)', borderColor: 'rgba(191,61,48,0.12)', opacity: deleting ? 0.5 : 1 }} onClick={() => setShowDelete(true)}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                حذف
+              </button>
+              <a href={`/api/export/${c.id}/pdf`} className="ghost-btn" style={{ minHeight: 26, padding: '0 6px', fontSize: '0.6rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }} title="تصدير PDF"><IconPDF /> PDF</a>
+              <a href={mailtoHref(c)} className="ghost-btn" style={{ minHeight: 26, padding: '0 6px', fontSize: '0.6rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }} title="ارسال بالبريد"><IconEML /> بريد</a>
+              <button className="ghost-btn" style={{ minHeight: 26, padding: '0 8px', fontSize: '0.6rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 4, color: '#14805a', borderColor: 'rgba(20,128,90,0.18)', background: 'rgba(20,128,90,0.06)' }} onClick={() => setShowIssue(true)} title="تم تصدير التأمين الطبي">
+                <IconCheck /> تصدير التأمين
+              </button>
+            </>
+          )}
         </div>
-        <Link href={`/courses/${c.id}`} className="secondary-btn" style={{ minHeight: 26, padding: '0 10px', fontSize: '0.65rem', fontWeight: 700, flexShrink: 0 }}>عرض</Link>
+        {!isIssued && <Link href={`/courses/${c.id}`} className="secondary-btn" style={{ minHeight: 26, padding: '0 10px', fontSize: '0.65rem', fontWeight: 700, flexShrink: 0 }}>عرض</Link>}
       </div>
-      <div style={{ display: 'flex', gap: 4 }}>
+      {!isIssued && <div style={{ display: 'flex', gap: 4 }}>
         <div style={{ flex: 1, background: '#f7fafa', borderRadius: 6, border: '1px solid #e4ebeb', padding: '4px 6px', minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 2, marginBottom: 1 }}>
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#667777" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
@@ -200,7 +266,7 @@ export function CourseCard({ c, onDeleted, onEdited }: { c: Course; onDeleted: (
             <CopyLink url={insuranceUrl(c)} />
           </div>
         </div>
-      </div>
+      </div>}
     </div>
   );
 }

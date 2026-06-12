@@ -61,7 +61,7 @@ function UploadField({ label, value, onChange, hasError }: {
       <label>{label} <span className="req">*</span></label>
       <div className="upload-stack">
         <div className={`upload-zone ${value ? 'has-file' : ''} ${hasError ? 'upload-error' : ''}`}>
-          <input type="file" accept="image/*,application/pdf" onChange={e => onChange(e.target.files?.[0] || null)} />
+          <input type="file" accept="image/*" onChange={e => onChange(e.target.files?.[0] || null)} />
           {value ? (
             <div className="upload-file-info">
               <FileIcon />
@@ -165,6 +165,29 @@ export default function PublicFormPage({ params }: { params: { token: string } }
     else setIbanError('');
   }
 
+  function validateAttachment(file: File | null, setFileError: (message: string) => void) {
+    if (!file) {
+      setFileError('مطلوب');
+      return false;
+    }
+    if (!file.type.startsWith('image/')) {
+      setFileError('يرجى رفع صورة فقط');
+      return false;
+    }
+    setFileError('');
+    return true;
+  }
+
+  function handlePassportFile(file: File | null) {
+    setPassportFile(file);
+    validateAttachment(file, setPassportFileError);
+  }
+
+  function handleNationalIdFile(file: File | null) {
+    setNationalIdFile(file);
+    validateAttachment(file, setNationalIdFileError);
+  }
+
   function validateStep(s: number): boolean {
     let ok = true;
     if (s === 1) {
@@ -183,8 +206,8 @@ export default function PublicFormPage({ params }: { params: { token: string } }
       if (iban.length !== 24 || !/^SA\d{22}$/.test(iban)) { setIbanError('غير صحيح'); ok = false; }
     }
     if (s === 3) {
-      if (!passportFile) { setPassportFileError('مطلوب'); ok = false; }
-      if (!nationalIdFile) { setNationalIdFileError('مطلوب'); ok = false; }
+      if (!validateAttachment(passportFile, setPassportFileError)) ok = false;
+      if (!validateAttachment(nationalIdFile, setNationalIdFileError)) ok = false;
     }
     return ok;
   }
@@ -205,19 +228,6 @@ export default function PublicFormPage({ params }: { params: { token: string } }
     setTimeout(() => { setStep(s => s - 1); setAnimating(false); }, 220);
   }
 
-  async function uploadFile(submissionId: string, file: File, fileType: string): Promise<void> {
-    const fd = new FormData();
-    fd.append('submissionId', submissionId);
-    fd.append('fileType', fileType);
-    fd.append('file', file);
-    const res = await fetch('/api/public/upload', { method: 'POST', body: fd });
-    if (!res.ok) {
-      let msg = 'فشل رفع الملف';
-      try { const d = await res.json(); msg = d.message || msg; } catch {}
-      throw new Error(msg);
-    }
-  }
-
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (animating) return;
@@ -236,40 +246,32 @@ export default function PublicFormPage({ params }: { params: { token: string } }
     if (!birthDate) { setBirthDateError('مطلوب'); hasError = true; }
     else if (birthDate > maxBirthStr) { setBirthDateError('يجب أن لا يقل العمر عن ١٥ سنة'); hasError = true; }
     if (iban.length !== 24 || !/^SA\d{22}$/.test(iban)) { setIbanError('غير صحيح'); hasError = true; }
-    if (!passportFile) { setPassportFileError('مطلوب'); hasError = true; }
-    if (!nationalIdFile) { setNationalIdFileError('مطلوب'); hasError = true; }
+    if (!validateAttachment(passportFile, setPassportFileError)) hasError = true;
+    if (!validateAttachment(nationalIdFile, setNationalIdFileError)) hasError = true;
 
     if (hasError) { setError('يرجى تصحيح الأخطاء أعلاه'); setLoading(false); return; }
 
     try {
+      const compressedPassport = await compressImage(passportFile!);
+      const compressedNationalId = await compressImage(nationalIdFile!);
+      const fd = new FormData();
+      fd.append('fullNamePassport', name);
+      fd.append('passportNumber', passport);
+      fd.append('passportExpiry', expiry);
+      fd.append('nationalId', nationalId);
+      fd.append('mobile', mobilePrefix + mobileSuffix);
+      fd.append('birthDate', birthDate);
+      fd.append('iban', iban);
+      fd.append('passportFile', compressedPassport);
+      fd.append('nationalIdFile', compressedNationalId);
+
       const res = await fetch(`/api/public/form/${params.token}/submit`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fullNamePassport: name,
-          passportNumber: passport,
-          passportExpiry: expiry,
-          nationalId,
-          mobile: mobilePrefix + mobileSuffix,
-          birthDate,
-          iban,
-        }),
+        body: fd,
       });
       let data: any;
       try { data = await res.json(); } catch { throw new Error('خطأ في الاتصال بالخادم'); }
       if (!res.ok) throw new Error(data.message || 'حدث خطأ');
-
-      const submissionId = data.submissionId;
-      if (!submissionId) throw new Error('لم يتم إنشاء السجل');
-
-      if (passportFile) {
-        const compressed = await compressImage(passportFile);
-        await uploadFile(submissionId, compressed, 'PASSPORT');
-      }
-      if (nationalIdFile) {
-        const compressed = await compressImage(nationalIdFile);
-        await uploadFile(submissionId, compressed, 'NATIONAL_ID');
-      }
 
       setSuccess(true);
     } catch (err) {
@@ -437,13 +439,13 @@ export default function PublicFormPage({ params }: { params: { token: string } }
                   <UploadField
                     label="صورة جواز السفر"
                     value={passportFile}
-                    onChange={f => { setPassportFile(f); setPassportFileError(''); }}
+                    onChange={handlePassportFile}
                     hasError={!!passportFileError}
                   />
                   <UploadField
                     label="صورة الهوية الوطنية"
                     value={nationalIdFile}
-                    onChange={f => { setNationalIdFile(f); setNationalIdFileError(''); }}
+                    onChange={handleNationalIdFile}
                     hasError={!!nationalIdFileError}
                   />
                 </div>

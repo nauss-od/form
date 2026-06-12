@@ -24,7 +24,7 @@ export default function AuditPage() {
     RESET_PASSWORD: 'إعادة تعيين كلمة المرور', EXPORT_PDF: 'تصدير PDF', EXPORT_EML: 'تصدير EML',
     VIEW_INSURANCE: 'مشاهدة التأمين', SUBMIT_FORM: 'تقديم النموذج', PAGE_VIEW: 'مشاهدة الصفحة',
     EXPORT_EXCEL: 'تصدير Excel', DELETE_COURSE: 'حذف دورة', UPDATE_COURSE: 'تحديث دورة',
-    DELETE_SUBMISSION: 'حذف تسجيل', CLEANUP_ARCHIVE: 'أرشفة وتنظيف',
+    DELETE_SUBMISSION: 'حذف تسجيل', CLEANUP_ARCHIVE: 'أرشفة وتنظيف', INSURANCE_ISSUED: 'تصدير التأمين الطبي',
   };
 
   const entityLabels: Record<string, string> = {
@@ -36,7 +36,8 @@ export default function AuditPage() {
     name: 'الاسم', email: 'البريد الإلكتروني', role: 'الصلاحية',
     venue: 'المقر', startDate: 'تاريخ البداية', participantCount: 'عدد المستفيدين',
     submissionCount: 'عدد التسجيلات', fileCount: 'عدد الملفات', deletedAt: 'تاريخ الحذف',
-    submissionId: 'معرف التسجيل',
+    submissionId: 'معرف التسجيل', insuredCount: 'عدد من تم تصدير التأمين لهم', deletedFileCount: 'عدد المرفقات المحذوفة',
+    participantTarget: 'العدد المستهدف', linksRevoked: 'إبطال الروابط', issuedAt: 'وقت التصدير', endDate: 'تاريخ النهاية',
   };
 
   function formatMeta(meta: Record<string, unknown> | null): string {

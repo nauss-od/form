@@ -10,6 +10,14 @@ function checkAuth(session: Awaited<ReturnType<typeof getCurrentSession>>, cours
   return null;
 }
 
+async function isInsuranceIssued(courseId: string) {
+  const log = await prisma.auditLog.findFirst({
+    where: { action: 'INSURANCE_ISSUED', entityType: 'Course', entityId: courseId },
+    select: { id: true },
+  });
+  return Boolean(log);
+}
+
 export async function GET(_request: Request, { params }: { params: { id: string } }) {
   const session = getCurrentSession();
   if (!session) return NextResponse.json({ message: 'غير مصرح' }, { status: 401 });
@@ -43,6 +51,10 @@ export async function DELETE(_request: Request, { params }: { params: { id: stri
   const authErr = checkAuth(session, course);
   if (authErr) return authErr;
 
+  if (await isInsuranceIssued(course.id)) {
+    return NextResponse.json({ message: 'لا يمكن حذف دورة بعد تصدير التأمين الطبي' }, { status: 409 });
+  }
+
   const subCount = await prisma.submission.count({ where: { courseId: params.id } });
 
   await prisma.course.delete({ where: { id: params.id } });
@@ -67,6 +79,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
   const authErr = checkAuth(session, course);
   if (authErr) return authErr;
+
+  if (await isInsuranceIssued(course.id)) {
+    return NextResponse.json({ message: 'لا يمكن تعديل دورة بعد تصدير التأمين الطبي' }, { status: 409 });
+  }
 
   const body = await request.json();
   const data: Record<string, unknown> = {};

@@ -9,7 +9,7 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
       submissions: {
         orderBy: { createdAt: 'asc' },
         include: {
-          files: { select: { id: true, fileType: true } },
+          files: { select: { id: true, fileType: true, fileName: true, mimeType: true } },
         },
       },
       createdBy: { select: { name: true } },
@@ -18,6 +18,13 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
 
   if (!course) {
     return NextResponse.json({ message: 'الدورة غير موجودة' }, { status: 404 });
+  }
+
+  const issued = await prisma.auditLog.findFirst({
+    where: { action: 'INSURANCE_ISSUED', entityType: 'Course', entityId: course.id },
+  });
+  if (issued) {
+    return NextResponse.json({ message: 'تم تصدير التأمين وحذف بيانات المشاركين نهائياً' }, { status: 410 });
   }
 
   const participants = course.submissions.map(s => ({

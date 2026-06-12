@@ -12,7 +12,7 @@ type Participant = {
   mobile: string;
   birthDate: string;
   iban: string;
-  files: { id: string; fileType: string }[];
+  files: { id: string; fileType: string; fileName?: string | null; mimeType?: string | null }[];
 };
 
 type Course = {
@@ -122,7 +122,9 @@ export default function PublicInsurancePage({ params }: { params: { courseId: st
 
   useEffect(() => {
     if (!participants.length) return;
-    const ids = participants.flatMap((p: any) => (p.files || []).map((f: any) => f.id));
+    const ids = participants.flatMap((p: any) => (p.files || [])
+      .filter((f: any) => !f.mimeType || f.mimeType.startsWith('image/'))
+      .map((f: any) => f.id));
     if (!ids.length) return;
     let i = 0;
     const next = () => {
@@ -418,6 +420,26 @@ function ImgWithLoader({ src, alt }: { src: string; alt: string }) {
   );
 }
 
+function FilePreview({ file, alt, rotateTs }: { file: Participant['files'][number]; alt: string; rotateTs: number }) {
+  const isImage = !file.mimeType || file.mimeType.startsWith('image/');
+  if (isImage) {
+    return <ImgWithLoader src={rotateTs ? `/api/files/${file.id}?r=${rotateTs}` : `/api/files/${file.id}`} alt={alt} />;
+  }
+
+  return (
+    <div style={{ textAlign: 'center', padding: 16, color: '#5f7777', fontSize: '0.72rem' }}>
+      <div style={{ marginBottom: 8, fontWeight: 800 }}>{file.fileName || 'ملف مرفق'}</div>
+      <a href={`/api/files/${file.id}`} target="_blank" rel="noreferrer" style={{
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        background: '#e2f0ee', color: '#016564', borderRadius: 8, padding: '6px 12px',
+        textDecoration: 'none', fontWeight: 800,
+      }}>
+        فتح الملف
+      </a>
+    </div>
+  );
+}
+
 function ExpandedContent({ participant }: { participant: Participant }) {
   const passportFile = participant.files?.find(f => f.fileType === 'PASSPORT');
   const nationalIdFile = participant.files?.find(f => f.fileType === 'NATIONAL_ID');
@@ -465,10 +487,10 @@ function ExpandedContent({ participant }: { participant: Participant }) {
               <div style={{ padding: '6px 14px', background: '#eef6f6', fontSize: '0.68rem', fontWeight: 700, color: '#014948', borderBottom: '1px solid #e4ebeb', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#016564" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
                 <span style={{ flex: 1 }}>جواز السفر</span>
-                <RotateImageBtn fileId={passportFile.id} onRotated={onRotated} />
+                {(!passportFile.mimeType || passportFile.mimeType.startsWith('image/')) && <RotateImageBtn fileId={passportFile.id} onRotated={onRotated} />}
               </div>
               <div style={{ padding: 6, display: 'flex', justifyContent: 'center', background: '#fafcfc' }}>
-                <ImgWithLoader src={rotateTs ? `/api/files/${passportFile.id}?r=${rotateTs}` : `/api/files/${passportFile.id}`} alt="جواز السفر" />
+                <FilePreview file={passportFile} rotateTs={rotateTs} alt="جواز السفر" />
               </div>
             </div>
           )}
@@ -477,10 +499,10 @@ function ExpandedContent({ participant }: { participant: Participant }) {
               <div style={{ padding: '6px 14px', background: '#f8f5ee', fontSize: '0.68rem', fontWeight: 700, color: '#8a7440', borderBottom: '1px solid #e4ebeb', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8a7440" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
                 <span style={{ flex: 1 }}>الهوية الوطنية</span>
-                <RotateImageBtn fileId={nationalIdFile.id} onRotated={onRotated} />
+                {(!nationalIdFile.mimeType || nationalIdFile.mimeType.startsWith('image/')) && <RotateImageBtn fileId={nationalIdFile.id} onRotated={onRotated} />}
               </div>
               <div style={{ padding: 6, display: 'flex', justifyContent: 'center', background: '#fafcfc' }}>
-                <ImgWithLoader src={rotateTs ? `/api/files/${nationalIdFile.id}?r=${rotateTs}` : `/api/files/${nationalIdFile.id}`} alt="الهوية الوطنية" />
+                <FilePreview file={nationalIdFile} rotateTs={rotateTs} alt="الهوية الوطنية" />
               </div>
             </div>
           )}

@@ -32,7 +32,7 @@ export default function CoursesPage() {
     fetch('/api/courses').then(r => r.json()).then(d => setCourses(d.courses || [])).catch(() => {});
   }
 
-  const totalSubmissions = courses.reduce((a, c) => a + c._count.submissions, 0);
+  const totalSubmissions = courses.reduce((a, c) => a + (c.insuredCount ?? c._count.submissions), 0);
   const activeCourses = courses.filter(c => c.status === 'PUBLISHED').length;
 
   return (
