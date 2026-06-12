@@ -34,12 +34,25 @@ export async function POST(_request: Request, { params }: { params: { id: string
     ]);
     const issuedAt = new Date().toISOString();
 
+    // Explicitly zero out binary file data before deleting (belt+suspenders)
+    const submissionIds = await tx.submission.findMany({
+      where: { courseId: course.id },
+      select: { id: true },
+    });
+    if (submissionIds.length) {
+      await tx.submissionFile.deleteMany({
+        where: { submissionId: { in: submissionIds.map(s => s.id) } },
+      });
+    }
     await tx.submission.deleteMany({ where: { courseId: course.id } });
+
     await tx.course.update({
       where: { id: course.id },
       data: {
         status: 'CLOSED',
-        publicToken: generatePublicToken(),
+        publicToken: generatePublicToken(), // invalidate old share link
+        approvalFileUrl: null,
+        approvalFileName: null,
       },
     });
 

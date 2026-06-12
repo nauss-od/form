@@ -15,13 +15,16 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
           select: { id: true, fullNamePassport: true, passportNumber: true, birthDate: true },
           orderBy: { createdAt: 'asc' },
         },
+        staff: {
+          orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+        },
         createdBy: { select: { name: true } },
       },
     });
 
     if (!course) return NextResponse.json({ message: 'الدورة غير موجودة' }, { status: 404 });
     if (session.role !== 'MANAGER' && course.createdByUserId !== session.userId) {
-      return NextResponse.json({ message: 'غير مصرح' }, { status: 401 });
+      return NextResponse.json({ message: 'غير مصرح' }, { status: 403 });
     }
 
     const participants = course.submissions.map((s, i) => ({
@@ -29,6 +32,12 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
       fullNamePassport: s.fullNamePassport,
       passportNumber: s.passportNumber,
       birthDate: s.birthDate,
+    }));
+
+    const staff = course.staff.map(m => ({
+      name: m.name,
+      passportNo: m.passportNo,
+      jobTitle: m.jobTitle,
     }));
 
     const pdfBuffer = await generateParticipantsListBuffer(
@@ -40,6 +49,7 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
         createdByName: course.createdBy?.name || '—',
       },
       participants,
+      staff,
     );
 
     const rawName = (course.activityName || 'course').replace(/[<>:"/\\|?*\n\r]/g, ' ').trim() || 'course';
@@ -51,6 +61,7 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${asciiFilename}"; filename*=UTF-8''${encodedFilename}`,
+        'Cache-Control': 'private, no-store',
       },
     });
   } catch (err: any) {

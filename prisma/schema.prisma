@@ -56,6 +56,19 @@ model Course {
 
   createdBy   User           @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
   submissions Submission[]
+  staff       CourseStaff[]
+}
+
+model CourseStaff {
+  id         String   @id @default(cuid())
+  courseId   String
+  name       String
+  passportNo String?
+  jobTitle   String
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 }
 
 model Submission {
