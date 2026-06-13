@@ -14,8 +14,9 @@ interface Course {
 }
 
 interface StaffMember { id: string; name: string; passportNo: string | null; mobile: string | null; jobTitle: string; }
+interface EditState { name: string; passportNo: string; mobile: string; jobTitle: string; }
 
-const JOB_TITLES = ['Scientific Supervisor', 'Translator', 'Trainer 1', 'Trainer 2', 'Coordinator'];
+const JOB_TITLES = ['Scientific Supervisor', 'Translator', 'Trainer 1', 'Trainer 2', 'Coordinator', 'Operations Manager'];
 
 function fmtDate(d: string | null) {
   if (!d) return '';
@@ -26,12 +27,20 @@ function fmtDate(d: string | null) {
 function StaffModal({ course, onClose }: { course: Course; onClose: () => void }) {
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loadingStaff, setLoadingStaff] = useState(true);
+  // Add form state
   const [name, setName] = useState('');
   const [passportNo, setPassportNo] = useState('');
   const [mobile, setMobile] = useState('');
   const [jobTitle, setJobTitle] = useState(JOB_TITLES[0]);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
+  // Edit state: staffId → edit fields
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editState, setEditState] = useState<EditState>({ name: '', passportNo: '', mobile: '', jobTitle: JOB_TITLES[0] });
+  const [editSaving, setEditSaving] = useState(false);
+  const [editMsg, setEditMsg] = useState('');
+  // Delete confirm
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`/api/courses/${course.id}/staff`)
@@ -53,22 +62,47 @@ function StaffModal({ course, onClose }: { course: Course; onClose: () => void }
     setSaving(false);
   }
 
+  function startEdit(m: StaffMember) {
+    setEditingId(m.id);
+    setEditState({ name: m.name, passportNo: m.passportNo || '', mobile: m.mobile || '', jobTitle: m.jobTitle });
+    setEditMsg('');
+  }
+
+  async function saveEdit() {
+    if (!editingId) return;
+    setEditMsg('');
+    if (!editState.name.trim()) { setEditMsg('الاسم مطلوب'); return; }
+    setEditSaving(true);
+    const res = await fetch(`/api/courses/${course.id}/staff`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ staffId: editingId, name: editState.name.trim(), passportNo: editState.passportNo.trim() || null, mobile: editState.mobile.trim() || null, jobTitle: editState.jobTitle }),
+    });
+    const data = await res.json();
+    if (!res.ok) { setEditMsg(data.message || 'خطأ'); setEditSaving(false); return; }
+    setStaff(prev => prev.map(m => m.id === editingId ? data.member : m));
+    setEditingId(null);
+    setEditSaving(false);
+  }
+
   async function removeMember(staffId: string) {
     await fetch(`/api/courses/${course.id}/staff?staffId=${staffId}`, { method: 'DELETE' });
     setStaff(prev => prev.filter(m => m.id !== staffId));
+    setConfirmDeleteId(null);
   }
 
   const title = course.activityName || '—';
+  const inputStyle = { width: '100%', padding: '6px 10px', border: '1.5px solid #cbd5e1', borderRadius: 7, fontSize: 12, fontFamily: 'inherit', direction: 'ltr' as const, outline: 'none' };
+  const selectStyle = { ...inputStyle, background: '#fff' };
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 9000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 620, maxHeight: '88vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
+      <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 640, maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
         {/* Header */}
         <div style={{ padding: '18px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
           <div>
             <div style={{ fontWeight: 700, fontSize: 15, color: '#1b4f6b' }}>{title}</div>
-            <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>المرشحون من جامعة نايف</div>
+            <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>مرشحو جامعة نايف</div>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: '#94a3b8', lineHeight: 1, flexShrink: 0 }}>×</button>
         </div>
@@ -76,7 +110,7 @@ function StaffModal({ course, onClose }: { course: Course; onClose: () => void }
         <div style={{ overflow: 'auto', flex: 1, padding: '16px 24px' }}>
           {/* Add form */}
           <div style={{ background: '#f8fafc', borderRadius: 10, padding: 16, marginBottom: 20, border: '1px solid #e2e8f0' }}>
-            <div style={{ fontWeight: 700, fontSize: 13, color: '#1b4f6b', marginBottom: 12 }}>إضافة فرد من الكادر</div>
+            <div style={{ fontWeight: 700, fontSize: 13, color: '#1b4f6b', marginBottom: 12 }}>إضافة مرشح جديد</div>
             <div style={{ display: 'grid', gap: 10 }}>
               <div>
                 <label style={{ fontSize: 11, fontWeight: 700, color: '#64748b', display: 'block', marginBottom: 4 }}>الاسم (إنجليزي فقط) *</label>
@@ -109,16 +143,83 @@ function StaffModal({ course, onClose }: { course: Course; onClose: () => void }
           {loadingStaff ? (
             <div style={{ textAlign: 'center', color: '#94a3b8', padding: 20 }}>جاري التحميل...</div>
           ) : staff.length === 0 ? (
-            <div style={{ textAlign: 'center', color: '#94a3b8', padding: 24, border: '1px dashed #cbd5e1', borderRadius: 8, fontSize: 13 }}>لم يُضف أي فرد من الكادر بعد</div>
+            <div style={{ textAlign: 'center', color: '#94a3b8', padding: 24, border: '1px dashed #cbd5e1', borderRadius: 8, fontSize: 13 }}>لم يُضَف أي مرشح بعد</div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {staff.map(m => (
-                <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#f8fafc', borderRadius: 8, padding: '10px 14px', border: '1px solid #e2e8f0' }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: 13, color: '#1e293b', direction: 'ltr' }}>{m.name}</div>
-                    <div style={{ fontSize: 11, color: '#64748b', direction: 'ltr' }}>{m.jobTitle}{m.passportNo ? ` · ${m.passportNo}` : ''}{m.mobile ? ` · ${m.mobile}` : ''}</div>
-                  </div>
-                  <button onClick={() => removeMember(m.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: 20, lineHeight: 1 }}>×</button>
+              {staff.map((m, idx) => (
+                <div key={m.id} style={{ background: '#f8fafc', borderRadius: 10, border: `1.5px solid ${editingId === m.id ? '#016564' : '#e2e8f0'}`, overflow: 'hidden' }}>
+                  {editingId === m.id ? (
+                    /* ── Edit mode ── */
+                    <div style={{ padding: '12px 14px' }}>
+                      <div style={{ display: 'grid', gap: 8 }}>
+                        <div>
+                          <label style={{ fontSize: 10, fontWeight: 700, color: '#64748b', display: 'block', marginBottom: 3 }}>الاسم (إنجليزي) *</label>
+                          <input style={inputStyle} value={editState.name} onChange={e => setEditState(s => ({ ...s, name: e.target.value }))} placeholder="JOHN DOE" />
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                          <div>
+                            <label style={{ fontSize: 10, fontWeight: 700, color: '#64748b', display: 'block', marginBottom: 3 }}>رقم الجواز</label>
+                            <input style={inputStyle} value={editState.passportNo} onChange={e => setEditState(s => ({ ...s, passportNo: e.target.value.toUpperCase() }))} placeholder="AB123456" />
+                          </div>
+                          <div>
+                            <label style={{ fontSize: 10, fontWeight: 700, color: '#64748b', display: 'block', marginBottom: 3 }}>رقم الجوال</label>
+                            <input style={inputStyle} value={editState.mobile} onChange={e => setEditState(s => ({ ...s, mobile: e.target.value }))} placeholder="+966XXXXXXXXX" />
+                          </div>
+                        </div>
+                        <div>
+                          <label style={{ fontSize: 10, fontWeight: 700, color: '#64748b', display: 'block', marginBottom: 3 }}>المسمى الوظيفي</label>
+                          <select style={selectStyle} value={editState.jobTitle} onChange={e => setEditState(s => ({ ...s, jobTitle: e.target.value }))}>
+                            {JOB_TITLES.map(t => <option key={t} value={t}>{t}</option>)}
+                          </select>
+                        </div>
+                        {editMsg && <div style={{ color: '#dc2626', fontSize: 11 }}>{editMsg}</div>}
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button onClick={saveEdit} disabled={editSaving}
+                            style={{ flex: 1, padding: '7px 0', background: '#016564', color: '#fff', border: 'none', borderRadius: 7, fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+                            {editSaving ? '...' : 'حفظ التعديل'}
+                          </button>
+                          <button onClick={() => setEditingId(null)}
+                            style={{ padding: '7px 14px', background: '#fff', color: '#64748b', border: '1.5px solid #e2e8f0', borderRadius: 7, fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+                            إلغاء
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : confirmDeleteId === m.id ? (
+                    /* ── Delete confirm ── */
+                    <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                      <span style={{ fontSize: 12, color: '#dc2626', fontWeight: 600 }}>حذف «{m.name}»؟</span>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button onClick={() => removeMember(m.id)}
+                          style={{ padding: '5px 14px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+                          نعم، احذف
+                        </button>
+                        <button onClick={() => setConfirmDeleteId(null)}
+                          style={{ padding: '5px 14px', background: '#fff', color: '#64748b', border: '1.5px solid #e2e8f0', borderRadius: 6, fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+                          إلغاء
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    /* ── Normal display ── */
+                    <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ width: 26, height: 26, borderRadius: '50%', background: '#e0f2f1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#016564', flexShrink: 0 }}>{idx + 1}</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 700, fontSize: 13, color: '#1e293b', direction: 'ltr' }}>{m.name}</div>
+                        <div style={{ fontSize: 11, color: '#64748b', direction: 'ltr' }}>{m.jobTitle}{m.passportNo ? ` · ${m.passportNo}` : ''}{m.mobile ? ` · ${m.mobile}` : ''}</div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        <button onClick={() => startEdit(m)} title="تعديل"
+                          style={{ padding: '5px 10px', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 6, cursor: 'pointer', fontSize: 12, color: '#1b4f6b', fontWeight: 700 }}>
+                          تعديل
+                        </button>
+                        <button onClick={() => setConfirmDeleteId(m.id)} title="حذف"
+                          style={{ padding: '5px 10px', background: '#fff0f0', border: '1px solid #fecaca', borderRadius: 6, cursor: 'pointer', fontSize: 12, color: '#dc2626', fontWeight: 700 }}>
+                          حذف
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -166,7 +267,7 @@ function CourseCardItem({ course, onClick }: { course: Course; onClick: () => vo
         </div>
         <div style={{ color: '#1b4f6b', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, flexShrink: 0, marginTop: 2 }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          كادر NAUSS والـ PDF
+          مرشحو نايف والـ PDF
         </div>
       </div>
     </button>
@@ -229,7 +330,7 @@ export default function ParticipantsPage() {
           <p style={{ color: '#64748b', marginTop: 6, fontSize: 14 }}>
             {isManagerView
               ? 'جميع دورات المنصة — تصدير قائمة PDF لأي دورة'
-              : 'اضغط على الدورة لإدارة كادر NAUSS وتصدير القائمة'}
+              : 'اضغط على الدورة لإدارة مرشحي جامعة نايف وتصدير القائمة'}
           </p>
         </div>
 

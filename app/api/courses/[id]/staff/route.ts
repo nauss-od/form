@@ -8,6 +8,7 @@ const ALLOWED_TITLES = [
   'Trainer 1',
   'Trainer 2',
   'Coordinator',
+  'Operations Manager',
 ];
 
 async function getCourseWithAuth(courseId: string) {
@@ -65,6 +66,38 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   });
 
   return NextResponse.json({ success: true, member });
+}
+
+export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+  const auth = await getCourseWithAuth(params.id);
+  if (auth.error) return auth.error;
+
+  const body = await req.json().catch(() => null);
+  if (!body || !body.staffId) return NextResponse.json({ message: 'بيانات غير صالحة' }, { status: 400 });
+
+  const member = await prisma.courseStaff.findFirst({ where: { id: body.staffId, courseId: params.id } });
+  if (!member) return NextResponse.json({ message: 'لم يوجد' }, { status: 404 });
+
+  const name = String(body.name || '').trim();
+  const passportNo = String(body.passportNo || '').trim().toUpperCase() || null;
+  const mobile = String(body.mobile || '').trim() || null;
+  const jobTitle = String(body.jobTitle || '').trim();
+
+  if (!name || !/^[A-Za-z\s.\-']+$/.test(name))
+    return NextResponse.json({ message: 'الاسم مطلوب باللغة الإنجليزية فقط' }, { status: 400 });
+
+  if (!ALLOWED_TITLES.includes(jobTitle))
+    return NextResponse.json({ message: 'المسمى الوظيفي غير صالح' }, { status: 400 });
+
+  if (passportNo && !/^[A-Z0-9]{3,20}$/.test(passportNo))
+    return NextResponse.json({ message: 'رقم الجواز غير صالح' }, { status: 400 });
+
+  const updated = await prisma.courseStaff.update({
+    where: { id: body.staffId },
+    data: { name, passportNo, mobile, jobTitle },
+  });
+
+  return NextResponse.json({ success: true, member: updated });
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
