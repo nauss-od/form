@@ -99,6 +99,7 @@ export interface CourseForList {
   startDate: Date | null;
   endDate: Date | null;
   createdByName: string;
+  coordinatorTitle?: string | null;
 }
 
 function fmtDate(d: Date | null): string {
@@ -166,7 +167,10 @@ export async function generateParticipantsListBuffer(
             </View>
             <View style={s.infoItem}>
               <Text style={s.infoLabel}>Programme Coordinator</Text>
-              <Text style={s.infoValue}>{course.createdByName}</Text>
+              <Text style={s.infoValue}>
+                {course.createdByName}
+                {course.coordinatorTitle ? ` — ${course.coordinatorTitle}` : ''}
+              </Text>
             </View>
           </View>
         </View>
@@ -177,18 +181,19 @@ export async function generateParticipantsListBuffer(
             <Text style={s.tableTitle}>NAIF UNIVERSITY NOMINEES</Text>
             <View style={s.table}>
               <View style={s.tableHead}>
-                {['#', 'Name', 'Pass. No.', 'Mob. No.'].map((h, i) => (
-                  <View key={h} style={[s.tableHeadCell, { width: ['8%', '44%', '24%', '24%'][i] }]}>
+                {['#', 'Name', 'Job Title', 'Pass. No.', 'Mob. No.'].map((h, i) => (
+                  <View key={h} style={[s.tableHeadCell, { width: ['6%', '32%', '26%', '18%', '18%'][i] }]}>
                     <Text>{h}</Text>
                   </View>
                 ))}
               </View>
               {staff.map((m, idx) => (
                 <View key={idx} style={idx % 2 === 0 ? s.tableRow : s.tableRowAlt}>
-                  <Text style={[s.tableCell, { width: '8%' }]}>{idx + 1}</Text>
-                  <Text style={[s.tableCell, { width: '44%', textAlign: 'left' }]}>{m.name}</Text>
-                  <Text style={[s.tableCell, { width: '24%' }]}>{m.passportNo || '—'}</Text>
-                  <Text style={[s.tableCell, { width: '24%' }]}>{m.mobile || '—'}</Text>
+                  <Text style={[s.tableCell, { width: '6%' }]}>{idx + 1}</Text>
+                  <Text style={[s.tableCell, { width: '32%', textAlign: 'left' }]}>{m.name}</Text>
+                  <Text style={[s.tableCell, { width: '26%', textAlign: 'left' }]}>{m.jobTitle}</Text>
+                  <Text style={[s.tableCell, { width: '18%' }]}>{m.passportNo || '—'}</Text>
+                  <Text style={[s.tableCell, { width: '18%' }]}>{m.mobile || '—'}</Text>
                 </View>
               ))}
             </View>
