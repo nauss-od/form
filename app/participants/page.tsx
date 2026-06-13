@@ -245,32 +245,51 @@ function CourseCardItem({ course, onClick }: { course: Course; onClick: () => vo
   const title = course.activityName || '—';
   const count = course._count?.submissions ?? 0;
   return (
-    <button onClick={onClick} style={{
-      width: '100%', textAlign: 'right', background: '#fff', border: '1.5px solid #e2e8f0',
-      borderRadius: 14, padding: '18px 20px', cursor: 'pointer',
-      transition: 'border-color 0.15s, box-shadow 0.15s',
+    <div style={{
+      width: '100%', background: '#fff', border: '1.5px solid #e2e8f0',
+      borderRadius: 14, overflow: 'hidden',
       boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+      transition: 'border-color 0.15s, box-shadow 0.15s',
     }}
-      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#016564'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 16px rgba(1,101,100,0.12)'; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#e2e8f0'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 1px 4px rgba(0,0,0,0.04)'; }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 700, fontSize: 15, color: '#1e293b', marginBottom: 4 }}>{title}</div>
-          <div style={{ fontSize: 13, color: '#64748b' }}>
-            {course.venue && <span style={{ marginLeft: 12 }}>📍 {course.venue}</span>}
-            {course.startDate && <span>{fmtDate(course.startDate)}{course.endDate ? ` — ${fmtDate(course.endDate)}` : ''}</span>}
+      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = '#016564'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 16px rgba(1,101,100,0.12)'; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = '#e2e8f0'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 1px 4px rgba(0,0,0,0.04)'; }}>
+
+      {/* Main info — clickable to open modal */}
+      <button onClick={onClick} style={{ width: '100%', textAlign: 'right', background: 'none', border: 'none', padding: '18px 20px 12px', cursor: 'pointer' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, fontSize: 15, color: '#1e293b', marginBottom: 4 }}>{title}</div>
+            <div style={{ fontSize: 13, color: '#64748b' }}>
+              {course.venue && <span style={{ marginLeft: 12 }}>📍 {course.venue}</span>}
+              {course.startDate && <span>{fmtDate(course.startDate)}{course.endDate ? ` — ${fmtDate(course.endDate)}` : ''}</span>}
+            </div>
+            <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 12, color: '#0ea5e9', fontWeight: 600 }}>{count} مشارك</span>
+              {course.insuranceIssuedAt && <span style={{ fontSize: 12, color: '#16a34a', fontWeight: 600 }}>✓ تم إصدار التأمين</span>}
+            </div>
           </div>
-          <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 12, color: '#0ea5e9', fontWeight: 600 }}>{count} مشارك</span>
-            {course.insuranceIssuedAt && <span style={{ fontSize: 12, color: '#16a34a', fontWeight: 600 }}>✓ تم إصدار التأمين</span>}
+          <div style={{ color: '#94a3b8', fontSize: 11, flexShrink: 0, marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            إدارة المرشحين
           </div>
         </div>
-        <div style={{ color: '#1b4f6b', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, flexShrink: 0, marginTop: 2 }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          مرشحو نايف والـ PDF
-        </div>
+      </button>
+
+      {/* Action buttons row */}
+      <div style={{ padding: '0 14px 14px', display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+        <button onClick={onClick}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 8, background: 'rgba(1,73,72,0.07)', color: '#014948', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          مرشحو نايف
+        </button>
+        <a href={`/api/export/${course.id}/participants-list`} target="_blank" rel="noopener noreferrer"
+          onClick={e => e.stopPropagation()}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 8, background: '#1b4f6b', color: '#fff', textDecoration: 'none', fontSize: 12, fontWeight: 700 }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          تصدير PDF
+        </a>
       </div>
-    </button>
+    </div>
   );
 }
 
