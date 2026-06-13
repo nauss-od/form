@@ -9,6 +9,14 @@ export default function InsuranceReviewPage({ params }: { params: { courseId: st
   const [participants, setParticipants] = useState<any[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isManager, setIsManager] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(r => r.json())
+      .then(d => { if (d?.role === 'MANAGER') setIsManager(true); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetch(`/api/insurance/${params.courseId}`)
@@ -175,12 +183,14 @@ export default function InsuranceReviewPage({ params }: { params: { courseId: st
                           <div key={p.id} style={{ animation: 'slideUp 0.2s ease' }}>
                             <ExpandedPreview participant={p} />
                             <div style={{ padding: '0 20px 14px', background: '#f7fbfb', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-                              <MoveParticipantBtn
-                                participantId={p.id}
-                                participantName={p.fullNamePassport}
-                                currentCourseId={params.courseId}
-                                onMoved={id => setParticipants(prev => prev.filter(x => x.id !== id))}
-                              />
+                              {isManager && (
+                                <MoveParticipantBtn
+                                  participantId={p.id}
+                                  participantName={p.fullNamePassport}
+                                  currentCourseId={params.courseId}
+                                  onMoved={id => setParticipants(prev => prev.filter(x => x.id !== id))}
+                                />
+                              )}
                               <DeleteParticipantBtn participantId={p.id} onDelete={id => setParticipants(prev => prev.filter(x => x.id !== id))} />
                             </div>
                           </div>
