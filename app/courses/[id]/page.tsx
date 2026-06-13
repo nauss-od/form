@@ -16,6 +16,7 @@ type CourseDetail = {
   publicToken: string; status: string; createdBy: { name: string };
   submissions: Submission[];
 };
+type CourseOption = { id: string; activityName: string | null; status: string };
 
 function IconLoc() { return <svg viewBox="0 0 26 26" fill="none" width="15" height="15"><defs><linearGradient id="lg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#016564"/><stop offset="100%" stopColor="#014948"/></linearGradient></defs><ellipse cx="13" cy="22" rx="6" ry="2" fill="#014948" opacity="0.08"/><path d="M13 2a8 8 0 0 0-8 8c0 6 8 13 8 13s8-7 8-13a8 8 0 0 0-8-8z" fill="url(#lg1)" opacity="0.1"/><path d="M13 2a8 8 0 0 0-8 8c0 6 8 13 8 13s8-7 8-13a8 8 0 0 0-8-8z" stroke="url(#lg1)" strokeWidth="1.5"/><circle cx="13" cy="10" r="3" fill="url(#lg1)" opacity="0.9"/></svg>; }
 function IconCal() { return <svg viewBox="0 0 26 26" fill="none" width="15" height="15"><defs><linearGradient id="cg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#016564"/><stop offset="100%" stopColor="#014948"/></linearGradient></defs><rect x="2" y="3" width="20" height="20" rx="4" fill="#014948" opacity="0.08" transform="translate(1,1)"/><rect x="2" y="2" width="20" height="20" rx="4" fill="url(#cg1)" opacity="0.1"/><rect x="2" y="2" width="20" height="20" rx="4" stroke="url(#cg1)" strokeWidth="1.5"/><path d="M2 9h20" stroke="url(#cg1)" strokeWidth="1.5"/><path d="M7 6V2M17 6V2" stroke="url(#cg1)" strokeWidth="1.5" strokeLinecap="round"/><circle cx="8.5" cy="13" r="1.5" fill="url(#cg1)"/><circle cx="13" cy="13" r="1.5" fill="url(#cg1)"/><circle cx="17.5" cy="13" r="1.5" fill="url(#cg1)"/></svg>; }
@@ -30,6 +31,12 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
   const [loading, setLoading] = useState(true);
   const [publicUrl, setPublicUrl] = useState('');
   const [deletingParticipant, setDeletingParticipant] = useState<string | null>(null);
+  const [isManager, setIsManager] = useState(false);
+  const [moveModal, setMoveModal] = useState<{ submissionId: string; name: string } | null>(null);
+  const [allCourses, setAllCourses] = useState<CourseOption[]>([]);
+  const [targetCourseId, setTargetCourseId] = useState('');
+  const [moving, setMoving] = useState(false);
+  const [moveError, setMoveError] = useState('');
 
   useEffect(() => {
     fetch(`/api/courses/${params.id}`)
@@ -37,7 +44,41 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
       .then(d => setCourse(d))
       .catch(() => { window.location.href = '/login'; })
       .finally(() => setLoading(false));
+    fetch('/api/auth/me')
+      .then(r => r.json())
+      .then(d => { if (d?.role === 'MANAGER') setIsManager(true); })
+      .catch(() => {});
   }, [params.id]);
+
+  function openMoveModal(submissionId: string, name: string) {
+    setMoveModal({ submissionId, name });
+    setTargetCourseId('');
+    setMoveError('');
+    if (allCourses.length === 0) {
+      fetch('/api/courses')
+        .then(r => r.json())
+        .then((data: { courses?: CourseOption[] }) => setAllCourses((data.courses ?? []).filter(c => c.id !== params.id && c.status === 'PUBLISHED')))
+        .catch(() => {});
+    }
+  }
+
+  async function handleMove() {
+    if (!moveModal || !targetCourseId) return;
+    setMoving(true);
+    setMoveError('');
+    try {
+      const res = await fetch(`/api/participant/${moveModal.submissionId}/move`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetCourseId }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setMoveError(data.message || 'حدث خطأ'); return; }
+      setCourse(prev => prev ? { ...prev, submissions: prev.submissions.filter(s => s.id !== moveModal.submissionId) } : prev);
+      setMoveModal(null);
+    } catch { setMoveError('حدث خطأ في الاتصال'); }
+    finally { setMoving(false); }
+  }
 
   useEffect(() => {
     if (course) setPublicUrl(`${window.location.origin}/public/form/${course.publicToken}`);
@@ -150,6 +191,15 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
                           {f.fileType === 'PASSPORT' ? <><IconPassport /> جواز</> : <><IconID /> هوية</>}
                         </a>
                       ))}
+                      {isManager && (
+                        <button onClick={() => openMoveModal(s.id, s.fullNamePassport)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: '#016564', opacity: 0.5, transition: 'opacity 0.15s' }}
+                          onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+                          onMouseLeave={e => e.currentTarget.style.opacity = '0.5'}
+                          title="نقل إلى دورة أخرى">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+                        </button>
+                      )}
                       <button onClick={() => deleteParticipant(s.id)}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', marginRight: 'auto', color: '#bf3d30', opacity: 0.5, transition: 'opacity 0.15s' }}
                         onMouseEnter={e => e.currentTarget.style.opacity = '1'}
@@ -165,6 +215,35 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
           )}
         </div>
       </div>
+
+      {/* Move participant modal */}
+      {moveModal && (
+        <div onClick={() => setMoveModal(null)} style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, padding: 24, width: '100%', maxWidth: 420, boxShadow: '0 8px 40px rgba(0,0,0,0.18)' }}>
+            <h3 style={{ margin: '0 0 4px', color: '#014948', fontSize: '1rem' }}>نقل مشارك</h3>
+            <p style={{ margin: '0 0 16px', color: '#667', fontSize: '0.85rem' }}>{moveModal.name}</p>
+            {allCourses.length === 0 ? (
+              <p style={{ color: '#889', fontSize: '0.85rem' }}>جاري تحميل الدورات...</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 260, overflowY: 'auto', marginBottom: 16 }}>
+                {allCourses.map(c => (
+                  <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, border: `1.5px solid ${targetCourseId === c.id ? '#016564' : '#d8eaea'}`, background: targetCourseId === c.id ? '#f0faf9' : '#fafffe', cursor: 'pointer' }}>
+                    <input type="radio" name="target" value={c.id} checked={targetCourseId === c.id} onChange={() => setTargetCourseId(c.id)} style={{ accentColor: '#016564' }} />
+                    <span style={{ fontSize: '0.88rem', color: '#014948', fontWeight: 600 }}>{c.activityName || c.id}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+            {moveError && <p style={{ color: '#bf3d30', fontSize: '0.83rem', margin: '0 0 12px' }}>{moveError}</p>}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button onClick={() => setMoveModal(null)} style={{ padding: '8px 18px', borderRadius: 8, border: '1.5px solid #d8eaea', background: '#f5fafa', color: '#445', cursor: 'pointer', fontWeight: 600 }}>إلغاء</button>
+              <button onClick={handleMove} disabled={!targetCourseId || moving} style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: targetCourseId && !moving ? '#014948' : '#b2d8d7', color: '#fff', cursor: targetCourseId && !moving ? 'pointer' : 'not-allowed', fontWeight: 700 }}>
+                {moving ? 'جاري النقل...' : 'نقل'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }
