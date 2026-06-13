@@ -239,9 +239,16 @@ export default function PublicFormPage({ params }: { params: { token: string } }
   maxBirth.setFullYear(maxBirth.getFullYear() - 15);
   const maxBirthStr = maxBirth.toISOString().split('T')[0];
 
-  function validateName(v: string) {
-    if (!v) { setNameError(''); return; }
-    if (!/^[\u0600-\u06FF\sA-Za-z.\-']+$/.test(v)) setNameError('أحرف عربية أو إنجليزية فقط');
+  function handleNameChange(raw: string) {
+    const hasArabic = /[؀-ۿ]/.test(raw);
+    const clean = raw.replace(/[؀-ۿ]/g, '');
+    setName(clean);
+    if (hasArabic) {
+      setNameError('يُدخَل الاسم بالإنجليزية فقط كما هو مكتوب في الجواز — الأحرف العربية غير مقبولة');
+      return;
+    }
+    if (!clean) { setNameError(''); return; }
+    if (!/^[A-Za-z .'-]+$/.test(clean)) setNameError('أحرف إنجليزية فقط');
     else setNameError('');
   }
 
@@ -428,6 +435,8 @@ export default function PublicFormPage({ params }: { params: { token: string } }
     let ok = true;
     if (s === 1) {
       if (!name) { setNameError('مطلوب'); ok = false; }
+      else if (/[؀-ۿ]/.test(name)) { setNameError('يُدخَل الاسم بالإنجليزية فقط — الأحرف العربية غير مقبولة'); ok = false; }
+      else if (!/^[A-Za-z\s.\-']+$/.test(name)) { setNameError('أحرف إنجليزية فقط'); ok = false; }
       if (!passport) { setPassportError('مطلوب'); ok = false; }
       else if (!/\d/.test(passport)) { setPassportError('يحتوي على أرقام'); ok = false; }
       else if (!/^[A-Z]{1,3}\d{1,6}$/.test(passport)) { setPassportError('صيغة غير صحيحة'); ok = false; }
@@ -472,6 +481,8 @@ export default function PublicFormPage({ params }: { params: { token: string } }
 
     let hasError = false;
     if (!name) { setNameError('مطلوب'); hasError = true; }
+    else if (/[؀-ۿ]/.test(name)) { setNameError('يُدخَل الاسم بالإنجليزية فقط — الأحرف العربية غير مقبولة'); hasError = true; }
+    else if (!/^[A-Za-z\s.\-']+$/.test(name)) { setNameError('أحرف إنجليزية فقط'); hasError = true; }
     if (!passport) { setPassportError('مطلوب'); hasError = true; }
     else if (!/\d/.test(passport)) { setPassportError('يحتوي على أرقام'); hasError = true; }
     else if (!/^[A-Z]{1,3}\d{1,6}$/.test(passport)) { setPassportError('صيغة غير صحيحة (حروف ثم أرقام)'); hasError = true; }
@@ -717,11 +728,15 @@ export default function PublicFormPage({ params }: { params: { token: string } }
                   <input
                     className={`input ${nameError ? 'input-error' : ''} ${name && !nameError ? 'input-valid' : ''}`}
                     value={name}
-                    onChange={e => { setName(e.target.value); validateName(e.target.value); }}
-                    placeholder="الاسم الكامل حسب جواز السفر"
+                    onChange={e => handleNameChange(e.target.value)}
+                    placeholder="Full name as in passport (English only)"
                     dir="ltr"
+                    lang="en"
                   />
-                  {nameError && <span className="field-error">{nameError}</span>}
+                  {nameError
+                    ? <span className="field-error">{nameError}</span>
+                    : <span className="field-hint">English letters only — as written in the passport</span>
+                  }
                 </div>
 
                 <div className="form-row">
