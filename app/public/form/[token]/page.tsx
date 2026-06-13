@@ -268,11 +268,19 @@ export default function PublicFormPage({ params }: { params: { token: string } }
   }
 
   function handlePassportFile(file: File | null) {
+    if (file && !file.type.startsWith('image/')) {
+      setPassportFileError('يُقبل الصور فقط — التقط صورة للجواز من شاشة جوالك وارفقها مباشرةً، لا يتطلب ملف PDF');
+      return;
+    }
     setPassportFile(file);
     validateAttachment(file, setPassportFileError);
   }
 
   function handleNationalIdFile(file: File | null) {
+    if (file && !file.type.startsWith('image/')) {
+      setNationalIdFileError('يُقبل الصور فقط — التقط صورة للهوية من شاشة جوالك وارفقها مباشرةً، لا يتطلب ملف PDF');
+      return;
+    }
     setNationalIdFile(file);
     validateAttachment(file, setNationalIdFileError);
   }
@@ -504,6 +512,27 @@ export default function PublicFormPage({ params }: { params: { token: string } }
           <img src="/images/nauss-logo-gold.png" alt="NAUSS" className="form-logo" />
           <h2>نموذج تأمين المشاركين</h2>
           <p>يرجى تعبئة البيانات بدقة حسب جواز السفر — جامعة نايف العربية للعلوم الأمنية</p>
+        </div>
+
+        {/* Privacy notice */}
+        <div style={{
+          display: 'flex', alignItems: 'flex-start', gap: 10,
+          background: 'linear-gradient(135deg,#f0faf9,#e6f4f3)',
+          border: '1.5px solid #b2d8d7', borderRadius: 12,
+          padding: '12px 14px', marginBottom: 20,
+        }}>
+          <svg viewBox="0 0 24 24" fill="none" width="20" height="20" style={{ flexShrink: 0, marginTop: 1 }}>
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="#016564" strokeWidth="1.6" fill="rgba(1,101,100,0.08)" strokeLinejoin="round"/>
+            <path d="M9 12l2 2 4-4" stroke="#016564" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: '0.82rem', color: '#014948', marginBottom: 3 }}>
+              جميع البيانات مشفرة ومحمية
+            </div>
+            <div style={{ fontSize: '0.76rem', color: '#4a7c7b', lineHeight: 1.7 }}>
+              تُستخدم لأغراض إصدار تأمين طبي دولي للمشاركين فقط، ولا تُشارَك مع أي جهة أخرى.
+            </div>
+          </div>
         </div>
 
         <div className="wizard-top">
