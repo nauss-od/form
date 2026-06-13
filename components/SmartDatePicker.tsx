@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 const MONTHS = [
   'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
@@ -41,6 +42,8 @@ export default function SmartDatePicker({ value, onChange, min, max, placeholder
   const [viewYear, setViewYear] = useState(initDate.getFullYear());
   const [viewMonth, setViewMonth] = useState(initDate.getMonth());
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   // Keep view in sync if value changes externally (e.g. from passport scan)
   const prevVal = useRef(value);
@@ -127,8 +130,8 @@ export default function SmartDatePicker({ value, onChange, min, max, placeholder
         </svg>
       </div>
 
-      {/* Full-screen overlay — fixed so it always renders above everything */}
-      {open && (
+      {/* Full-screen overlay via Portal — renders on document.body, above ALL stacking contexts */}
+      {open && mounted && createPortal(
         <div
           onClick={() => setOpen(false)}
           style={{
@@ -226,7 +229,8 @@ export default function SmartDatePicker({ value, onChange, min, max, placeholder
               })}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <style>{`

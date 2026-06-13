@@ -322,31 +322,42 @@ export default function PublicFormPage({ params }: { params: { token: string } }
     setScanning(true);
     setScanMsg('جاري تحليل صورة الجواز...');
     try {
-      // Crop bottom 25% of image where MRZ lines are printed
-      const croppedBlob = await cropMRZZone(file);
-
-      // Dynamic import — loads Tesseract only when needed
       const { createWorker } = await import('tesseract.js');
       setScanMsg('جاري قراءة البيانات...');
       const worker = await createWorker('eng', 1, { logger: () => {} });
       await worker.setParameters({
         tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<',
-        tessedit_pageseg_mode: '6', // uniform block of text
+        tessedit_pageseg_mode: '6',
       } as Record<string, string>);
 
-      const { data: { text } } = await worker.recognize(croppedBlob);
+      // Normalize EXIF orientation first, then try MRZ crop at 4 rotations
+      const normalizedBlob = await normalizeImageOrientation(file);
+      const rotations = [0, 90, 270, 180]; // most likely first
+      let bestResult: ReturnType<typeof parseMRZ> = {};
+
+      for (const rot of rotations) {
+        setScanMsg(`جاري القراءة... (زاوية ${rot}°)`);
+        const blob = await cropMRZZone(normalizedBlob, rot);
+        const { data: { text } } = await worker.recognize(blob);
+        const d = parseMRZ(text);
+        // Score: prefer result with both name and passport number
+        const score = (d.passportNumber ? 2 : 0) + (d.fullNamePassport ? 1 : 0) + (d.birthDate ? 1 : 0);
+        const bestScore = (bestResult.passportNumber ? 2 : 0) + (bestResult.fullNamePassport ? 1 : 0) + (bestResult.birthDate ? 1 : 0);
+        if (score > bestScore) bestResult = d;
+        if (d.passportNumber && d.fullNamePassport) break; // good enough
+      }
+
       await worker.terminate();
 
-      const d = parseMRZ(text);
-      if (!d.passportNumber && !d.fullNamePassport) {
-        setScanMsg('تعذّر قراءة الجواز — تأكد من وضوح الصورة وأن تشمل الجزء السفلي من الجواز');
+      if (!bestResult.passportNumber && !bestResult.fullNamePassport) {
+        setScanMsg('تعذّر قراءة الجواز — تأكد من وضوح الصورة وأن تشمل المنطقة السفلية (MRZ)');
         return;
       }
 
-      if (d.fullNamePassport) { setName(d.fullNamePassport); setNameError(''); }
-      if (d.passportNumber) { setPassport(d.passportNumber.slice(0, 7)); setPassportError(''); }
-      if (d.birthDate) { setBirthDate(d.birthDate); setBirthDateError(''); }
-      if (d.passportExpiry) { setExpiry(d.passportExpiry); setExpiryError(''); }
+      if (bestResult.fullNamePassport) { setName(bestResult.fullNamePassport); setNameError(''); }
+      if (bestResult.passportNumber) { setPassport(bestResult.passportNumber.slice(0, 7)); setPassportError(''); }
+      if (bestResult.birthDate) { setBirthDate(bestResult.birthDate); setBirthDateError(''); }
+      if (bestResult.passportExpiry) { setExpiry(bestResult.passportExpiry); setExpiryError(''); }
       setPassportFile(file);
       setPassportFileError('');
       setScanMsg('✓ تم استخراج البيانات — راجع الحقول وأكمل المعلومات الناقصة');
@@ -357,22 +368,123 @@ export default function PublicFormPage({ params }: { params: { token: string } }
     }
   }
 
-  // Crop bottom 25% of the image where MRZ lines live
-  function cropMRZZone(file: File): Promise<Blob> {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
+  // Read EXIF orientation tag from JPEG and return the orientation value (1–8)
+  function readExifOrientation(file: File): Promise<number> {
+    return new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const buf = e.target?.result as ArrayBuffer;
+          const view = new DataView(buf);
+          if (view.getUint16(0, false) !== 0xFFD8) { resolve(1); return; }
+          let offset = 2;
+          while (offset < view.byteLength - 2) {
+            const marker = view.getUint16(offset, false);
+            offset += 2;
+            if (marker === 0xFFE1) {
+              if (view.getUint32(offset + 2, false) !== 0x45786966) { resolve(1); return; }
+              const little = view.getUint16(offset + 8, false) === 0x4949;
+              const ifdOffset = offset + 8 + view.getUint32(offset + 12, little);
+              const tags = view.getUint16(ifdOffset, little);
+              for (let i = 0; i < tags; i++) {
+                if (view.getUint16(ifdOffset + 2 + i * 12, little) === 0x0112) {
+                  resolve(view.getUint16(ifdOffset + 2 + i * 12 + 8, little));
+                  return;
+                }
+              }
+              resolve(1); return;
+            } else if ((marker & 0xFF00) !== 0xFF00) break;
+            else offset += view.getUint16(offset, false);
+          }
+        } catch { /* ignore */ }
+        resolve(1);
+      };
+      reader.onerror = () => resolve(1);
+      reader.readAsArrayBuffer(file.slice(0, 128 * 1024));
+    });
+  }
+
+  // Draw image on canvas applying EXIF orientation correction, return normalized blob
+  function normalizeImageOrientation(file: File): Promise<Blob> {
+    return new Promise(async (resolve, reject) => {
+      const orientation = await readExifOrientation(file);
       const url = URL.createObjectURL(file);
+      const img = new Image();
       img.onload = () => {
         URL.revokeObjectURL(url);
-        const cropH = Math.floor(img.height * 0.25);
+        const o = orientation;
+        // Rotated 90 or 270 → swap width/height
+        const swapped = o >= 5 && o <= 8;
+        const w = swapped ? img.height : img.width;
+        const h = swapped ? img.width : img.height;
         const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = cropH;
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { resolve(file); return; }
+        // Apply transform based on EXIF orientation
+        if      (o === 2) { ctx.transform(-1, 0, 0, 1, w, 0); }
+        else if (o === 3) { ctx.transform(-1, 0, 0, -1, w, h); }
+        else if (o === 4) { ctx.transform(1, 0, 0, -1, 0, h); }
+        else if (o === 5) { ctx.transform(0, 1, 1, 0, 0, 0); }
+        else if (o === 6) { ctx.transform(0, 1, -1, 0, h, 0); }
+        else if (o === 7) { ctx.transform(0, -1, -1, 0, h, w); }
+        else if (o === 8) { ctx.transform(0, -1, 1, 0, 0, w); }
+        ctx.drawImage(img, 0, 0);
+        canvas.toBlob(b => b ? resolve(b) : resolve(file), 'image/jpeg', 0.96);
+      };
+      img.onerror = () => resolve(file);
+      img.src = url;
+    });
+  }
+
+  // Crop MRZ zone from a (already orientation-normalized) blob, with optional extra rotation
+  function cropMRZZone(blob: Blob, extraRotation = 0): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const rad = (extraRotation * Math.PI) / 180;
+        const swapped = extraRotation === 90 || extraRotation === 270;
+        const srcW = img.width, srcH = img.height;
+        // After rotation, which dimension is width/height?
+        const rotW = swapped ? srcH : srcW;
+        const rotH = swapped ? srcW : srcH;
+        // We want bottom 25% of the rotated image (where MRZ lives)
+        const cropH = Math.floor(rotH * 0.28);
+        const canvas = document.createElement('canvas');
+        canvas.width = rotW; canvas.height = cropH;
         const ctx = canvas.getContext('2d');
         if (!ctx) { reject(new Error('canvas')); return; }
-        // Increase contrast for better OCR
-        ctx.filter = 'contrast(1.4) grayscale(1)';
-        ctx.drawImage(img, 0, img.height - cropH, img.width, cropH, 0, 0, img.width, cropH);
+        ctx.filter = 'contrast(1.5) grayscale(1) brightness(1.05)';
+        // Translate so we draw only the bottom cropH rows of the rotated image
+        ctx.save();
+        if (extraRotation === 0) {
+          ctx.drawImage(img, 0, srcH - cropH, srcW, cropH, 0, 0, srcW, cropH);
+        } else if (extraRotation === 90) {
+          // Rotate 90 CW: new bottom = left side of original
+          ctx.translate(rotW / 2, cropH / 2);
+          ctx.rotate(rad);
+          ctx.drawImage(img, srcW - cropH, -srcH / 2, cropH, srcH, 0, 0, cropH, srcH);
+          ctx.restore();
+          canvas.toBlob(b => b ? resolve(b) : reject(new Error('blob')), 'image/jpeg', 0.95);
+          return;
+        } else if (extraRotation === 270) {
+          ctx.translate(rotW / 2, cropH / 2);
+          ctx.rotate(rad);
+          ctx.drawImage(img, 0, -srcH / 2, cropH, srcH, 0, 0, cropH, srcH);
+          ctx.restore();
+          canvas.toBlob(b => b ? resolve(b) : reject(new Error('blob')), 'image/jpeg', 0.95);
+          return;
+        } else if (extraRotation === 180) {
+          ctx.translate(rotW / 2, cropH / 2);
+          ctx.rotate(rad);
+          ctx.drawImage(img, -srcW / 2, -(srcH - cropH / 2), srcW, srcH);
+          ctx.restore();
+          canvas.toBlob(b => b ? resolve(b) : reject(new Error('blob')), 'image/jpeg', 0.95);
+          return;
+        }
+        ctx.restore();
         canvas.toBlob(b => b ? resolve(b) : reject(new Error('blob')), 'image/jpeg', 0.95);
       };
       img.onerror = reject;
