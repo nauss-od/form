@@ -174,7 +174,13 @@ export default function InsuranceReviewPage({ params }: { params: { courseId: st
                         <td colSpan={7} style={{ padding: 0, borderBottom: '1px solid #eef3f3' }}>
                           <div key={p.id} style={{ animation: 'slideUp 0.2s ease' }}>
                             <ExpandedPreview participant={p} />
-                            <div style={{ padding: '0 20px 14px', background: '#f7fbfb', display: 'flex', justifyContent: 'flex-end' }}>
+                            <div style={{ padding: '0 20px 14px', background: '#f7fbfb', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                              <MoveParticipantBtn
+                                participantId={p.id}
+                                participantName={p.fullNamePassport}
+                                currentCourseId={params.courseId}
+                                onMoved={id => setParticipants(prev => prev.filter(x => x.id !== id))}
+                              />
                               <DeleteParticipantBtn participantId={p.id} onDelete={id => setParticipants(prev => prev.filter(x => x.id !== id))} />
                             </div>
                           </div>
@@ -485,6 +491,144 @@ function ExpandedPreview({ participant }: { participant: any }) {
         </div>
       )}
     </div>
+  );
+}
+
+function MoveParticipantBtn({ participantId, participantName, currentCourseId, onMoved }: {
+  participantId: string;
+  participantName: string;
+  currentCourseId: string;
+  onMoved: (id: string) => void;
+}) {
+  const [showModal, setShowModal] = useState(false);
+  const [courses, setCourses] = useState<{ id: string; activityName: string; startDate: string | null }[]>([]);
+  const [loadingCourses, setLoadingCourses] = useState(false);
+  const [selectedId, setSelectedId] = useState('');
+  const [moving, setMoving] = useState(false);
+  const [error, setError] = useState('');
+
+  async function openModal() {
+    setShowModal(true);
+    setSelectedId('');
+    setError('');
+    setLoadingCourses(true);
+    try {
+      const res = await fetch('/api/courses');
+      const data = await res.json();
+      // Filter: only published, no insurance issued, not current course
+      const available = (data.courses || []).filter(
+        (c: any) => c.id !== currentCourseId && c.status === 'PUBLISHED' && !c.insuranceIssuedAt
+      );
+      setCourses(available);
+    } catch { setError('تعذّر تحميل الدورات'); }
+    finally { setLoadingCourses(false); }
+  }
+
+  async function handleMove() {
+    if (!selectedId) { setError('اختر دورة أولاً'); return; }
+    setMoving(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/participant/${participantId}/move`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetCourseId: selectedId }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.message || 'فشل النقل'); return; }
+      setShowModal(false);
+      onMoved(participantId);
+    } catch { setError('حدث خطأ'); }
+    finally { setMoving(false); }
+  }
+
+  return (
+    <>
+      <button
+        onClick={openModal}
+        style={{
+          background: 'rgba(1,73,72,0.06)', border: '1px solid rgba(1,73,72,0.14)', borderRadius: 8,
+          padding: '5px 10px', cursor: 'pointer', color: '#016564', fontSize: '0.7rem', fontWeight: 600,
+          display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap',
+        }}
+      >
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M5 12h14"/><path d="M12 5l7 7-7 7"/>
+        </svg>
+        نقل إلى دورة أخرى
+      </button>
+
+      {showModal && (
+        <div onClick={() => setShowModal(false)} style={{
+          position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.45)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: '#fff', borderRadius: 16, width: '100%', maxWidth: 440,
+            padding: '24px 24px 20px', boxShadow: '0 8px 40px rgba(0,0,0,0.18)',
+          }}>
+            <h3 style={{ margin: '0 0 4px', fontSize: '1rem', color: '#014948' }}>نقل مشارك</h3>
+            <p style={{ margin: '0 0 16px', fontSize: '0.78rem', color: '#667777' }}>
+              نقل <strong>{participantName}</strong> إلى دورة أخرى
+            </p>
+
+            {loadingCourses ? (
+              <div style={{ textAlign: 'center', padding: '20px 0', color: '#889f9f', fontSize: '0.82rem' }}>جاري تحميل الدورات...</div>
+            ) : courses.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '20px 0', color: '#94a8a8', fontSize: '0.82rem' }}>
+                لا توجد دورات نشطة متاحة للنقل إليها
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 260, overflowY: 'auto', marginBottom: 16 }}>
+                {courses.map(c => (
+                  <label key={c.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+                    borderRadius: 10, border: `1.5px solid ${selectedId === c.id ? '#016564' : '#e0eaea'}`,
+                    background: selectedId === c.id ? '#f0faf9' : '#fff',
+                    cursor: 'pointer', transition: 'all 0.12s',
+                  }}>
+                    <input type="radio" name="target-course" value={c.id}
+                      checked={selectedId === c.id}
+                      onChange={() => { setSelectedId(c.id); setError(''); }}
+                      style={{ accentColor: '#016564', width: 16, height: 16, flexShrink: 0 }}
+                    />
+                    <div>
+                      <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#014948' }}>{c.activityName}</div>
+                      {c.startDate && (
+                        <div style={{ fontSize: '0.68rem', color: '#889f9f', marginTop: 2 }}>
+                          {new Date(c.startDate).toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' })}
+                        </div>
+                      )}
+                    </div>
+                  </label>
+                ))}
+              </div>
+            )}
+
+            {error && (
+              <div style={{ background: 'rgba(191,61,48,0.06)', border: '1px solid rgba(191,61,48,0.15)', borderRadius: 8, padding: '8px 12px', color: '#bf3d30', fontSize: '0.75rem', fontWeight: 700, marginBottom: 12 }}>
+                {error}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button onClick={() => setShowModal(false)} style={{
+                padding: '8px 18px', borderRadius: 8, border: '1px solid #dce5e5',
+                background: '#fff', color: '#667777', fontSize: '0.8rem', cursor: 'pointer',
+              }}>إلغاء</button>
+              <button onClick={handleMove} disabled={moving || !selectedId || courses.length === 0} style={{
+                padding: '8px 18px', borderRadius: 8, border: 'none',
+                background: selectedId ? '#014948' : '#c8d8d8', color: '#fff',
+                fontSize: '0.8rem', fontWeight: 700, cursor: selectedId ? 'pointer' : 'not-allowed',
+                opacity: moving ? 0.7 : 1,
+              }}>
+                {moving ? 'جاري النقل...' : 'نقل المشارك'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
