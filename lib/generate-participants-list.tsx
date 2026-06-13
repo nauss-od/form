@@ -135,7 +135,7 @@ export async function generateParticipantsListBuffer(
             </Text>
           </View>
           <View style={s.headerRight}>
-            <Image src={logoSrc} style={{ width: 100 }} />
+            <Image src={logoSrc} style={{ width: 150 }} />
           </View>
         </View>
 
@@ -146,11 +146,11 @@ export async function generateParticipantsListBuffer(
           <View style={s.infoGrid}>
             <View style={[s.infoItem, { width: '100%' }]}>
               <Text style={s.infoLabel}>Activity / Program Title</Text>
-              <Text style={[s.infoValue, { textAlign: 'right' }]}>{course.activityName || '—'}</Text>
+              <Text style={s.infoValue}>{course.activityName || '—'}</Text>
             </View>
             <View style={s.infoItem}>
               <Text style={s.infoLabel}>Venue</Text>
-              <Text style={[s.infoValue, { textAlign: 'right' }]}>{course.venue || '—'}</Text>
+              <Text style={s.infoValue}>{course.venue || '—'}</Text>
             </View>
             <View style={s.infoItem}>
               <Text style={s.infoLabel}>Total Participants</Text>
@@ -166,7 +166,7 @@ export async function generateParticipantsListBuffer(
             </View>
             <View style={s.infoItem}>
               <Text style={s.infoLabel}>Programme Coordinator</Text>
-              <Text style={[s.infoValue, { textAlign: 'right' }]}>{course.createdByName}</Text>
+              <Text style={s.infoValue}>{course.createdByName}</Text>
             </View>
           </View>
         </View>
