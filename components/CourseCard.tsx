@@ -85,7 +85,7 @@ function IssueInsuranceDialog({ courseName, onConfirm, onCancel, issuing }: { co
             <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
           </div>
           <div>
-            <h3 style={{ margin: 0, color: 'var(--nauss-ink)', fontSize: '1rem' }}>تأكيد تصدير التأمين الطبي</h3>
+            <h3 style={{ margin: 0, color: 'var(--nauss-ink)', fontSize: '1rem' }}>تأكيد — تم إصدار التأمين من قبل إدارة السفر</h3>
             <p style={{ margin: '3px 0 0', color: 'var(--nauss-muted)', fontSize: '0.72rem' }}>{courseName}</p>
           </div>
         </div>
@@ -93,11 +93,11 @@ function IssueInsuranceDialog({ courseName, onConfirm, onCancel, issuing }: { co
           سيتم حذف بيانات المشاركين والمرفقات وروابط النموذج وإدارة التأمين نهائياً. لن يمكن الرجوع لهذه البيانات أو الوصول لها من أي رابط بعد التأكيد.
         </p>
         <div style={{ padding: '10px 12px', borderRadius: 12, background: 'rgba(191,61,48,0.06)', color: 'var(--danger)', fontSize: '0.76rem', fontWeight: 800, marginBottom: 14 }}>
-          هذا الإجراء نهائي ويُبقي بطاقة الدورة فقط مع عدد من تم تصدير التأمين لهم.
+          هذا الإجراء نهائي ويُبقي بطاقة الدورة فقط مع عدد المشاركين المؤمَّن عليهم.
         </div>
         <div className="confirm-actions">
           <button className="secondary-btn" disabled={issuing} onClick={onCancel}>إلغاء</button>
-          <button className="primary-btn" disabled={issuing} style={{ background: 'var(--danger)', boxShadow: 'none' }} onClick={onConfirm}>{issuing ? 'جاري التصدير...' : 'تأكيد التصدير والحذف النهائي'}</button>
+          <button className="primary-btn" disabled={issuing} style={{ background: 'var(--danger)', boxShadow: 'none' }} onClick={onConfirm}>{issuing ? 'جاري المعالجة...' : 'تأكيد وحذف البيانات نهائياً'}</button>
         </div>
       </div>
     </div>
@@ -195,11 +195,11 @@ export function CourseCard({ c, onDeleted, onEdited }: { c: Course; onDeleted: (
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
             <span className={`status-chip ${c.status === 'PUBLISHED' ? 'is-open' : ''}`} style={{ minHeight: 22, fontSize: '0.62rem', padding: '0 8px' }}>
-              {isIssued ? 'تم تصدير التأمين' : c.status === 'PUBLISHED' ? 'نشط' : 'مغلق'}
+              {isIssued ? 'تم إصدار التأمين' : c.status === 'PUBLISHED' ? 'نشط' : 'مغلق'}
             </span>
             {isIssued && (
               <span style={{ minHeight: 22, display: 'inline-flex', alignItems: 'center', gap: 4, padding: '0 8px', borderRadius: 999, background: 'rgba(20,128,90,0.08)', color: '#14805a', fontSize: '0.62rem', fontWeight: 900, border: '1px solid rgba(20,128,90,0.14)' }}>
-                <IconCheck /> تم تصدير التأمين
+                <IconCheck /> تم إصدار التأمين من قبل إدارة السفر
               </span>
             )}
             <strong style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--nauss-ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>{c.activityName || 'دورة تدريبية'}</strong>
@@ -227,7 +227,7 @@ export function CourseCard({ c, onDeleted, onEdited }: { c: Course; onDeleted: (
         <div style={{ flex: 1, minWidth: 0, display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
           {isIssued ? (
             <div style={{ minHeight: 28, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0 10px', borderRadius: 10, background: 'linear-gradient(135deg, rgba(20,128,90,0.1), rgba(1,101,100,0.08))', color: '#14805a', fontSize: '0.68rem', fontWeight: 900 }}>
-              <IconCheck /> تم تصدير التأمين وحذف البيانات نهائياً
+              <IconCheck /> تم إصدار التأمين من قبل إدارة السفر — البيانات محذوفة
             </div>
           ) : (
             <>
@@ -245,9 +245,9 @@ export function CourseCard({ c, onDeleted, onEdited }: { c: Course; onDeleted: (
                 قائمة
               </a>
               <a href={mailtoHref(c)} className="ghost-btn" style={{ minHeight: 26, padding: '0 6px', fontSize: '0.6rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }} title="ارسال بالبريد"><IconEML /> بريد</a>
-              <button className="ghost-btn" style={{ minHeight: 26, padding: '0 8px', fontSize: '0.6rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 4, color: '#5f7777', borderColor: 'rgba(0,0,0,0.08)' }} onClick={() => setShowIssue(true)} title="تصدير التأمين الطبي النهائي">
+              <button className="ghost-btn" style={{ minHeight: 26, padding: '0 8px', fontSize: '0.6rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 4, color: '#5f7777', borderColor: 'rgba(0,0,0,0.08)' }} onClick={() => setShowIssue(true)} title="تم إصدار التأمين من قبل إدارة السفر">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                تصدير التأمين
+                تم إصدار التأمين
               </button>
             </>
           )}
