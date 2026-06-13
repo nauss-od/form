@@ -370,9 +370,43 @@ function CopyBtn({ text }: { text: string }) {
   );
 }
 
+function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: 'rgba(0,0,0,0.88)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 20, cursor: 'zoom-out',
+      }}
+    >
+      <button onClick={onClose} style={{
+        position: 'absolute', top: 16, left: 16,
+        background: 'rgba(255,255,255,0.12)', border: 'none', borderRadius: '50%',
+        width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        cursor: 'pointer', color: '#fff',
+      }}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+      <img
+        src={src} alt={alt} onClick={e => e.stopPropagation()}
+        style={{ maxWidth: '100%', maxHeight: '90vh', objectFit: 'contain', borderRadius: 8, boxShadow: '0 8px 40px rgba(0,0,0,0.6)', cursor: 'default' }}
+      />
+    </div>
+  );
+}
+
 function ImgWithLoader({ src, alt }: { src: string; alt: string }) {
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [lightbox, setLightbox] = useState(false);
 
   function retry() {
     setLoaded(false);
@@ -394,29 +428,43 @@ function ImgWithLoader({ src, alt }: { src: string; alt: string }) {
   }
 
   return (
-    <div style={{ position: 'relative', width: '100%', minHeight: 100 }}>
-      {!loaded && (
-        <div style={{
-          position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: '#eef3f3', borderRadius: 8, animation: 'pulse 1.5s ease-in-out infinite',
-        }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b8cccc" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>
-          </svg>
+    <>
+      {lightbox && <Lightbox src={src} alt={alt} onClose={() => setLightbox(false)} />}
+      <div style={{ position: 'relative', width: '100%', minHeight: 100 }}>
+        {!loaded && (
+          <div style={{
+            position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: '#eef3f3', borderRadius: 8, animation: 'pulse 1.5s ease-in-out infinite',
+          }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b8cccc" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>
+            </svg>
+          </div>
+        )}
+        <div style={{ position: 'relative', display: loaded ? 'block' : 'none' }}>
+          <img
+            src={src} alt={alt} loading="lazy"
+            onLoad={() => setLoaded(true)} onError={() => setFailed(true)}
+            onClick={() => setLightbox(true)}
+            style={{
+              width: '100%', maxHeight: 220, borderRadius: 8, objectFit: 'contain', objectPosition: 'center',
+              opacity: 1, transition: 'opacity 0.25s', cursor: 'zoom-in', display: 'block',
+            }}
+          />
+          <div style={{
+            position: 'absolute', bottom: 6, left: 6,
+            background: 'rgba(0,0,0,0.45)', borderRadius: 6, padding: '2px 7px',
+            fontSize: '0.62rem', color: '#fff', display: 'flex', alignItems: 'center', gap: 4, pointerEvents: 'none',
+          }}>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+            </svg>
+            تكبير
+          </div>
         </div>
-      )}
-      <img
-        src={src}
-        alt={alt}
-        loading="lazy"
-        onLoad={() => setLoaded(true)}
-        onError={() => setFailed(true)}
-        style={{
-          width: '100%', maxHeight: 220, borderRadius: 8, objectFit: 'contain', objectPosition: 'right top',
-          opacity: loaded ? 1 : 0, transition: 'opacity 0.25s',
-        }}
-      />
-    </div>
+        {!loaded && <img src={src} alt="" onLoad={() => setLoaded(true)} onError={() => setFailed(true)} style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }} />}
+      </div>
+    </>
   );
 }
 

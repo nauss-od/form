@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useRef, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import SmartDatePicker from '@/components/SmartDatePicker';
 import { compressImage } from '@/lib/compress-image';
 
@@ -170,6 +170,18 @@ function ScanIcon() {
   );
 }
 
+interface CourseInfo {
+  activityName: string;
+  startDate: string | null;
+  endDate: string | null;
+  venue: string | null;
+}
+
+function formatDate(d: string | null | undefined): string {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
 export default function PublicFormPage({ params }: { params: { token: string } }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -180,6 +192,20 @@ export default function PublicFormPage({ params }: { params: { token: string } }
   const [scanning, setScanning] = useState(false);
   const [scanMsg, setScanMsg] = useState('');
   const scanInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const [courseInfo, setCourseInfo] = useState<CourseInfo | null>(null);
+  const [courseError, setCourseError] = useState('');
+  const [showWarning, setShowWarning] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/public/form/${params.token}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.message) setCourseError(d.message);
+        else setCourseInfo(d);
+      })
+      .catch(() => {});
+  }, [params.token]);
 
   const [name, setName] = useState('');
   const [nameError, setNameError] = useState('');
@@ -491,6 +517,17 @@ export default function PublicFormPage({ params }: { params: { token: string } }
     }
   }
 
+  if (courseError) {
+    return (
+      <div className="public-page">
+        <div className="public-card" style={{ textAlign: 'center', padding: '56px 40px', maxWidth: 480 }}>
+          <div style={{ fontSize: '2.5rem', marginBottom: 16 }}>⚠️</div>
+          <h2 style={{ color: '#dc2626', marginBottom: 8, fontSize: '1.2rem', fontWeight: 900 }}>{courseError}</h2>
+        </div>
+      </div>
+    );
+  }
+
   if (success) {
     return (
       <div className="public-page">
@@ -507,12 +544,94 @@ export default function PublicFormPage({ params }: { params: { token: string } }
 
   return (
     <div className="public-page">
+
+      {/* ── Course confirmation warning — shown once on open ── */}
+      {showWarning && courseInfo && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1000,
+          background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '20px',
+        }}>
+          <div style={{
+            background: '#fff', borderRadius: 20, maxWidth: 420, width: '100%',
+            padding: '32px 28px', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+          }}>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(234,179,8,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+              <svg viewBox="0 0 24 24" fill="none" width="28" height="28">
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="#ca8a04" strokeWidth="1.8" fill="rgba(234,179,8,0.15)" strokeLinejoin="round"/>
+                <line x1="12" y1="9" x2="12" y2="13" stroke="#ca8a04" strokeWidth="2" strokeLinecap="round"/>
+                <line x1="12" y1="17" x2="12.01" y2="17" stroke="#ca8a04" strokeWidth="2.5" strokeLinecap="round"/>
+              </svg>
+            </div>
+            <h3 style={{ color: '#014948', fontSize: '1.1rem', fontWeight: 900, marginBottom: 10 }}>
+              تأكّد قبل التعبئة
+            </h3>
+            <p style={{ color: '#64748b', fontSize: '0.88rem', lineHeight: 1.9, marginBottom: 20 }}>
+              هذا النموذج مخصص لدورة
+            </p>
+            <div style={{ background: 'linear-gradient(135deg,#f0faf9,#e6f4f3)', border: '1.5px solid #b2d8d7', borderRadius: 12, padding: '14px 18px', marginBottom: 22 }}>
+              <div style={{ fontWeight: 900, fontSize: '1rem', color: '#014948', marginBottom: 6 }}>
+                {courseInfo.activityName}
+              </div>
+              {(courseInfo.startDate || courseInfo.endDate) && (
+                <div style={{ fontSize: '0.82rem', color: '#4a7c7b', fontWeight: 700 }}>
+                  {formatDate(courseInfo.startDate)}{courseInfo.endDate && courseInfo.endDate !== courseInfo.startDate ? ` — ${formatDate(courseInfo.endDate)}` : ''}
+                </div>
+              )}
+              {courseInfo.venue && (
+                <div style={{ fontSize: '0.78rem', color: '#6b9999', marginTop: 4 }}>{courseInfo.venue}</div>
+              )}
+            </div>
+            <p style={{ fontSize: '0.82rem', color: '#dc2626', fontWeight: 700, marginBottom: 20 }}>
+              إذا لم تكن من المشاركين في هذه الدورة، أغلق هذه الصفحة.
+            </p>
+            <button
+              onClick={() => setShowWarning(false)}
+              style={{
+                width: '100%', padding: '13px', borderRadius: 12,
+                background: '#014948', color: '#fff', border: 'none',
+                fontWeight: 900, fontSize: '1rem', cursor: 'pointer',
+              }}
+            >
+              نعم، أنا من المشاركين — متابعة
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="public-card">
         <div className="form-header">
           <img src="/images/nauss-logo-gold.png" alt="NAUSS" className="form-logo" />
           <h2>نموذج تأمين المشاركين</h2>
           <p>يرجى تعبئة البيانات بدقة حسب جواز السفر — جامعة نايف العربية للعلوم الأمنية</p>
         </div>
+
+        {/* Course info banner */}
+        {courseInfo && (
+          <div style={{
+            background: 'linear-gradient(135deg,#014948,#016564)',
+            borderRadius: 14, padding: '14px 18px', marginBottom: 16,
+            color: '#fff',
+          }}>
+            <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.65)', fontWeight: 700, marginBottom: 4, letterSpacing: '0.04em' }}>
+              الدورة التدريبية
+            </div>
+            <div style={{ fontWeight: 900, fontSize: '0.96rem', marginBottom: courseInfo.startDate ? 6 : 0 }}>
+              {courseInfo.activityName}
+            </div>
+            {(courseInfo.startDate || courseInfo.venue) && (
+              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: '0.78rem', color: 'rgba(255,255,255,0.75)' }}>
+                {courseInfo.startDate && (
+                  <span>
+                    📅 {formatDate(courseInfo.startDate)}
+                    {courseInfo.endDate && courseInfo.endDate !== courseInfo.startDate ? ` — ${formatDate(courseInfo.endDate)}` : ''}
+                  </span>
+                )}
+                {courseInfo.venue && <span>📍 {courseInfo.venue}</span>}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Privacy notice */}
         <div style={{
@@ -566,13 +685,26 @@ export default function PublicFormPage({ params }: { params: { token: string } }
                   <p style={{ fontSize: '0.78rem', color: '#4a7c7b', margin: '0 0 10px', lineHeight: 1.7 }}>
                     صوّر جواز سفرك وسيتم استخراج البيانات تلقائياً داخل جهازك — لا تُرسَل الصورة لأي جهة
                   </p>
+                  {/* camera — opens native camera */}
                   <input ref={scanInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
                     onChange={e => { const f = e.target.files?.[0]; if (f) handleScanPassport(f); e.target.value = ''; }} />
-                  <button type="button" onClick={() => scanInputRef.current?.click()} disabled={scanning}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 18px', borderRadius: 10, background: '#014948', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: '0.82rem' }}>
-                    {scanning ? <span style={{ display: 'inline-block', width: 16, height: 16, border: '2px solid rgba(255,255,255,0.4)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} /> : <ScanIcon />}
-                    {scanning ? 'جاري المسح...' : 'مسح الجواز'}
-                  </button>
+                  {/* gallery — opens photo library without capture */}
+                  <input ref={galleryInputRef} type="file" accept="image/*" style={{ display: 'none' }}
+                    onChange={e => { const f = e.target.files?.[0]; if (f) handleScanPassport(f); e.target.value = ''; }} />
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <button type="button" onClick={() => scanInputRef.current?.click()} disabled={scanning}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 18px', borderRadius: 10, background: '#014948', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: '0.82rem' }}>
+                      {scanning ? <span style={{ display: 'inline-block', width: 16, height: 16, border: '2px solid rgba(255,255,255,0.4)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} /> : <ScanIcon />}
+                      {scanning ? 'جاري المسح...' : 'تصوير الجواز'}
+                    </button>
+                    <button type="button" onClick={() => galleryInputRef.current?.click()} disabled={scanning}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 18px', borderRadius: 10, background: 'rgba(1,73,72,0.12)', color: '#014948', border: '1.5px solid #b2d8d7', cursor: 'pointer', fontWeight: 800, fontSize: '0.82rem' }}>
+                      <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                      </svg>
+                      رفع من المعرض
+                    </button>
+                  </div>
                   {scanMsg && (
                     <div style={{ marginTop: 8, fontSize: '0.78rem', fontWeight: 700, color: scanMsg.startsWith('✓') ? '#14805a' : '#dc2626' }}>
                       {scanMsg}
