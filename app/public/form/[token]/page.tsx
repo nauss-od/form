@@ -203,27 +203,115 @@ export default function PublicFormPage({ params }: { params: { token: string } }
 
   async function handleScanPassport(file: File) {
     setScanning(true);
-    setScanMsg('');
+    setScanMsg('جاري تحليل صورة الجواز...');
     try {
-      const fd = new FormData();
-      fd.append('image', file);
-      const res = await fetch('/api/public/scan-passport', { method: 'POST', body: fd });
-      const data = await res.json();
-      if (!res.ok) { setScanMsg(data.message || 'تعذّر المسح'); return; }
-      const d = data.data;
+      // Crop bottom 25% of image where MRZ lines are printed
+      const croppedBlob = await cropMRZZone(file);
+
+      // Dynamic import — loads Tesseract only when needed
+      const { createWorker } = await import('tesseract.js');
+      setScanMsg('جاري قراءة البيانات...');
+      const worker = await createWorker('eng', 1, { logger: () => {} });
+      await worker.setParameters({
+        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<',
+        tessedit_pageseg_mode: '6', // uniform block of text
+      } as Record<string, string>);
+
+      const { data: { text } } = await worker.recognize(croppedBlob);
+      await worker.terminate();
+
+      const d = parseMRZ(text);
+      if (!d.passportNumber && !d.fullNamePassport) {
+        setScanMsg('تعذّر قراءة الجواز — تأكد من وضوح الصورة وأن تشمل الجزء السفلي من الجواز');
+        return;
+      }
+
       if (d.fullNamePassport) { setName(d.fullNamePassport); setNameError(''); }
-      if (d.passportNumber) { setPassport(d.passportNumber.toUpperCase().slice(0, 7)); setPassportError(''); }
+      if (d.passportNumber) { setPassport(d.passportNumber.slice(0, 7)); setPassportError(''); }
       if (d.birthDate) { setBirthDate(d.birthDate); setBirthDateError(''); }
       if (d.passportExpiry) { setExpiry(d.passportExpiry); setExpiryError(''); }
-      // Use the scanned image as passport file attachment
       setPassportFile(file);
       setPassportFileError('');
       setScanMsg('✓ تم استخراج البيانات — راجع الحقول وأكمل المعلومات الناقصة');
     } catch {
-      setScanMsg('حدث خطأ في المسح');
+      setScanMsg('حدث خطأ في المسح — حاول مرة أخرى');
     } finally {
       setScanning(false);
     }
+  }
+
+  // Crop bottom 25% of the image where MRZ lines live
+  function cropMRZZone(file: File): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const cropH = Math.floor(img.height * 0.25);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = cropH;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { reject(new Error('canvas')); return; }
+        // Increase contrast for better OCR
+        ctx.filter = 'contrast(1.4) grayscale(1)';
+        ctx.drawImage(img, 0, img.height - cropH, img.width, cropH, 0, 0, img.width, cropH);
+        canvas.toBlob(b => b ? resolve(b) : reject(new Error('blob')), 'image/jpeg', 0.95);
+      };
+      img.onerror = reject;
+      img.src = url;
+    });
+  }
+
+  function parseMRZ(ocrText: string): { fullNamePassport?: string; passportNumber?: string; birthDate?: string; passportExpiry?: string } {
+    // Extract lines that look like MRZ (44 chars of A-Z0-9<)
+    const lines = ocrText.split('\n')
+      .map(l => l.trim().replace(/\s/g, '').toUpperCase())
+      .filter(l => /^[A-Z0-9<]{30,}$/.test(l))
+      .map(l => l.padEnd(44, '<').slice(0, 44));
+
+    if (lines.length < 2) return {};
+
+    // Find line1 (starts with P) and line2 (starts with digit or letters for passport no)
+    const line1 = lines.find(l => l.startsWith('P')) || lines[0];
+    const line2 = lines.find(l => l !== line1 && /^[A-Z0-9]{9}/.test(l)) || lines[1];
+
+    const result: { fullNamePassport?: string; passportNumber?: string; birthDate?: string; passportExpiry?: string } = {};
+
+    // Parse name from line1: P<NAT SURNAME<<GIVENNAME(S)
+    if (line1 && line1.startsWith('P')) {
+      const namePart = line1.substring(5);
+      const [surname, ...givenParts] = namePart.split('<<');
+      const surnameClean = surname.replace(/<+/g, ' ').trim();
+      const givenClean = (givenParts[0] || '').replace(/<+/g, ' ').trim();
+      result.fullNamePassport = [surnameClean, givenClean].filter(Boolean).join(' ');
+    }
+
+    // Parse from line2
+    if (line2 && line2.length >= 28) {
+      // Passport number: positions 0–8
+      const passNo = line2.substring(0, 9).replace(/<+/g, '');
+      if (passNo.length >= 5) result.passportNumber = passNo;
+
+      // DOB: positions 13–18 (YYMMDD)
+      const dobRaw = line2.substring(13, 19);
+      if (/^\d{6}$/.test(dobRaw)) {
+        const yy = parseInt(dobRaw.slice(0, 2));
+        const curYY = new Date().getFullYear() % 100;
+        const yyyy = yy > curYY ? 1900 + yy : 2000 + yy;
+        result.birthDate = `${yyyy}-${dobRaw.slice(2, 4)}-${dobRaw.slice(4, 6)}`;
+      }
+
+      // Expiry: positions 21–26 (YYMMDD)
+      const expRaw = line2.substring(21, 27);
+      if (/^\d{6}$/.test(expRaw)) {
+        const yy = parseInt(expRaw.slice(0, 2));
+        const yyyy = yy < 50 ? 2000 + yy : 1900 + yy;
+        result.passportExpiry = `${yyyy}-${expRaw.slice(2, 4)}-${expRaw.slice(4, 6)}`;
+      }
+    }
+
+    return result;
   }
 
   function validateStep(s: number): boolean {
@@ -371,7 +459,7 @@ export default function PublicFormPage({ params }: { params: { token: string } }
                     مسح جواز السفر تلقائياً
                   </div>
                   <p style={{ fontSize: '0.78rem', color: '#4a7c7b', margin: '0 0 10px', lineHeight: 1.7 }}>
-                    صوّر جواز سفرك وسيتم استخراج البيانات تلقائياً — ستبقى صورة الجواز كمرفق
+                    صوّر جواز سفرك وسيتم استخراج البيانات تلقائياً داخل جهازك — لا تُرسَل الصورة لأي جهة
                   </p>
                   <input ref={scanInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
                     onChange={e => { const f = e.target.files?.[0]; if (f) handleScanPassport(f); e.target.value = ''; }} />
