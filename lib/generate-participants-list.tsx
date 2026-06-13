@@ -99,7 +99,6 @@ export interface CourseForList {
   startDate: Date | null;
   endDate: Date | null;
   createdByName: string;
-  coordinatorTitle?: string | null;
 }
 
 function fmtDate(d: Date | null): string {
@@ -167,10 +166,7 @@ export async function generateParticipantsListBuffer(
             </View>
             <View style={s.infoItem}>
               <Text style={s.infoLabel}>Programme Coordinator</Text>
-              <Text style={s.infoValue}>
-                {course.createdByName}
-                {course.coordinatorTitle ? ` — ${course.coordinatorTitle}` : ''}
-              </Text>
+              <Text style={s.infoValue}>{course.createdByName}</Text>
             </View>
           </View>
         </View>

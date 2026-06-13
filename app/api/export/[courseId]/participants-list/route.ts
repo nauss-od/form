@@ -18,7 +18,7 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
         staff: {
           orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
         },
-        createdBy: { select: { name: true, extension: true } },
+        createdBy: { select: { name: true } },
       },
     });
 
@@ -48,7 +48,6 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
         startDate: course.startDate,
         endDate: course.endDate,
         createdByName: course.createdBy?.name || '—',
-        coordinatorTitle: course.createdBy?.extension || null,
       },
       participants,
       staff,

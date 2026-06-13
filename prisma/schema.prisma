@@ -29,6 +29,7 @@ model User {
   passwordHash String
   mobile       String?
   extension    String?
+  jobTitle     String?
   role         UserRole @default(EMPLOYEE)
   isActive     Boolean  @default(true)
   lastLoginAt  DateTime?

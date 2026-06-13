@@ -4,9 +4,11 @@ import { useEffect, useState } from 'react';
 import AppShell from '@/components/AppShell';
 import Link from 'next/link';
 
+const JOB_TITLES = ['Operations Manager', 'Supervisor', 'Coordinator'];
+
 type AdminUser = {
   id: string; name: string; email: string; mobile: string | null;
-  extension: string | null; role: string; isActive: boolean;
+  extension: string | null; jobTitle: string | null; role: string; isActive: boolean;
   lastLoginAt: string | null; createdAt: string;
   _count: { courses: number }; submissionCount: number;
 };
@@ -16,7 +18,7 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [editId, setEditId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ name: '', email: '', mobile: '', extension: '', role: '' });
+  const [editForm, setEditForm] = useState({ name: '', email: '', mobile: '', extension: '', role: '', jobTitle: '' });
   const [originalRole, setOriginalRole] = useState('');
   const [pwdId, setPwdId] = useState<string | null>(null);
   const [pwdValue, setPwdValue] = useState('');
@@ -37,7 +39,7 @@ export default function AdminUsersPage() {
   function startEdit(u: AdminUser) {
     setEditId(u.id);
     setOriginalRole(u.role);
-    setEditForm({ name: u.name, email: u.email, mobile: u.mobile || '', extension: u.extension || '', role: u.role });
+    setEditForm({ name: u.name, email: u.email, mobile: u.mobile || '', extension: u.extension || '', role: u.role, jobTitle: u.jobTitle || '' });
   }
 
   function saveEdit() {
@@ -91,7 +93,7 @@ export default function AdminUsersPage() {
         <div className="section-card">
           <div className="section-head"><h3>جميع المستخدمين ({users.length})</h3></div>
           <table className="data-table">
-            <thead><tr><th>الاسم</th><th>البريد</th><th>الجوال</th><th>الدور</th><th>الحالة</th><th>دورات</th><th>مسجلون</th><th>الإجراءات</th></tr></thead>
+            <thead><tr><th>الاسم</th><th>البريد</th><th>الجوال</th><th>المسمى الوظيفي</th><th>الدور</th><th>الحالة</th><th>دورات</th><th>مسجلون</th><th>الإجراءات</th></tr></thead>
             <tbody>
               {users.map(u => (
                 <tr key={u.id}>
@@ -100,6 +102,12 @@ export default function AdminUsersPage() {
                       <td><input className="input" style={{minHeight:36,width:120}} value={editForm.name} onChange={e => setEditForm(f=>({...f,name:e.target.value}))} /></td>
                       <td><input className="input" style={{minHeight:36,width:160,direction:'ltr'}} value={editForm.email} onChange={e => setEditForm(f=>({...f,email:e.target.value}))} /></td>
                       <td><input className="input" style={{minHeight:36,width:120}} value={editForm.mobile} onChange={e => setEditForm(f=>({...f,mobile:e.target.value}))} /></td>
+                      <td>
+                        <select className="input" style={{minHeight:36,direction:'ltr'}} value={editForm.jobTitle} onChange={e => setEditForm(f=>({...f,jobTitle:e.target.value}))}>
+                          <option value="">— بدون —</option>
+                          {JOB_TITLES.map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                      </td>
                       <td>
                         <select className="input" style={{minHeight:36}} value={editForm.role} onChange={e => setEditForm(f=>({...f,role:e.target.value}))}>
                           <option value="EMPLOYEE">موظف</option><option value="MANAGER">مدير</option>
@@ -118,6 +126,11 @@ export default function AdminUsersPage() {
                       <td><strong>{u.name}</strong></td>
                       <td style={{ direction: 'ltr', textAlign: 'right' }}>{u.email}</td>
                       <td dir="ltr">{u.mobile || '—'}</td>
+                      <td dir="ltr">
+                        {u.jobTitle
+                          ? <span className="metric-chip" style={{background:'rgba(1,101,100,0.08)',color:'#014948',fontSize:'0.75rem'}}>{u.jobTitle}</span>
+                          : <span style={{color:'#94a3b8'}}>—</span>}
+                      </td>
                       <td><span className="metric-chip" style={{background: u.role === 'MANAGER' ? 'rgba(208,178,132,0.2)' : 'rgba(1,101,100,0.08)', color: u.role === 'MANAGER' ? '#8a6a39' : '#016564'}}>{u.role === 'MANAGER' ? 'مدير' : 'موظف'}</span></td>
                       <td>
                         <button className="secondary-btn" style={{minHeight:34,fontSize:'0.82rem',background: u.isActive ? 'rgba(1,101,100,0.08)' : 'rgba(191,61,48,0.08)', color: u.isActive ? '#016564' : '#bf3d30'}} onClick={() => toggleStatus(u)}>

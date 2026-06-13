@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 
 const ALLOWED_TITLES = [
   'Scientific Supervisor',
+  'Supervisor',
   'Translator',
   'Trainer 1',
   'Trainer 2',

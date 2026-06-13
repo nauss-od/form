@@ -16,7 +16,7 @@ interface Course {
 interface StaffMember { id: string; name: string; passportNo: string | null; mobile: string | null; jobTitle: string; }
 interface EditState { name: string; passportNo: string; mobile: string; jobTitle: string; }
 
-const JOB_TITLES = ['Scientific Supervisor', 'Translator', 'Trainer 1', 'Trainer 2', 'Coordinator', 'Operations Manager'];
+const JOB_TITLES = ['Scientific Supervisor', 'Supervisor', 'Translator', 'Trainer 1', 'Trainer 2', 'Coordinator', 'Operations Manager'];
 
 function fmtDate(d: string | null) {
   if (!d) return '';

@@ -9,18 +9,21 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     return NextResponse.json({ message: 'غير مصرح' }, { status: 401 });
   }
 
-  const { name, email, mobile, extension, role } = await request.json();
-  const data: Record<string, string> = {};
+  const ALLOWED_JOB_TITLES = ['Operations Manager', 'Supervisor', 'Coordinator'];
+  const { name, email, mobile, extension, role, jobTitle } = await request.json();
+  const data: Record<string, string | null> = {};
   if (typeof name === 'string') data.name = name;
   if (typeof email === 'string') data.email = email.toLowerCase();
   if (typeof mobile === 'string') data.mobile = mobile;
   if (typeof extension === 'string') data.extension = extension;
   if (typeof role === 'string' && ['MANAGER', 'EMPLOYEE'].includes(role)) data.role = role;
+  if (jobTitle === null || jobTitle === '') data.jobTitle = null;
+  else if (typeof jobTitle === 'string' && ALLOWED_JOB_TITLES.includes(jobTitle)) data.jobTitle = jobTitle;
 
   const user = await prisma.user.update({
     where: { id: params.id },
     data,
-    select: { id: true, name: true, email: true, mobile: true, extension: true, role: true, isActive: true }
+    select: { id: true, name: true, email: true, mobile: true, extension: true, jobTitle: true, role: true, isActive: true }
   });
 
   await logAudit({
