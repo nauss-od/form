@@ -84,6 +84,16 @@ function UploadField({ label, value, onChange, hasError }: {
   );
 }
 
+function ScanIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/>
+      <path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
+      <line x1="7" y1="12" x2="17" y2="12"/>
+    </svg>
+  );
+}
+
 export default function PublicFormPage({ params }: { params: { token: string } }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -91,6 +101,9 @@ export default function PublicFormPage({ params }: { params: { token: string } }
   const [step, setStep] = useState(1);
   const [animDir, setAnimDir] = useState<'next' | 'prev'>('next');
   const [animating, setAnimating] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [scanMsg, setScanMsg] = useState('');
+  const scanInputRef = useRef<HTMLInputElement>(null);
 
   const [name, setName] = useState('');
   const [nameError, setNameError] = useState('');
@@ -186,6 +199,31 @@ export default function PublicFormPage({ params }: { params: { token: string } }
   function handleNationalIdFile(file: File | null) {
     setNationalIdFile(file);
     validateAttachment(file, setNationalIdFileError);
+  }
+
+  async function handleScanPassport(file: File) {
+    setScanning(true);
+    setScanMsg('');
+    try {
+      const fd = new FormData();
+      fd.append('image', file);
+      const res = await fetch('/api/public/scan-passport', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) { setScanMsg(data.message || 'تعذّر المسح'); return; }
+      const d = data.data;
+      if (d.fullNamePassport) { setName(d.fullNamePassport); setNameError(''); }
+      if (d.passportNumber) { setPassport(d.passportNumber.toUpperCase().slice(0, 7)); setPassportError(''); }
+      if (d.birthDate) { setBirthDate(d.birthDate); setBirthDateError(''); }
+      if (d.passportExpiry) { setExpiry(d.passportExpiry); setExpiryError(''); }
+      // Use the scanned image as passport file attachment
+      setPassportFile(file);
+      setPassportFileError('');
+      setScanMsg('✓ تم استخراج البيانات — راجع الحقول وأكمل المعلومات الناقصة');
+    } catch {
+      setScanMsg('حدث خطأ في المسح');
+    } finally {
+      setScanning(false);
+    }
   }
 
   function validateStep(s: number): boolean {
@@ -326,6 +364,29 @@ export default function PublicFormPage({ params }: { params: { token: string } }
 
             {step === 1 && (
               <div className="form-section" style={{ gap: 18 }}>
+
+                {/* Passport scanner */}
+                <div style={{ background: 'linear-gradient(135deg,#f0faf9,#e6f4f3)', border: '1.5px solid #b2d8d7', borderRadius: 14, padding: '14px 16px' }}>
+                  <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#014948', marginBottom: 6 }}>
+                    مسح جواز السفر تلقائياً
+                  </div>
+                  <p style={{ fontSize: '0.78rem', color: '#4a7c7b', margin: '0 0 10px', lineHeight: 1.7 }}>
+                    صوّر جواز سفرك وسيتم استخراج البيانات تلقائياً — ستبقى صورة الجواز كمرفق
+                  </p>
+                  <input ref={scanInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
+                    onChange={e => { const f = e.target.files?.[0]; if (f) handleScanPassport(f); e.target.value = ''; }} />
+                  <button type="button" onClick={() => scanInputRef.current?.click()} disabled={scanning}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 18px', borderRadius: 10, background: '#014948', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: '0.82rem' }}>
+                    {scanning ? <span style={{ display: 'inline-block', width: 16, height: 16, border: '2px solid rgba(255,255,255,0.4)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} /> : <ScanIcon />}
+                    {scanning ? 'جاري المسح...' : 'مسح الجواز'}
+                  </button>
+                  {scanMsg && (
+                    <div style={{ marginTop: 8, fontSize: '0.78rem', fontWeight: 700, color: scanMsg.startsWith('✓') ? '#14805a' : '#dc2626' }}>
+                      {scanMsg}
+                    </div>
+                  )}
+                </div>
+
                 <div className="field">
                   <label>الاسم حسب جواز السفر <span className="req">*</span></label>
                   <input
