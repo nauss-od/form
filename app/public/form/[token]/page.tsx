@@ -54,32 +54,108 @@ function UploadField({ label, value, onChange, hasError }: {
   onChange: (f: File | null) => void;
   hasError?: boolean;
 }) {
+  const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  // Build object URL for preview whenever file changes
+  useState(() => {
+    if (value) {
+      const url = URL.createObjectURL(value);
+      setPreviewUrl(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setPreviewUrl(null);
+    }
+  });
+
+  // Keep preview in sync when value changes from outside (e.g. passport scan)
+  const prevValue = useRef<File | null>(null);
+  if (prevValue.current !== value) {
+    prevValue.current = value;
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    if (value) {
+      // schedule async so we can call setPreviewUrl
+      setTimeout(() => setPreviewUrl(URL.createObjectURL(value)), 0);
+    } else {
+      // will be set on next render cycle
+    }
+  }
+
+  function handleChange(f: File | null) {
+    onChange(f);
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(f ? URL.createObjectURL(f) : null);
+  }
+
+  if (value && previewUrl) {
+    // Show preview — no clickable input, just the image + change button
+    return (
+      <div className="field">
+        <label>{label} <span className="req">*</span></label>
+        <div style={{
+          border: '2px solid #016564', borderRadius: 12, overflow: 'hidden',
+          background: '#f4f8f8', position: 'relative',
+        }}>
+          {/* Thumbnail */}
+          <img
+            src={previewUrl}
+            alt="معاينة"
+            style={{ width: '100%', maxHeight: 180, objectFit: 'cover', display: 'block' }}
+          />
+          {/* Overlay bar */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '8px 12px', background: 'rgba(1,73,72,0.92)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
+                <path d="M9 12l2 2 4-4" stroke="#6ee7b7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx="12" cy="12" r="10" stroke="#6ee7b7" strokeWidth="1.6"/>
+              </svg>
+              <span style={{ color: '#e0f2f1', fontSize: '0.78rem', fontWeight: 700 }}>
+                {value.name.length > 28 ? value.name.slice(0, 25) + '…' : value.name}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              style={{
+                background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)',
+                borderRadius: 6, color: '#fff', fontSize: '0.72rem', padding: '3px 10px',
+                cursor: 'pointer', fontWeight: 700,
+              }}
+            >
+              تغيير
+            </button>
+          </div>
+        </div>
+        <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}
+          onChange={e => handleChange(e.target.files?.[0] || null)} />
+        <input ref={cameraRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
+          onChange={e => handleChange(e.target.files?.[0] || null)} />
+      </div>
+    );
+  }
 
   return (
     <div className="field">
       <label>{label} <span className="req">*</span></label>
       <div className="upload-stack">
-        <div className={`upload-zone ${value ? 'has-file' : ''} ${hasError ? 'upload-error' : ''}`}>
-          <input type="file" accept="image/*" onChange={e => onChange(e.target.files?.[0] || null)} />
-          {value ? (
-            <div className="upload-file-info">
-              <FileIcon />
-              <span className="upload-file-name">{value.name}</span>
-            </div>
-          ) : (
-            <div className="upload-empty">
-              <UploadIcon />
-              <span>اضغط لاختيار ملف</span>
-            </div>
-          )}
+        <div className={`upload-zone ${hasError ? 'upload-error' : ''}`}>
+          <input type="file" accept="image/*" onChange={e => handleChange(e.target.files?.[0] || null)} />
+          <div className="upload-empty">
+            <UploadIcon />
+            <span>اضغط لاختيار ملف</span>
+          </div>
         </div>
         <button type="button" className="upload-camera-btn" onClick={() => cameraRef.current?.click()}>
           <CameraIcon />
           <span>تصوير</span>
         </button>
       </div>
-      <input ref={cameraRef} type="file" accept="image/*" capture="environment" onChange={e => onChange(e.target.files?.[0] || null)} style={{ display: 'none' }} />
+      <input ref={cameraRef} type="file" accept="image/*" capture="environment"
+        onChange={e => handleChange(e.target.files?.[0] || null)} style={{ display: 'none' }} />
     </div>
   );
 }
