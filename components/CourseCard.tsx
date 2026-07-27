@@ -10,6 +10,7 @@ export type Course = {
   participantCount: number | null; publicToken: string;
   status: string; _count: { submissions: number };
   createdBy: { name: string };
+  insuranceName?: string;
   insuranceIssuedAt?: string | null;
   insuredCount?: number | null;
 };
@@ -36,12 +37,13 @@ export function insuranceUrl(c: Course): string {
 
 export function mailtoHref(c: Course): string {
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  const subject = encodeURIComponent(`طلب إصدار تأمين طبي — ${c.activityName || 'دورة خارجية'}`);
+  const insuranceName = c.insuranceName || 'دورة تدريبية';
+  const subject = encodeURIComponent(`طلب إصدار تأمين طبي — ${insuranceName}`);
   const body = encodeURIComponent(
     `السلام عليكم ورحمة الله وبركاته،\n\n` +
     `نرفق لكم بيانات المشاركين في الدورة التدريبية أدناه، ونأمل منكم التكرم بإصدار التأمين الطبي لهم.\n\n` +
     `بيانات الدورة:\n` +
-    `- اسم النشاط: ${c.activityName || '—'}\n` +
+    `- اسم الدورة: ${insuranceName}\n` +
     `- مقر الانعقاد: ${c.venue || '—'}\n` +
     `- تاريخ البداية: ${formatDate(c.startDate)}\n` +
     `- تاريخ النهاية: ${formatDate(c.endDate)}\n` +

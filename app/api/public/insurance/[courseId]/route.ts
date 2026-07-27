@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { logAudit } from '@/lib/audit';
+import { getInsuranceCourseName } from '@/lib/insurance-course-name';
 
 export async function GET(_request: Request, { params }: { params: { courseId: string } }) {
   const course = await prisma.course.findUnique({
@@ -27,6 +28,13 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
     return NextResponse.json({ message: 'تم تصدير التأمين وحذف بيانات المشاركين نهائياً' }, { status: 410 });
   }
 
+  const insuranceName = await getInsuranceCourseName({
+    id: course.id,
+    createdAt: course.createdAt,
+    createdByUserId: course.createdByUserId,
+    createdBy: course.createdBy,
+  });
+
   const participants = course.submissions.map(s => ({
     id: s.id,
     fullNamePassport: s.fullNamePassport,
@@ -49,7 +57,7 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
   return NextResponse.json({
     course: {
       id: course.id,
-      activityName: course.activityName,
+      activityName: insuranceName,
       venue: course.venue,
       startDate: course.startDate,
       endDate: course.endDate,

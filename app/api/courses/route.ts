@@ -3,6 +3,7 @@ import { getCurrentSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { generatePublicToken } from '@/lib/utils';
 import { logAudit } from '@/lib/audit';
+import { getInsuranceCourseNames } from '@/lib/insurance-course-name';
 
 export async function GET(request: NextRequest) {
   const session = getCurrentSession();
@@ -89,16 +90,19 @@ export async function GET(request: NextRequest) {
   return res;
 }
 
-async function attachInsuranceIssued<T extends { id: string }>(courses: T[]) {
+async function attachInsuranceIssued<T extends { id: string; createdAt: Date; createdByUserId: string; createdBy: { name: string } }>(courses: T[]) {
   if (!courses.length) return courses;
-  const logs = await prisma.auditLog.findMany({
-    where: {
-      action: 'INSURANCE_ISSUED',
-      entityType: 'Course',
-      entityId: { in: courses.map(course => course.id) },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
+  const [logs, insuranceNames] = await Promise.all([
+    prisma.auditLog.findMany({
+      where: {
+        action: 'INSURANCE_ISSUED',
+        entityType: 'Course',
+        entityId: { in: courses.map(course => course.id) },
+      },
+      orderBy: { createdAt: 'desc' },
+    }),
+    getInsuranceCourseNames(courses),
+  ]);
   const byCourse = new Map<string, { insuredCount: number; issuedAt: Date }>();
   for (const log of logs) {
     if (byCourse.has(log.entityId)) continue;
@@ -110,7 +114,10 @@ async function attachInsuranceIssued<T extends { id: string }>(courses: T[]) {
   }
   return courses.map(course => {
     const issued = byCourse.get(course.id);
-    return issued ? { ...course, insuranceIssuedAt: issued.issuedAt, insuredCount: issued.insuredCount } : course;
+    const insuranceName = insuranceNames.get(course.id);
+    return issued
+      ? { ...course, insuranceName, insuranceIssuedAt: issued.issuedAt, insuredCount: issued.insuredCount }
+      : { ...course, insuranceName };
   });
 }
 

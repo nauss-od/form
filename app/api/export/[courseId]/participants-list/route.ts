@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentSession } from '@/lib/auth';
 import { generateParticipantsListBuffer } from '@/lib/generate-participants-list';
+import { getInsuranceCourseName } from '@/lib/insurance-course-name';
 
 export async function GET(_request: Request, { params }: { params: { courseId: string } }) {
   try {
@@ -26,6 +27,7 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
     if (session.role !== 'MANAGER' && course.createdByUserId !== session.userId) {
       return NextResponse.json({ message: 'غير مصرح' }, { status: 403 });
     }
+    const insuranceName = await getInsuranceCourseName(course);
 
     const participants = course.submissions.map((s, i) => ({
       index: i + 1,
@@ -43,7 +45,7 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
 
     const pdfBuffer = await generateParticipantsListBuffer(
       {
-        activityName: course.activityName,
+        activityName: insuranceName,
         venue: course.venue,
         startDate: course.startDate,
         endDate: course.endDate,
@@ -53,7 +55,7 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
       staff,
     );
 
-    const rawName = (course.activityName || 'course').replace(/[<>:"/\\|?*\n\r]/g, ' ').trim() || 'course';
+    const rawName = insuranceName.replace(/[<>:"/\\|?*\n\r]/g, ' ').trim();
     const filename = `participants-list-${rawName}.pdf`;
     const asciiFilename = filename.replace(/[^\x20-\x7E]/g, '');
     const encodedFilename = encodeURIComponent(filename);

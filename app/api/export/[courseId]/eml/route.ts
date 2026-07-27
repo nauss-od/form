@@ -4,6 +4,7 @@ import { formatDate } from '@/lib/utils';
 import { getCurrentSession } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
 import { generatePdfBuffer } from '@/lib/generate-pdf';
+import { getInsuranceCourseName } from '@/lib/insurance-course-name';
 
 function addDays(date: Date, days: number): Date {
   const result = new Date(date);
@@ -39,6 +40,7 @@ export async function GET(request: Request, { params }: { params: { courseId: st
     await logAudit({ userId: session.userId, action: 'EXPORT_EML', entityType: 'Course', entityId: params.courseId });
 
     const baseUrl = new URL(request.url).origin;
+    const insuranceName = await getInsuranceCourseName(course);
 
     const participants = course.submissions.map((s, i) => ({
       index: i + 1,
@@ -48,7 +50,7 @@ export async function GET(request: Request, { params }: { params: { courseId: st
 
     const pdfBuffer = await generatePdfBuffer(
       {
-        activityName: course.activityName,
+        activityName: insuranceName,
         venue: course.venue,
         startDate: course.startDate,
         endDate: course.endDate,
@@ -65,7 +67,7 @@ export async function GET(request: Request, { params }: { params: { courseId: st
 
     const fromName = (course.createdBy?.name || 'موظف التدريب').replace(/[<>()\[\]\\,;:\"\n\r]/g, '').trim();
     const fromEmail = course.createdBy?.email || 'training@nauss.edu.sa';
-    const subject = `طلب إصدار تأمين طبي — ${course.activityName || 'دورة خارجية'}`;
+    const subject = `طلب إصدار تأمين طبي — ${insuranceName}`;
     const dateStr = new Date().toUTCString();
     const boundary = `----=_NAUSS_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
     const msgId = `<nauss-${Date.now()}-${Math.random().toString(36).slice(2, 14)}@nauss.edu.sa>`;
@@ -79,7 +81,7 @@ export async function GET(request: Request, { params }: { params: { courseId: st
 نرفق لكم ملف PDF يتضمن بيانات المشاركين في الدورة التدريبية أدناه، ونأمل منكم التكرم بإصدار التأمين الطبي لهم.
 
 بيانات الدورة:
-- اسم النشاط: ${course.activityName || '—'}
+- اسم الدورة: ${insuranceName}
 - مقر الانعقاد: ${course.venue || '—'}
 - تاريخ البداية: ${formatDate(course.startDate)}
 - تاريخ النهاية: ${formatDate(course.endDate)}
@@ -105,7 +107,7 @@ ${course.createdBy?.name || 'موظف التدريب'}
 إدارة عمليات التدريب — وكالة التدريب
 جامعة نايف العربية للعلوم الأمنية`;
 
-    const safeName = (course.activityName || 'course').replace(/[<>:"/\\|?*\n\r]/g, ' ').trim().replace(/\s+/g, ' ') || 'course';
+    const safeName = insuranceName.replace(/[<>:"/\\|?*\n\r]/g, ' ').trim().replace(/\s+/g, ' ');
     const pdfFilename = `${safeName}-insurance.pdf`;
 
     const eml = [

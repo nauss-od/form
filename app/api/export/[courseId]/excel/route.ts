@@ -4,6 +4,7 @@ import { formatDate } from '@/lib/utils';
 import { getCurrentSession } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
 import ExcelJS from 'exceljs';
+import { getInsuranceCourseName } from '@/lib/insurance-course-name';
 
 export async function GET(_request: Request, { params }: { params: { courseId: string } }) {
   try {
@@ -24,6 +25,7 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
     }
 
     await logAudit({ userId: session.userId, action: 'EXPORT_EXCEL', entityType: 'Course', entityId: params.courseId });
+    const insuranceName = await getInsuranceCourseName(course);
 
     const wb = new ExcelJS.Workbook();
   wb.creator = 'منصة تأمين المشاركين';
@@ -37,7 +39,7 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
   ];
 
   const infoRows = [
-    { label: 'النشاط', value: course.activityName || '—' },
+    { label: 'الدورة', value: insuranceName },
     { label: 'المكان', value: course.venue || '—' },
     { label: 'تاريخ البداية', value: formatDate(course.startDate) },
     { label: 'تاريخ النهاية', value: formatDate(course.endDate) },
@@ -105,7 +107,7 @@ export async function GET(_request: Request, { params }: { params: { courseId: s
   return new NextResponse(buffer, {
     headers: {
       'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'Content-Disposition': `attachment; filename="${(course.activityName || 'course').replace(/[^a-zA-Z0-9\-_ ]/g, '')}-participants.xlsx"`,
+      'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(`${insuranceName}-participants.xlsx`)}`,
     },
   });
   } catch (err) {

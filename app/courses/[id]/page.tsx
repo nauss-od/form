@@ -14,6 +14,7 @@ type CourseDetail = {
   id: string; activityName: string | null; venue: string | null;
   startDate: string | null; endDate: string | null; participantCount: number | null;
   publicToken: string; status: string; createdBy: { name: string };
+  insuranceName: string;
   submissions: Submission[];
 };
 type CourseOption = { id: string; activityName: string | null; status: string };
@@ -135,11 +136,11 @@ export default function CourseDetailsPage({ params }: { params: { id: string } }
                 <button className="secondary-btn" onClick={() => { navigator.clipboard.writeText(publicUrl); alert('تم نسخ الرابط'); }}>نسخ رابط المشاركين</button>
                 <button className="secondary-btn" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/public/insurance/${course.id}`); alert('تم نسخ رابط التأمين'); }}>نسخ رابط التأمين</button>
                 <a href={`/api/export/${course.id}/pdf`} className="secondary-btn">تصدير PDF</a>
-                <a href={`mailto:?subject=${encodeURIComponent('طلب إصدار تأمين طبي — ' + (course.activityName || 'دورة خارجية'))}&body=${encodeURIComponent(
+                <a href={`mailto:?subject=${encodeURIComponent('طلب إصدار تأمين طبي — ' + course.insuranceName)}&body=${encodeURIComponent(
                   'السلام عليكم ورحمة الله وبركاته،\n\n' +
                   'نرفق لكم بيانات المشاركين في الدورة التدريبية أدناه، ونأمل منكم التكرم بإصدار التأمين الطبي لهم.\n\n' +
                   'بيانات الدورة:\n' +
-                  `- اسم النشاط: ${course.activityName || '—'}\n` +
+                  `- اسم الدورة: ${course.insuranceName}\n` +
                   `- مقر الانعقاد: ${course.venue || '—'}\n` +
                   `- تاريخ البداية: ${formatDate(course.startDate)}\n` +
                   `- تاريخ النهاية: ${formatDate(course.endDate)}\n` +

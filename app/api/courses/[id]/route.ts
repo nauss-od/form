@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { logAudit } from '@/lib/audit';
+import { getInsuranceCourseName } from '@/lib/insurance-course-name';
 function checkAuth(session: Awaited<ReturnType<typeof getCurrentSession>>, course: { createdByUserId: string }) {
   if (!session) return NextResponse.json({ message: 'غير مصرح' }, { status: 401 });
   if (session.role !== 'MANAGER' && course.createdByUserId !== session.userId) {
@@ -38,7 +39,8 @@ export async function GET(_request: Request, { params }: { params: { id: string 
   const authErr = checkAuth(session, course);
   if (authErr) return authErr;
 
-  return NextResponse.json(course);
+  const insuranceName = await getInsuranceCourseName(course);
+  return NextResponse.json({ ...course, insuranceName });
 }
 
 export async function DELETE(_request: Request, { params }: { params: { id: string } }) {

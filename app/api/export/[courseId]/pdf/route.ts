@@ -4,6 +4,7 @@ import { formatDate } from '@/lib/utils';
 import { getCurrentSession } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
 import { generatePdfBuffer } from '@/lib/generate-pdf';
+import { getInsuranceCourseName } from '@/lib/insurance-course-name';
 
 export async function GET(request: Request, { params }: { params: { courseId: string } }) {
   try {
@@ -25,6 +26,7 @@ export async function GET(request: Request, { params }: { params: { courseId: st
     await logAudit({ userId: session.userId, action: 'EXPORT_PDF', entityType: 'Course', entityId: params.courseId });
 
     const baseUrl = new URL(request.url).origin;
+    const insuranceName = await getInsuranceCourseName(course);
 
     const participants = course.submissions.map((s, i) => ({
       index: i + 1,
@@ -34,7 +36,7 @@ export async function GET(request: Request, { params }: { params: { courseId: st
 
     const pdfBuffer = await generatePdfBuffer(
       {
-        activityName: course.activityName,
+        activityName: insuranceName,
         venue: course.venue,
         startDate: course.startDate,
         endDate: course.endDate,
@@ -44,7 +46,7 @@ export async function GET(request: Request, { params }: { params: { courseId: st
       baseUrl,
     );
 
-    const rawName = (course.activityName || 'course').replace(/[<>:"/\\|?*\n\r]/g, ' ').trim() || 'course';
+    const rawName = insuranceName.replace(/[<>:"/\\|?*\n\r]/g, ' ').trim();
     const rawVenue = course.venue ? '-' + course.venue.replace(/[<>:"/\\|?*\n\r]/g, ' ').trim() : '';
     const rawFilename = `${rawName}${rawVenue}-insurance.pdf`;
 
